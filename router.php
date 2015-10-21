@@ -185,7 +185,7 @@ class PHPRouter {
 		return false;
 	}*/
 	
-	function urlroute($s = array(), $r, &$path){
+	function urlroute($s = array(), $r, $path){
 		//comments on 'r': mapping
 			//node aka o => 0
 			//variable aka v =>1
@@ -213,13 +213,21 @@ class PHPRouter {
 		$url = explode('?', $uri, 2);
 		
 		$path = new Path($url = rtrim($url[0],'/'));
+
+		//trigger_error("A: " . var_export($path, true));
 			
 		$s = explode('/', ltrim($path->url,'/'));
 		
 		$data = array();
 		$node = $this->urlroute($s, $this->paths[$type], $path);
+
+		//trigger_error("B: " . var_export($path, true));
+
 		if(!$node)
 			return new Route(false, 'fourohfour', $data, $path, false);
+
+		//trigger_error("C: " . var_export($path, true));
+
 		
 		if(is_array($node->inputs)){
 			$source = ($type == "GET" ? $_GET : $_POST);
@@ -361,10 +369,12 @@ class PHPRouter {
 function fourohfour(&$data, &$path, &$user){
 	//trigger_error("404: " . $path->url); //Only set this if you are sending errors somewhere other than the page being displayed
 	header($_SERVER["SERVER_PROTOCOL"] . " 404 Not Found");
+	//trigger_error("HERE: " . var_export($path,true));
 	$path->url = htmlentities($path->url);
 	echo <<<END
 <html>
-<head><title>404</title><link rel='stylesheet' href='/css/public_css.css' type='text/css' /></head>
+<head><title>404</title></head>
+<!--<link rel='stylesheet' href='/css/public_css.css' type='text/css' />-->
 <body>
 <br /><br /><br />404 - not found<br /><br />The URL you attempted to access was: {$path->url}<br /><br /><a href='/'>Back to homepage!</a>
 </div></div></body>
