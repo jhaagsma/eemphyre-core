@@ -136,9 +136,26 @@ class MysqlDb {
 		
 		$result = $this->con->query($query);
 		
-		if(!$result)
-			trigger_error("Query Error: (" . $this->con->errno . ") " . $this->con->error . " : \"$query\"",E_USER_ERROR) && exit;
-		
+		if(!$result){
+			//lets add a bit to tell us where the damned query was called.
+			$backtrace = debug_backtrace();
+			$pq = ($backtrace[1]['function'] == 'pquery' || $backtrace[1]['function']  == 'pquery_array' ? 1 : 0);
+			$line = $backtrace[$pq]['line'];
+			$file_err = explode('/',$backtrace[$pq]['file']);
+			$dir_this = explode('/',__DIR__);
+			$i = 0;
+			$count = count($file_err) - 1;
+			while(isset($file_err[$i]) && isset($dir_this[$i]) && $file_err[$i] == $dir_this[$i]){
+				unset($file_err[$i]);
+				unset($file_err[$i]);
+				$i++;
+			}
+			$file_err = implode('/',$file_err);
+
+			trigger_error("Query Error:  (" . $this->con->errno . "), $file_err:$line " . $this->con->error . " : \"$query\"",E_USER_ERROR);
+			exit;
+		}
+
 		$insertid = $this->con->insert_id;
 		$affectedrows = $this->con->affected_rows;
 		$numrows = (isset($result->num_rows) ? $result->num_rows : 0);
