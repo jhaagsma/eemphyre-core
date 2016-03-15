@@ -18,11 +18,14 @@ All files are licensed under the MIT License.
 First release, September 3, 2012
 ---------------------------------------------------*/
 
-define("DB_ASSOC", MYSQLI_ASSOC);
-define("DB_NUM",   MYSQLI_NUM);
-define("DB_BOTH",  MYSQLI_BOTH);
+namespace EmPHyre;
 
-class MysqlDb {
+define("DB_ASSOC", MYSQLI_ASSOC);
+define("DB_NUM", MYSQLI_NUM);
+define("DB_BOTH", MYSQLI_BOTH);
+
+class MysqlDb
+{
     public $host;
     public $db;
     public $user;
@@ -34,7 +37,9 @@ class MysqlDb {
     public $queries;
     public $querystore;
 
-    function __construct($host, $db, $user, $pass, $persist = false, $seqtable = null, $logqueries = false, $qlog_table = 'queries'){ //logqueries should really be false by default
+    function __construct($host, $db, $user, $pass, $persist = false, $seqtable = null, $logqueries = false, $qlog_table = 'queries')
+    {
+        //logqueries should really be false by default
 
         $this->host = $host;
         $this->db = $db;
@@ -56,31 +61,37 @@ class MysqlDb {
         $this->querytime = 0;
     }
 
-    function __destruct(){
+    function __destruct()
+    {
         $this->close();
     }
     
-    function can_connect(){
-        if(!$this->persist)
-            $this->con = new mysqli($this->host, $this->user, $this->pass, $this->db);
-        else
-            $this->con = new mysqli('p:' . $this->host, $this->user, $this->pass, $this->db);
+    function can_connect()
+    {
+        if (!$this->persist) {
+            $this->con = new \mysqli($this->host, $this->user, $this->pass, $this->db);
+        } else {
+            $this->con = new \mysqli('p:' . $this->host, $this->user, $this->pass, $this->db);
+        }
             
-        if($this->con->connect_errno)
+        if ($this->con->connect_errno) {
             return false;
+        }
             
         return true;
     }
     
-    function connect(){
-        if($this->con){
-            if($this->lasttime > time()-10)
+    function connect()
+    {
+        if ($this->con) {
+            if ($this->lasttime > time()-10) {
                 return $this->con->ping();
+            }
 
             return true;
         }
             
-        if(!$this->can_connect()){
+        if (!$this->can_connect()) {
             trigger_error('Connect Error (' . $this->con->connect_errno . ') ' . $this->con->connect_error, E_USER_ERROR);
             $this->con = null;
             exit; //if the redirect doesn't exist??
@@ -89,14 +100,15 @@ class MysqlDb {
         return true;
     }
 
-    function close(){
-        if($this->con){
+    function close()
+    {
+        if ($this->con) {
             $this->con->close();
             $this->con = null;
         }
     }
     
-/*  
+    /*
     function log_em($query,$qtime){
         if($this->logqueries && !$this->plogged){//SQRT(sq_total_time/total_num - total_time*total_time/(total_num*total_num))',
             $this->plogged = true;
@@ -121,37 +133,39 @@ class MysqlDb {
         }
         return;
     }
-*/  
+    */
     
-    function query($query,$logthis = true){
+    function query($query, $logthis = true)
+    {
         $insertid = 0;
         $affectedrows = 0;
         $numrows = 0;
         $qt = 0;
     
-        if(!$this->connect())
+        if (!$this->connect()) {
             return false;
+        }
 
         $start = microtime(true);
         
         $result = $this->con->query($query);
         
-        if(!$result){
+        if (!$result) {
             //lets add a bit to tell us where the damned query was called.
             $backtrace = debug_backtrace();
             $pq = ($backtrace[1]['function'] == 'pquery' ? 1 : 0);
             $line = $backtrace[$pq]['line'];
-            $file_err = explode('/',$backtrace[$pq]['file']);
-            $dir_this = explode('/',__DIR__);
+            $file_err = explode('/', $backtrace[$pq]['file']);
+            $dir_this = explode('/', __DIR__);
             $i = 0;
-            while($file_err[$i] == $dir_this[$i]){
+            while ($file_err[$i] == $dir_this[$i]) {
                 unset($file_err[$i]);
                 unset($file_err[$i]);
                 $i++;
             }
-            $file_err = implode('/',$file_err);
+            $file_err = implode('/', $file_err);
 
-            trigger_error("Query Error:  (" . $this->con->errno . "), $file_err:$line " . $this->con->error . " : \"$query\"",E_USER_ERROR);
+            trigger_error("Query Error:  (" . $this->con->errno . "), $file_err:$line " . $this->con->error . " : \"$query\"", E_USER_ERROR);
             exit;
         }
 
@@ -166,16 +180,18 @@ class MysqlDb {
         $this->count++;
         $qt = $this->querytime = ($end - $start);
         
-        if($logthis){
-            if($this->plogged)
+        if ($logthis) {
+            if ($this->plogged) {
                 $this->queries[] = array($this->qlog, $this->querytime);
-            else
+            } else {
                 $this->queries[] = array($query, $this->querytime);
+            }
         }
-        if(count($this->queries) > $this->querystore)
+        if (count($this->queries) > $this->querystore) {
             array_shift($this->queries);
+        }
         
-        /*  
+        /*
         global $debug;
         if(isset($debug) && $debug)
             $this->debug_query($query); //this returns a little table that does the EXPLAIN of a non-EXPLAIN query in the query list
@@ -187,59 +203,72 @@ class MysqlDb {
         return new MysqlDbResult($result, $this->con, $numrows, $affectedrows, $insertid, $qt);
     }
 
-    function prepare(){
-        if(!$this->connect())
+    function prepare()
+    {
+        if (!$this->connect()) {
             return false;
+        }
 
         $args = func_get_args();
         
-        if(count($args) == 0)
-            trigger_error("mysql: Bad number of args (No args)",E_USER_ERROR) && exit;
+        if (count($args) == 0) {
+            trigger_error("mysql: Bad number of args (No args)", E_USER_ERROR) && exit;
+        }
         
-        if(count($args) == 1)
+        if (count($args) == 1) {
             return $args[0];
+        }
 
         $query = array_shift($args);
         $parts = explode('?', $query);
         $query = array_shift($parts);
         
-        if(count($parts) != count($args))
-            trigger_error("Wrong number of args to prepare for $query",E_USER_ERROR) && exit;
+        if (count($parts) != count($args)) {
+            trigger_error("Wrong number of args to prepare for $query", E_USER_ERROR) && exit;
+        }
         
-        for($i = 0; $i < count($args); $i++){
+        for ($i = 0; $i < count($args); $i++) {
             $query .= $this->prepare_part($args[$i]) . $parts[$i];
         }
         
         return $query;
     }
 
-    function prepare_arr($query, $array){
+    function prepare_arr($query, $array)
+    {
         return call_user_func_array($query, $array);
     }
 
-    function prepare_part($part){
-
-        
-        switch(gettype($part)){
-            case 'integer': return $part;
-            case 'double':  return $part;
+    function prepare_part($part)
+    {
+        switch (gettype($part)) {
+            case 'integer':
+                return $part;
+            case 'double':
+                return $part;
             case 'string':
-                if(is_numeric($part))
+                if (is_numeric($part)) {
                     return $part;
-                return "'" . $this->con->real_escape_string($part) . "'"; // mysql_real_escape_string($part, $this->con) 
-            case 'boolean': return ($part ? 1 : 0);
-            case 'NULL':    return 'NULL';
+                }
+                return "'" . $this->con->real_escape_string($part) . "'"; // mysql_real_escape_string($part, $this->con)
+            case 'boolean':
+                return ($part ? 1 : 0);
+            case 'NULL':
+                return 'NULL';
             case 'array':
                 $ret = array();
-                foreach($part as $v)
+                foreach ($part as $v) {
                     $ret[] = $this->prepare_part($v);
+                }
                 return implode(',', $ret);
             default:
-                trigger_error("Bad type passed to the database!!!!", E_USER_ERROR) && exit;
+                trigger_error("Bad type passed to the database!!!!", E_USER_ERROR) &&
+                exit;
         }
     }
 
-    function pquery(){
+    function pquery()
+    {
         $args = func_get_args();
         $this->preparedq = $args[0];
         $query = call_user_func_array(array($this, 'prepare'), $args);
@@ -247,31 +276,37 @@ class MysqlDb {
         return $this->query($query);
     }
     
-    function pquery_array($args){
+    function pquery_array($args)
+    {
         $this->preparedq = $args[0];
         $query = call_user_func_array(array($this, 'prepare'), $args);
         
         return $this->query($query);
     }
 
-    function getSeqID($id1, $id2, $area, $table = false, $start = false){
-        if(!$table){
+    function getSeqID($id1, $id2, $area, $table = false, $start = false)
+    {
+        if (!$table) {
             $table = $this->seqtable;
-            if(!$table)
+            if (!$table) {
                 return false;
+            }
         }
         $inid = $this->pquery("UPDATE " . $table . " SET max = LAST_INSERT_ID(max+1) WHERE id1 = ? && id2 = ? && area = ?", $id1, $id2, $area)->insertid();
-        if($inid)
+        if ($inid) {
             return $inid;
+        }
             
-        if(!$start)
+        if (!$start) {
             $start = 1;
+        }
             
         $ignore = $this->pquery("INSERT IGNORE INTO " . $table . " SET max = ?, id1 = ?, id2 = ?, area = ?", $start, $id1, $id2, $area);
-        if($ignore->affectedrows())
+        if ($ignore->affectedrows()) {
             return $start;
-        else    
+        } else {
             return $this->getSeqID($id1, $id2, $area, $table, $start);
+        }
     }
     /*
     function debug_query($query){
@@ -291,7 +326,8 @@ class MysqlDb {
     */
 }
 
-class MysqlDbResult {
+class MysqlDbResult
+{
     public $dbcon;
     public $result;
     public $numrows;
@@ -299,7 +335,8 @@ class MysqlDbResult {
     public $insertid;
     public $querytime;
 
-    function __construct($result, $dbcon, $numrows, $affectedrows, $insertid, $qt){
+    function __construct($result, $dbcon, $numrows, $affectedrows, $insertid, $qt)
+    {
         $this->dbcon = $dbcon;
         $this->result = $result;
         $this->numrows = $numrows;
@@ -308,30 +345,35 @@ class MysqlDbResult {
         $this->querytime = $qt;
     }
     
-    function __destruct(){
+    function __destruct()
+    {
         $this->free();
     }
 
     //one row at a time
-    function fetchrow($type = DB_ASSOC){
+    function fetchrow($type = DB_ASSOC)
+    {
         return $this->result->fetch_array($type);
     }
 
     //for queries with a single column in a single row
-    function fetchfield(){
+    function fetchfield()
+    {
         $ret = $this->fetchrow(DB_NUM);
         return $ret[0];
     }
 
     //return the full set
-    function fetchfieldset(){
+    function fetchfieldset()
+    {
         $ret = array();
 
-        while($line = $this->fetchrow(DB_NUM)){
-            if(count($line) == 1)
+        while ($line = $this->fetchrow(DB_NUM)) {
+            if (count($line) == 1) {
                 $ret[] = $line[0];
-            else
+            } else {
                 $ret[$line[0]] = $line[1];
+            }
         }
 
         return $ret;
@@ -339,35 +381,42 @@ class MysqlDbResult {
     
 
     //return the full set
-    function fetchrowset($col = null, $type = DB_ASSOC){
+    function fetchrowset($col = null, $type = DB_ASSOC)
+    {
         $ret = array();
 
-        while($line = $this->fetchrow($type))
-            if($col)
+        while ($line = $this->fetchrow($type)) {
+            if ($col) {
                 $ret[$line[$col]] = $line;
-            else
+            } else {
                 $ret[] = $line;
+            }
+        }
 
         return $ret;
     }
 
-    function affectedrows(){
+    function affectedrows()
+    {
         return $this->affectedrows;
     }
 
-    function insertid(){
+    function insertid()
+    {
         return $this->insertid;
     }
     
-    function rows(){
+    function rows()
+    {
         return $this->numrows;
     }
 
-    function free(){
-        if(!is_object($this->result))
+    function free()
+    {
+        if (!is_object($this->result)) {
             return false;
+        }
             
         return $this->result->free();
     }
 }
-
