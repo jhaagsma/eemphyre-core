@@ -6,7 +6,7 @@ class Result
 {
 
     public $type;
-    function __construct($type, $additional = null, $success = false)
+    public function __construct($type, $additional = null, $success = false)
     {
         $this->type = $type;
         $this->additional = $additional;
@@ -14,13 +14,13 @@ class Result
         $this->success = $success;
     }
 
-    function set_success()
+    private function set_success()
     {
         $this->error = false;
         $this->success = true;
     }
 
-    function message()
+    public function message()
     {
         //I don't like having custom error messages stored in /core
         //Consider making a non-core file, perhaps result.messages.php in / dir, with custom error messages

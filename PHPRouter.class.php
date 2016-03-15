@@ -26,7 +26,8 @@ class PHPRouter
 
     public function __construct($filetime = false)
     {
-        //trigger_error("{NODETAIL_IRC}Rebuilding Router Object for " . $_SERVER['SERVER_NAME']); //only for if you want Notices printed when the router is rebuilt
+        //trigger_error("{NODETAIL_IRC}Rebuilding Router Object for " . $_SERVER['SERVER_NAME']);
+        //only for if you want Notices printed when the router is rebuilt
         $this->time = ($filetime ? $filetime : time()); //so we know if it's fresh
         //$this->paths = array("GET" => new UriPart(), "POST" =>  new UriPart());
         $this->paths = array("GET" => array(), "POST" =>  array());
@@ -41,36 +42,36 @@ class PHPRouter
         $this->skin = null;
     }
     
-    function dir_set($dir = null)
+    public function dirSet($dir = null)
     {
         $this->dir = rtrim($dir, '/');
     }
     
-    function default_auth($auth = null)
+    public function defaultAuth($auth = null)
     {
         $this->auth = $auth;
     }
     
-    function default_skin($skin = null)
+    public function defaultSkin($skin = null)
     {
         $this->skin = $skin;
     }
     
-    function area_set($area = null)
+    public function areaSet($area = null)
     {
         $this->area = array();
         if ($area) {
-            $this->area_push($area);
+            $this->areaPush($area);
         }
     }
 
-    function area_push($area)
+    public function areaPush($area)
     {
         //this function is to allow me to avoid putting in /{server=>string}/ for like 200 entries in the registry
         $this->area = array_merge($this->area, explode('/', trim($area, '/')));
     }
     
-    function area_pop()
+    public function areaPop()
     {
         array_pop($this->area);
     }
@@ -81,11 +82,11 @@ class PHPRouter
         foreach($this->prepends as $pre){
             $uri_parts = explode('/', ltrim($pre . $url,'/'));
             $node = new PathNode($f, $u, $i, $a, $s); //maybe array
-            $this->buildbranch($uri_parts, $this->paths[$type], $node);
+            $this->buildBranch($uri_parts, $this->paths[$type], $node);
         }
     }
     
-    function buildbranch($uri_parts, &$r, $node){
+    function buildBranch($uri_parts, &$r, $node){
         $current = array_shift($uri_parts);
         if(!$current){ //ie we've moved to the end of the url
             if(!$r->o){
@@ -93,33 +94,38 @@ class PHPRouter
                 return false;
             }
             else
-                trigger_error("Different node already set for this path!") and die("Different node already set for this path!");
+                trigger_error("Different node already set for this path!") &&
+                 die("Different node already set for this path!");
         }
         
-        if($vinfo = $this->is_variable($current)){
+        if($vinfo = $this->isVariable($current)){
             if(!isset($r->v))
                 $r->v = new VUriPart($vinfo[1], $vinfo[2]);
-            elseif($r->v->n != $vinfo[1])//this must be 1 because is_variable returns 0 for matches 1 for name and 2 for type in {name=>type}
-                trigger_error("Different variable already set for this path!") and die("Different variable already set for this path!");
+            elseif($r->v->n != $vinfo[1])
+                //this must be 1 because isVariable returns 0 for matches 1 for name and 2 for type in {name=>type}
+                trigger_error("Different variable already set for this path!") &&
+                 die("Different variable already set for this path!");
         
-            return $this->buildbranch($uri_parts, $r->v, $node);
+            return $this->buildBranch($uri_parts, $r->v, $node);
         }
         else{
             if(!isset($r->s[$current]))
                 $r->s[$current] = new UriPart();
             
-            return $this->buildbranch($uri_parts, $r->s[$current], $node);
+            return $this->buildBranch($uri_parts, $r->s[$current], $node);
         }
     }*/
     
-    function add($type, $url, $file, $function, $inputs = null, $auth = false, $skin = false)
+    public function add($type, $url, $file, $function, $inputs = null, $auth = false, $skin = false)
     {
         //Testing out array version
         $uri_parts = array_merge($this->area, explode('/', ltrim($url, '/')));
         $url = implode('/', $uri_parts);
         $file = ($this->dir && $file[0] != '.' ? $this->dir . '/' . ltrim($file, '/') : $file);
         $node = array(0=>$file, 1=>$function); //maybe array
-        if ($skin === false) { //in other words, if they supplied no auth; if they supplied null, it should still set it as null, even if the default is not
+        if ($skin === false) {
+            //in other words, if they supplied no auth
+            //if they supplied null, it should still set it as null, even if the default is not
             $skin = $this->skin;
         }
         if ($auth === false) {
@@ -137,10 +143,10 @@ class PHPRouter
             $node[2] = $inputs;
         }
         
-        $this->buildbranch($uri_parts, $this->paths[$type], $node, $url);
+        $this->buildBranch($uri_parts, $this->paths[$type], $node, $url);
     }
     
-    function buildbranch($uri_parts, &$r, $node, $url)
+    private function buildBranch($uri_parts, &$r, $node, $url)
     {
         //comments on 'r': mapping
             //node aka o => 0
@@ -159,15 +165,16 @@ class PHPRouter
             }
         }
         
-        if ($vinfo = $this->is_variable($current)) {
+        if ($vinfo = $this->isVariable($current)) {
             if (!isset($r[1])) {
                 $r[1] = array(3=>$vinfo[1], 4=>$vinfo[2]);
-            } elseif ($r[1][3] != $vinfo[1]) {//this must be 1 because is_variable returns 0 for matches 1 for name and 2 for type in {name=>type}
+            } elseif ($r[1][3] != $vinfo[1]) {
+                //this must be 1 because isVariable returns 0 for matches 1 for name and 2 for type in {name=>type}
                 trigger_error("Ignoring Branch!: Different variable already set for this path: $url");
                 return;
             }
         
-            return $this->buildbranch($uri_parts, $r[1], $node, $url);
+            return $this->buildBranch($uri_parts, $r[1], $node, $url);
         } else {
             if (!isset($r[2])) {
                 $r[2] = array();
@@ -177,33 +184,36 @@ class PHPRouter
                 $r[2][$current] = array();
             }
             
-            return $this->buildbranch($uri_parts, $r[2][$current], $node, $url);
+            return $this->buildBranch($uri_parts, $r[2][$current], $node, $url);
         }
     }
     
-    function is_variable($string)
+    private function isVariable($string)
     {
         preg_match("/{([A-z0-9]*)=>([A-z0-9]*)}/", $string, $matches);
         return $matches; //this returns empty array if nothing was matched
     }
 
     // OBJECT VERSIONS: these are TOO SLOW!
-    /*function urlroute($s = array(), $r, &$path){
+    /*function urlRoute($s = array(), $r, &$path){
         $current = array_shift($s);
         if(!is_object($r))
             return false;
         elseif(!$current)
             return $r->o;
         elseif(isset($r->s[$current]))
-            return $this->urlroute($s, $r->s[$current], $path);
+            return $this->urlRoute($s, $r->s[$current], $path);
         elseif($r->v){
             $path->v[$r->v->n] = $this->validate(array($current),0,$r->v->t);
-            return $this->urlroute($s,$r->v,$path);
+            return $this->urlRoute($s,$r->v,$path);
         }
         return false;
     }*/
     
-    function urlroute($s = array(), $r, $path)
+    /**
+     *@param array $s
+     */
+    private function urlRoute($s, $r, $path)
     {
         //comments on 'r': mapping
             //node aka o => 0
@@ -213,20 +223,21 @@ class PHPRouter
             //type aka t => 4
 
         $current = array_shift($s);
-        if (($current === null || $current === "") && !isset($r[0])) { //can't do !$current if you want to pass in 0 as a path variable
+        if (($current === null || $current === "") && !isset($r[0])) {
+            //can't do !$current if you want to pass in 0 as a path variable
             return false;
         } elseif (($current === null || $current === "")) {
             return new PathNode($r[0]); //maybe array;
         } elseif (isset($r[2][$current])) {
-            return $this->urlroute($s, $r[2][$current], $path);
+            return $this->urlRoute($s, $r[2][$current], $path);
         } elseif (isset($r[1])) {
             $path->variables[$r[1][3]] = $this->validate(array($current), 0, $r[1][4]);
-            return $this->urlroute($s, $r[1], $path);
+            return $this->urlRoute($s, $r[1], $path);
         }
         return false;
     }
 
-    function route()
+    public function route()
     {
         $type = $_SERVER['REQUEST_METHOD'];
         $uri  = $_SERVER['REQUEST_URI'];
@@ -240,7 +251,7 @@ class PHPRouter
         $s = explode('/', ltrim($path->url, '/'));
         
         $data = array();
-        $node = $this->urlroute($s, $this->paths[$type], $path);
+        $node = $this->urlRoute($s, $this->paths[$type], $path);
 
         //trigger_error("B: " . var_export($path, true));
 
@@ -263,7 +274,7 @@ class PHPRouter
         return new Route($node->file, $node->function, $data, $path, $node->auth);
     }
 
-    function validate($source, $key, $type)
+    private function validate($source, $key, $type)
     {
         /*Added true multi-dim functionality
             Types Must be specified in the following manner (variable_name => type)
@@ -287,9 +298,11 @@ class PHPRouter
                 //two dimensoinal array with default bool for top layer, and key validation for both layers
                 'countries'=>array('array', false, array('array', false, 'bool', 'u_int'), 'u_int')
                 
-                //two dimensional array with default for base layer and second layer and type for array elements WITHOUT default for array elements
+                //two dimensional array with default for base layer
+                 //and second layer and type for array elements WITHOUT default for array elements
                 'testarray3'=>array('array',null,array('array',3,'int')),
-                //two dimensional array with default for base layer and second layer and type for array elements with default for array elements
+                //two dimensional array with default for base layer
+                 //and second layer and type for array elements with default for array elements
                 'testarray3b'=>array('array',null,array('array',3,array('int',136))),
                 
                 //these can be extended to further dimensions as following (a four dimensional array in this case)
@@ -322,7 +335,7 @@ class PHPRouter
                     $ret = $source[$key];
                     
                     if (!is_numeric($ret)) {
-                        $ret = $this->do_kmKM($ret); //make k's into 000's and m's into 000000
+                        $ret = $this->doSiPrefixes($ret); //make k's into 000's and m's into 000000
                     }
                     if (settype($ret, 'int')) {
                         if ($ret < 0) {
@@ -356,12 +369,17 @@ class PHPRouter
                     $ret = $source[$key];
 
                     if (settype($ret, 'array')) {
-                        //iff type is set as an array (eg 'countries'=>array('array', 0, 'int') ) with type array (which is how we got here) default, and internal type
+                        //iff type is set as an array (eg 'countries'=>array('array', 0, 'int') )
+                         //with type array (which is how we got here) default, and internal type
                         foreach ($ret as $k => $v) {
-                            if ($keytype) { //validate the keys as well -- have to store the data in $temp while we rewrite the key
+                            if ($keytype) {
+                                //validate the keys as well --
+                                //have to store the data in $temp while we rewrite the key
                                 $temp = $ret[$k];
                                 unset($ret[$k]);
-                                $k = $this->validate(array(0=>$k), 0, $keytype); //this is kindof hack-ish, but I only just ran into wanting to validate the keys as well
+
+                                //this is kindof hack-ish, but I only just ran into wanting to validate the keys as well
+                                $k = $this->validate(array(0=>$k), 0, $keytype);
                                 $ret[$k] = $temp;
                             }
                             $ret[$k] = $this->validate($ret, $k, (isset($passarray) ? $passarray : $innertype));
@@ -379,11 +397,12 @@ class PHPRouter
                 return def($_FILES[$key], null);
 
             default:
-                die("Unknown validation type: $type\n" . ($type ? null : "\n<br />Are you passing an array without specifying an inner default?"));
+                $noTypeErr = "\n<br />Are you passing an array without specifying an inner default?";
+                die("Unknown validation type: $type\n" .($type ? null : $noTypeErr));
         }
     }
     
-    function do_kmKM($ret)
+    private function doSiPrefixes($ret)
     {
         //make k's into 000's and m's into 000000
         $ret = str_replace(",", "", $ret);
@@ -399,17 +418,25 @@ class PHPRouter
 
 function fourohfour(&$data, &$path, &$user)
 {
-    //trigger_error("404: " . $path->url); //Only set this if you are sending errors somewhere other than the page being displayed
+    //trigger_error("404: " . $path->url);
+    //Only set this if you are sending errors somewhere other than the page being displayed
     header($_SERVER["SERVER_PROTOCOL"] . " 404 Not Found");
     //trigger_error("HERE: " . var_export($path,true));
     $path->url = htmlentities($path->url);
     echo <<<END
 <html>
-<head><title>404</title></head>
-<!--<link rel='stylesheet' href='/css/public_css.css' type='text/css' />-->
-<body>
-<br /><br /><br />404 - not found<br /><br />The URL you attempted to access was: {$path->url}<br /><br /><a href='/'>Back to homepage!</a>
-</div></div></body>
+    <head>
+        <title>404</title>
+    </head>
+    <body>
+    <div>
+        <br /><br /><br />404 - not found
+    </div>
+    <div>
+        <br /><br />The URL you attempted to access was: {$path->url}
+        <br /><br /><a href='/'>Back to homepage!</a>
+    </div>
+    </body>
 </html>
 END;
 }
@@ -429,7 +456,10 @@ END;
 class UriPart { //shortening names to speed up APC storage and retrieval
     public $o; //$node; //this stores the PathNode of the path in question
     public $s; //$static; //this is an array of UriParts of static uri's
-    public $v; //$variable; //this holds the UriPart of a variable - we can only have 1 variable at a given /static/ point otherwise we don't know which it is
+
+    //this holds the UriPart of a variable -
+    //we can only have 1 variable at a given /static/ point otherwise we don't know which it is
+    public $v; //$variable;
     function __construct(){
         $this->o = null;
         $this->s = array();
@@ -437,67 +467,6 @@ class UriPart { //shortening names to speed up APC storage and retrieval
     }
 }*/
 
-class PathNode
-{
-    //shortening names to speed up APC storage and retrieval //debug test
-    public $file; //$file;
-    public $function; //$function;
-    public $inputs; //$inputs;
-    public $auth; //$auth;
-    public $skin; //$skin_name;
 
-    /*function __construct($file, $function, $inputs = null, $auth = null, $skin = null){
-        $this->file = $file;
-        $this->function = $function;
-        $this->inputs = $inputs;
-        $this->auth = $auth;
-        $this->skin = $skin;
-    }*/
-    function __construct($r)
-    {
-        $this->file = $r['0'];
-        $this->function = $r['1'];
-        $this->inputs = def($r['2'], null);
-        $this->auth = def($r['3'], null);
-        $this->skin = def($r['4'], null);
-    }
-}
-
-
-class Route
-{
-    public $file;
-    public $function;
-    public $path;
-    public $auth;
-    public $data;
-    
-    function __construct($file, $function, $data, $path = null, $auth = null)
-    {
-        $this->file = $file;
-        $this->function = $function;
-        $this->data = $data;
-        $this->path = $path;
-        $this->auth = $auth;
-    }
-}
-
-class Path
-{
-    public $url;
-    public $skin;
-    public $page_title, $meta_desc, $language;
-    public $variables;
-
-    function __construct($url, $skin = null)
-    {
-        $this->url = $url;
-        $this->skin = null;
-        $this->page_title = null;
-        $this->meta_desc = null;
-        $this->language = null;
-        $this->variables = array();
-    }
-}
 
 //--These functions are for use within the router--//
