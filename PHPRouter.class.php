@@ -40,6 +40,9 @@ class PHPRouter
         $this->dir = null;
         $this->auth = null;
         $this->skin = null;
+        $this->get_inputs = array();
+        $this->post_inputs = array();
+
     }
     
     public function dirSet($dir = null)
@@ -56,7 +59,17 @@ class PHPRouter
     {
         $this->skin = $skin;
     }
-    
+
+    public function defaultGETInputs($inputs = array())
+    {
+        $this->get_inputs = $inputs;
+    }
+
+    public function defaultPOSTInputs($inputs = array())
+    {
+        $this->post_inputs = $inputs;
+    }
+
     public function areaSet($area = null)
     {
         $this->area = array();
@@ -115,8 +128,20 @@ class PHPRouter
             return $this->buildBranch($uri_parts, $r->s[$current], $node);
         }
     }*/
+
+    public function get($url, $file, $function, $inputs = array(), $auth = false, $skin = false)
+    {
+        //add a shorthand version
+        $this->add('GET', $url, $file, $function, $inputs, $auth, $skin);
+    }
     
-    public function add($type, $url, $file, $function, $inputs = null, $auth = false, $skin = false)
+    public function post($url, $file, $function, $inputs = array(), $auth = false, $skin = false)
+    {
+        //add a shorthand version
+        $this->add('POST', $url, $file, $function, $inputs, $auth, $skin);
+    }
+    
+    public function add($type, $url, $file, $function, $inputs = array(), $auth = false, $skin = false)
     {
         //Testing out array version
         $uri_parts = array_merge($this->area, explode('/', ltrim($url, '/')));
@@ -131,7 +156,14 @@ class PHPRouter
         if ($auth === false) {
             $auth = $this->auth;
         }
-            
+
+        //this will overwrite defaults with $inputs
+        if ($type == 'GET') {
+            $inputs = array_merge($this->get_inputs, $inputs);
+        } elseif ($type == 'POST') {
+            $inputs = array_merge($this->post_inputs, $inputs);
+        }
+
         if ($skin) {
             $node[2] = $inputs;
             $node[3] = $auth;
