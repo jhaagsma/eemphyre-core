@@ -415,7 +415,7 @@ class PHPRouter
         return (int)$ret;
     }
 }
-
+/*
 function fourohfour(&$data, &$path, &$user)
 {
     //trigger_error("404: " . $path->url);
@@ -440,6 +440,7 @@ function fourohfour(&$data, &$path, &$user)
 </html>
 END;
 }
+*/
 
 function def(&$var, $def)
 {

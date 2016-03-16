@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Error Log is a custom error handler
  *
