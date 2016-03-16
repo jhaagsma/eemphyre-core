@@ -159,9 +159,9 @@ class PHPRouter
 
         //this will overwrite defaults with $inputs
         if ($type == 'GET') {
-            $inputs = array_merge($this->get_inputs, $inputs);
+            $inputs = $inputs == null ? $this->get_inputs : array_merge($this->get_inputs, $inputs);
         } elseif ($type == 'POST') {
-            $inputs = array_merge($this->post_inputs, $inputs);
+            $inputs = $inputs == null ? $this->post_inputs : array_merge($this->post_inputs, $inputs);
         }
 
         if ($skin) {
