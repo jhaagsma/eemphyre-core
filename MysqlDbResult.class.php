@@ -44,7 +44,7 @@ class MysqlDbResult
         $this->dbcon = $dbcon;
         $this->result = $result;
         $this->numrows = $numrows;
-        $this->affectedRows = $affectedrows;
+        $this->affectedRows = $affectedRows;
         $this->insertid = $insertid;
         $this->querytime = $qt;
     }

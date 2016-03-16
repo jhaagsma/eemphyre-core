@@ -441,6 +441,11 @@ function fourohfour(&$data, &$path, &$user)
 END;
 }
 
+function def(&$var, $def)
+{
+    return (isset($var) ? $var : $def);
+}
+
 
 /*class VUriPart extends UriPart{ //switch to arrays as they are massively faster apparently
     public $n; //$name; //this is the NAME of a variable, if it is a variable
