@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Error Log is a custom error handler
+ * URL is a class to handle all sorts of URL-related functions
  *
  * PHP version 5
  *
