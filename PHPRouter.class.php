@@ -308,6 +308,11 @@ class PHPRouter
 
     private function validate($source, $key, $type)
     {
+        if ($type == 'arr1D_bool_uint') {
+            $type = array('array', false, 'bool', 'u_int');
+        } elseif ($type == 'arr2D_bool_uint') {
+            $type = array('array', false, array('array', false, 'bool', 'u_int'), 'u_int');
+        }
         /*Added true multi-dim functionality
             Types Must be specified in the following manner (variable_name => type)
                 //variable name with type
