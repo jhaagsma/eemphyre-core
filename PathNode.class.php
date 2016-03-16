@@ -46,7 +46,7 @@ class PathNode
         $this->auth = $auth;
         $this->skin = $skin;
     }*/
-    function __construct($r)
+    public function __construct($r)
     {
         $this->file = $r['0'];
         $this->function = $r['1'];

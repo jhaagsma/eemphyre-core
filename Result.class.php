@@ -14,7 +14,7 @@ class Result
         $this->success = $success;
     }
 
-    private function set_success()
+    private function setSuccess()
     {
         $this->error = false;
         $this->success = true;
@@ -50,32 +50,32 @@ class Result
                 return 'This group already exists.';
 
             case 'USER_ADDED':
-                $this->set_success();
+                $this->setSuccess();
                 return 'User added successfully.';
             case 'USER_EDITED':
-                $this->set_success();
+                $this->setSuccess();
                 return 'User edited successfully.';
             case 'GROUP_ADDED':
-                $this->set_success();
+                $this->setSuccess();
                 return 'Group added successfully.';
             case 'GROUP_EDITED':
-                $this->set_success();
+                $this->setSuccess();
                 return 'Group edited successfully.';
 
             case 'CLIENT_ADDED':
-                $this->set_success();
+                $this->setSuccess();
                 return 'Client added successfully.';
             
             case 'UNIT_ADDED':
-                $this->set_success();
+                $this->setSuccess();
                 return 'Unit added successfully.';
 
             case 'PROPERTY_ADDED':
-                $this->set_success();
+                $this->setSuccess();
                 return 'Property added successfully.';
 
             case 'TESTTYPE_ADDED':
-                $this->set_success();
+                $this->setSuccess();
                 return 'Test Type added successfully.';
 
             case 'INVALID_INPUT':

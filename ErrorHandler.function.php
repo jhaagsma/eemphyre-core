@@ -109,7 +109,14 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars)
         }
     }
 
-    $str = "\"$time\",\"$_SERVER[PHP_SELF]\",\"$user\",\"$ip\",\"$filename: $linenum\",\"($errlevel)\",\"$errmsg\",\"$backoutput\"\r\n";
+    $str = "\"$time\",";
+    $str .= "\"$_SERVER[PHP_SELF]\",";
+    $str .= "\"$user\",";
+    $str .= "\"$ip\",";
+    $str .= "\"$filename: $linenum\",";
+    $str .= "\"($errlevel)\",";
+    $str .= "\"$errmsg\",";
+    $str .= "\"$backoutput\"\r\n";
 
     if (isset($debug) && $debug) {
         echo $str;
