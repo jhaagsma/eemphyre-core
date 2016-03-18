@@ -40,21 +40,21 @@ class Cache {
 
 	public static function add($key,$val,$ttl=0){
 		$start = microtime(true);
-		$success = apc_add($key,$val,$ttl);
+		$success = apcu_add($key,$val,$ttl);
 		self::addquery(array('add',$success,microtime(true)-$start,$key,$ttl));
 		return $success;
 	}
 	
 	public static function store($key,$val,$ttl=0){
 		$start = microtime(true);
-		$success = apc_store($key,$val,$ttl);
+		$success = apcu_store($key,$val,$ttl);
 		self::addquery(array('store',$success,microtime(true)-$start,$key,$ttl));
 		return $success;
 	}
 	
 	public static function fetch($key, $default = null){
 		$start = microtime(true);
-		$val = apc_fetch($key,$success);
+		$val = apcu_fetch($key,$success);
 		self::addquery(array('fetch',$success,microtime(true)-$start,$key,null));
 		return ($success ? $val : $default);
 	}
@@ -63,7 +63,7 @@ class Cache {
 		$return = array();
 		foreach($keys as $key){
 			$start = microtime(true);
-			$val = apc_fetch($key,$success);
+			$val = apcu_fetch($key,$success);
 			self::addquery(array('fetch',$success,microtime(true)-$start,$key,null));
 			if($success)
 				$return[$key] = $val;
@@ -81,21 +81,21 @@ class Cache {
 	
 	public static function delete($key){
 		$start = microtime(true);
-		$success = apc_delete($key);
+		$success = apcu_delete($key);
 		self::addquery(array('delete',$success,microtime(true)-$start,$key,null));
 		return $success;
 	}
 	
 	public static function clear_user_cache(){
 		$start = microtime(true);
-		$success = apc_clear_cache('user');
+		$success = apcu_clear_cache('user');
 		self::addquery(array('clear user cache',$success,microtime(true)-$start,null,null));
 		return $success;
 	}
 	
 	public static function clear_cache(){
 		$start = microtime(true);
-		$success = apc_clear_cache();
+		$success = apcu_clear_cache();
 		self::addquery(array('clear cache',$success,microtime(true)-$start,null,null));
 		return $success;
 	}
