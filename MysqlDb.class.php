@@ -281,8 +281,18 @@ class MysqlDb
                 }
                 return implode(',', $ret);
             default:
-                trigger_error("Bad type passed to the database!!!!", E_USER_ERROR) &&
+                $backtrace = debug_backtrace();
+                foreach ($backtrace as $i => $stuff) {
+                    if ($stuff['function'] == 'pquery') {
+                        $line = $stuff['line'];
+                        $file_err = $stuff['file'];
+                    }
+                }
+                
+                $Err = "Bad type passed to the database!! Type: " . gettype($part) . ", $file_err:$line ";
+                trigger_error($Err);
                 exit;
+
         }
     }
 
