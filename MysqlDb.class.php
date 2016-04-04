@@ -313,6 +313,11 @@ class MysqlDb
         return $this->query($query);
     }
 
+    public function newUUID()
+    {
+        return $this->query("SELECT UNHEX(REPLACE(UUID(),'-',''))")->fetchField();
+    }
+
     public function getSeqID($id1, $id2, $area, $table = false, $start = false)
     {
         if (!$table) {
