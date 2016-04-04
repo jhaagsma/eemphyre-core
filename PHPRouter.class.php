@@ -366,7 +366,9 @@ class PHPRouter
             $type = $type[0];
         }
 
-        if ($type == "str") {
+        if ($type == "s") {
+            $type = "string";
+        } elseif ($type == "str") {
             $type = "string";
         }
 
