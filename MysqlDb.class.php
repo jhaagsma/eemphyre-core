@@ -175,14 +175,22 @@ class MysqlDb
             $file_err = explode('/', $backtrace[$pq]['file']);
             $dir_this = explode('/', __DIR__);
             $i = 0;
-            while ($file_err[$i] == $dir_this[$i]) {
+            while (isset($file_err[$i]) && isset($dir_this[$i]) && $file_err[$i] == $dir_this[$i]) {
                 unset($file_err[$i]);
                 unset($file_err[$i]);
                 $i++;
             }
             $file_err = implode('/', $file_err);
 
-            $connErr = "Query Error:  (" . $this->con->errno . "), $file_err:$line ";
+            $trace = null;
+            foreach ($backtrace as $item) {
+                $f = explode('/', $item['file']);
+                $trace .= $item['function'] . '()/' . end($f) . ':' . $item['line'] . ' ';
+            }
+
+            $connErr = "Query Error:  (" . $this->con->errno . "), $file_err:$line $trace";
+            //new \dBug($backtrace) && exit;
+
             trigger_error($connErr . $this->con->error . " : \"$query\"", E_USER_ERROR);
             exit;
         }
