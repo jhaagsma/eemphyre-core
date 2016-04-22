@@ -41,4 +41,9 @@ class Result{
 			default: 						return 'Error: ' . $this->type . ($this->additional ? ' - ' . $this->additional : null);
 		}
 	}
+
+	public function __toString()
+    {
+        return $this->type;
+    }
 }

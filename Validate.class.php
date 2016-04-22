@@ -1,8 +1,9 @@
 <?php
 
-class Validate() {
+class Validate
+{
 
-	function Email($email){
+	static function Email($email){
 		$email = filter_var($email, FILTER_VALIDATE_EMAIL); //returns the email or false
 		if($email)
 			return false;
@@ -56,7 +57,7 @@ class Validate() {
 		return $isValid;*/
 	}
 
-	function Password($pwd, $pwd2, $length = 8, $letters = true, $numbers = true, $specials = true)
+	static function Password($pwd, $pwd2, $length = 8, $letters = true, $numbers = true, $specials = true)
 	{
 		if($pwd != $pwd2){
 			return new Result('PASSWORD_NOMATCH');
