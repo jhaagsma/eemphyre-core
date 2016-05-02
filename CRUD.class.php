@@ -103,7 +103,7 @@ class CRUD
     }
 
     public static function verifyExists($primary_key)
-    {   
+    {
         if (!static::$db) {
             static::$db = Container::getDb();
         }
