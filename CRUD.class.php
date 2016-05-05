@@ -89,16 +89,18 @@ class CRUD
         }
     }
 
-    public static function primaryList($limit = null, $offset = 0)
+    public static function primaryList($limit = null, $offset = 0, $asc = true)
     {
         if (!static::$db) {
             static::$db = Container::getDb();
         }
 
+        $dir = ($asc ? 'ASC' : 'DESC');
+
         return static::$db->pquery(
             'SELECT `' . static::$_primary_key .
             '` FROM `' . static::$_table_name .
-            '` ORDER BY `' . static::$_primary_key . '` ASC'
+            '` ORDER BY `'.static::$_primary_key.'` '.$dir
         )->fetchFieldSet();
     }
 
