@@ -31,7 +31,7 @@ class MysqlDb
     public $user;
     public $pass;
     public $persist;
-    
+
     public $con;
     public $lasttime;
     public $queries;
@@ -73,7 +73,7 @@ class MysqlDb
     {
         $this->close();
     }
-    
+
     private function canConnect()
     {
         if (!$this->persist) {
@@ -81,14 +81,14 @@ class MysqlDb
         } else {
             $this->con = new \mysqli('p:' . $this->host, $this->user, $this->pass, $this->db);
         }
-            
+
         if ($this->con->connect_errno) {
             return false;
         }
-            
+
         return true;
     }
-    
+
     private function connect()
     {
         if ($this->con) {
@@ -98,7 +98,7 @@ class MysqlDb
 
             return true;
         }
-            
+
         if (!$this->canConnect()) {
             $connErr = 'Connect Error (' . $this->con->connect_errno . ') ';
             trigger_error($connErr . $this->con->connect_error, E_USER_ERROR);
@@ -116,7 +116,7 @@ class MysqlDb
             $this->con = null;
         }
     }
-    
+
     /*
     function log_em($query,$qtime){
         if($this->logqueries && !$this->plogged){
@@ -124,13 +124,13 @@ class MysqlDb
             $this->plogged = true;
             if($this->preparedq != false)
                 $query = $this->preparedq;
-            
+
             $this->qlog = 'INSERT INTO `' . $this->qlog_table . '`... ' . $query;
             $time = time();
-            
+
             //We should check this function for accuracy again;
             //I never properly checked it methinks
-            $this->pquery('INSERT INTO `' . $this->qlog_table . 
+            $this->pquery('INSERT INTO `' . $this->qlog_table .
                 '` (hash, strlen, last_time, total_num, total_time,
                 min_time, max_time,avg_time,new_mean,new_s,new_stdev,query,last_page)
                 VALUES (?,?,?,1,?,?,?,?,?,0,0,?,?) ON DUPLICATE KEY UPDATE
@@ -144,29 +144,29 @@ class MysqlDb
                 $time, (isset($_SERVER) ? $_SERVER['PHP_SELF'] : 'bot'), $qtime, $qtime, $qtime,
                 $qtime, $qtime, $qtime, $qtime, $qtime, $qtime);
             //Donald Knuth's "The Art of Computer Programming, Volume 2: Seminumerical Algorithms", section 4.2.2.
-            
+
             $this->plogged = false;
             $this->preparedq = false;
         }
         return;
     }
     */
-    
+
     public function query($query, $logthis = true)
     {
         $insertid = 0;
         $affectedRows = 0;
         $numrows = 0;
         $qt = 0;
-    
+
         if (!$this->connect()) {
             return false;
         }
 
         $start = microtime(true);
-        
+
         $result = $this->con->query($query);
-        
+
         if (!$result) {
             //lets add a bit to tell us where the damned query was called.
             $backtrace = debug_backtrace();
@@ -205,7 +205,7 @@ class MysqlDb
 
         $this->count++;
         $qt = $this->querytime = ($end - $start);
-        
+
         if ($logthis) {
             if ($this->plogged) {
                 $this->queries[] = array($this->qlog, $this->querytime);
@@ -216,14 +216,14 @@ class MysqlDb
         if (count($this->queries) > $this->querystore) {
             array_shift($this->queries);
         }
-        
+
         /*
         global $debug;
         if(isset($debug) && $debug)
             $this->debug_query($query);
             //this returns a little table that does the EXPLAIN of a non-EXPLAIN query in the query list
         */
-            
+
         /*if($this->logqueries && substr($query, 0, 7) != "EXPLAIN")
             $this->log_em($query,$qt);
         */
@@ -237,11 +237,11 @@ class MysqlDb
         }
 
         $args = func_get_args();
-        
+
         if (count($args) == 0) {
             trigger_error("mysql: Bad number of args (No args)", E_USER_ERROR) && exit;
         }
-        
+
         if (count($args) == 1) {
             return $args[0];
         }
@@ -249,15 +249,15 @@ class MysqlDb
         $query = array_shift($args);
         $parts = explode('?', $query);
         $query = array_shift($parts);
-        
+
         if (count($parts) != count($args)) {
             trigger_error("Wrong number of args to prepare for $query", E_USER_ERROR) && exit;
         }
-        
+
         for ($i = 0; $i < count($args); $i++) {
             $query .= $this->preparePart($args[$i]) . $parts[$i];
         }
-        
+
         return $query;
     }
 
@@ -296,11 +296,10 @@ class MysqlDb
                         $file_err = $stuff['file'];
                     }
                 }
-                
+
                 $Err = "Bad type passed to the database!! Type: " . gettype($part) . ", $file_err:$line ";
                 trigger_error($Err);
                 exit;
-
         }
     }
 
@@ -309,15 +308,15 @@ class MysqlDb
         $args = func_get_args();
         $this->preparedq = $args[0];
         $query = call_user_func_array(array($this, 'prepare'), $args);
-        
+
         return $this->query($query);
     }
-    
+
     public function pqueryArray($args)
     {
         $this->preparedq = $args[0];
         $query = call_user_func_array(array($this, 'prepare'), $args);
-        
+
         return $this->query($query);
     }
 
@@ -347,7 +346,7 @@ class MysqlDb
         if ($inid) {
             return $inid;
         }
-            
+
         if (!$start) {
             $start = 1;
         }
@@ -360,7 +359,7 @@ class MysqlDb
             $id2,
             $area
         );
-        
+
         if ($ignore->affectedRows()) {
             return $start;
         } else {
