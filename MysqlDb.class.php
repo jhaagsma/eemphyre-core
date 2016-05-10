@@ -26,16 +26,16 @@ define("DB_BOTH", MYSQLI_BOTH);
 
 class MysqlDb
 {
-    public $host;
-    public $db;
-    public $user;
-    public $pass;
-    public $persist;
+    private $host;
+    private $db;
+    private $user;
+    private $pass;
+    private $persist;
 
-    public $con;
-    public $lasttime;
-    public $queries;
-    public $querystore;
+    private $con = null;
+    private $lasttime = 0;
+    public $queries = [];
+    public $querystore = 150;
 
     public function __construct(
         $host,
@@ -43,30 +43,16 @@ class MysqlDb
         $user,
         $pass,
         $persist = false,
-        $seqtable = null,
-        $logqueries = false,
-        $qlog_table = 'queries'
+        $seqtable = null
     ) {
-        //logqueries should really be false by default
-
         $this->host = $host;
         $this->db = $db;
         $this->user = $user;
         $this->pass = $pass;
         $this->persist = $persist;
         $this->seqtable = $seqtable;
-        $this->logqueries = $logqueries;
-        $this->plogged = false;
-        $this->preparedq = false;
-        $this->querystore = 150;
+        $this->querystore; //number of queries to log in memory
         $this->con = null;
-        $this->lasttime = 0;
-        $this->qlog = null;
-        $this->qlog_table = $qlog_table;
-
-        $this->queries = array();
-        $this->count = 0;
-        $this->querytime = 0;
     }
 
     public function __destruct()
@@ -117,40 +103,90 @@ class MysqlDb
         }
     }
 
-    /*
-    function log_em($query,$qtime){
-        if($this->logqueries && !$this->plogged){
-            //SQRT(sq_total_time/total_num - total_time*total_time/(total_num*total_num))',
-            $this->plogged = true;
-            if($this->preparedq != false)
-                $query = $this->preparedq;
-
-            $this->qlog = 'INSERT INTO `' . $this->qlog_table . '`... ' . $query;
-            $time = time();
-
-            //We should check this function for accuracy again;
-            //I never properly checked it methinks
-            $this->pquery('INSERT INTO `' . $this->qlog_table .
-                '` (hash, strlen, last_time, total_num, total_time,
-                min_time, max_time,avg_time,new_mean,new_s,new_stdev,query,last_page)
-                VALUES (?,?,?,1,?,?,?,?,?,0,0,?,?) ON DUPLICATE KEY UPDATE
-                last_time = ?, last_page = ?, total_num = total_num + 1,
-                total_time = total_time + ?, min_time = if(? < min_time,?,min_time),
-                max_time = if(max_time < ?, ?, max_time), avg_time = total_time/total_num,
-                new_s = new_s + (? - new_mean) * (? - new_mean + (? - new_mean) / total_num),
-                new_mean = new_mean + (? - new_mean) / total_num, new_stdev = SQRT(new_s / (total_num - 1))',
-                md5($query), strlen($query), $time, $qtime,$qtime, $qtime, $qtime, $qtime,
-                $query, (isset($_SERVER) ? $_SERVER['PHP_SELF'] : 'bot'),
-                $time, (isset($_SERVER) ? $_SERVER['PHP_SELF'] : 'bot'), $qtime, $qtime, $qtime,
-                $qtime, $qtime, $qtime, $qtime, $qtime, $qtime);
-            //Donald Knuth's "The Art of Computer Programming, Volume 2: Seminumerical Algorithms", section 4.2.2.
-
-            $this->plogged = false;
-            $this->preparedq = false;
-        }
-        return;
+    public function deleteCol(&$array, $offset)
+    {
+        return array_walk($array, function (&$v) use ($offset) {
+            array_splice($v, $offset, 1);
+        });
     }
-    */
+
+    /**
+     * trims files in a column
+     *
+     * @param  array  $files an array of filenames
+     *
+     * @return [type]        [description]
+     */
+    public function trimFiles(array $files)
+    {
+        $list = [];
+        foreach ($files as $f) {
+            $list[] = explode('/', $f);
+        }
+
+        for ($i = 0; $i <= count($list); $i++) {
+            $column = array_column($list, 0);
+            if (count(array_unique($column) === 1)) {
+                $this->deleteCol($list, 0);
+            }
+        }
+
+        foreach ($list as $l => $f) {
+            $list[ $l] = implode('/', $f);
+        }
+
+        return $list;
+    }
+
+    /**
+     * Split out query error stuff to make it much more useful
+     *
+     * @param  string $query the query being called
+     * @param  string $error error text
+     *
+     * @return exits
+     */
+    public function queryError(string $query, string $error = null)
+    {
+        //lets add a bit to tell us where the damned query was called.
+        $backtrace = debug_backtrace();
+        $stuff = [];
+        while ($trace = next($backtrace)) {
+            $a['file'] = isset($trace['file']) ? $trace['file'] : null;
+            $a['line'] = isset($trace['line']) ? $trace['line'] : null;
+            $a['function'] = explode('\\', $trace['function']);
+            $stuff[] = $a;
+        }
+
+        $files = $this->trimFiles(array_column($stuff, 'file'));
+
+        foreach ($stuff as $k => $e) {
+            $fn = end($e['function']);
+            $stuff[$k]['file'] = $files[$k];
+            $stuff[$k]['function'] = $fn;
+            $stuff[$k] = implode(':', $stuff[$k]);
+            if (in_array($fn, ['query','pquery'])) {
+                unset($stuff[$k]);
+            }
+        }
+
+        $stuff = implode(", ", $stuff);
+        $err = (isset($this->con->errno) ? $this->con->errno.":" : null);
+        $err .= (
+            $error ?
+            $error :
+            (isset($this->con->error) ? $this->con->error : 'ERROR')
+        );
+        if ($this->con->errno == 1064) {
+            $err = 'SQL Syntax: '.substr($err, 134); //make it WAY shorter
+        }
+
+        $connErr = "QueryErr:".$err.", $stuff";
+        //new \dBug($backtrace) && exit;
+
+        trigger_error($connErr." \"$query\"", E_USER_ERROR);
+        exit;
+    }
 
     public function query($query, $logthis = true)
     {
@@ -168,31 +204,7 @@ class MysqlDb
         $result = $this->con->query($query);
 
         if (!$result) {
-            //lets add a bit to tell us where the damned query was called.
-            $backtrace = debug_backtrace();
-            $pq = ($backtrace[1]['function'] == 'pquery' ? 1 : 0);
-            $line = $backtrace[$pq]['line'];
-            $file_err = explode('/', $backtrace[$pq]['file']);
-            $dir_this = explode('/', __DIR__);
-            $i = 0;
-            while (isset($file_err[$i]) && isset($dir_this[$i]) && $file_err[$i] == $dir_this[$i]) {
-                unset($file_err[$i]);
-                unset($file_err[$i]);
-                $i++;
-            }
-            $file_err = implode('/', $file_err);
-
-            $trace = null;
-            foreach ($backtrace as $item) {
-                $f = explode('/', $item['file']);
-                $trace .= $item['function'] . '()/' . end($f) . ':' . $item['line'] . ' ';
-            }
-
-            $connErr = "Query Error:  (" . $this->con->errno . "), $file_err:$line $trace";
-            //new \dBug($backtrace) && exit;
-
-            trigger_error($connErr . $this->con->error . " : \"$query\"", E_USER_ERROR);
-            exit;
+            $this->queryError($query);
         }
 
         $insertid = $this->con->insert_id;
@@ -203,30 +215,15 @@ class MysqlDb
 
         $this->lasttime = time();
 
-        $this->count++;
-        $qt = $this->querytime = ($end - $start);
+        $qt = ($end - $start);
 
         if ($logthis) {
-            if ($this->plogged) {
-                $this->queries[] = array($this->qlog, $this->querytime);
-            } else {
-                $this->queries[] = array($query, $this->querytime);
-            }
+            $this->queries[] = array($query, $qt);
         }
         if (count($this->queries) > $this->querystore) {
             array_shift($this->queries);
         }
 
-        /*
-        global $debug;
-        if(isset($debug) && $debug)
-            $this->debug_query($query);
-            //this returns a little table that does the EXPLAIN of a non-EXPLAIN query in the query list
-        */
-
-        /*if($this->logqueries && substr($query, 0, 7) != "EXPLAIN")
-            $this->log_em($query,$qt);
-        */
         return new MysqlDbResult($result, $this->con, $numrows, $affectedRows, $insertid, $qt);
     }
 
@@ -239,7 +236,7 @@ class MysqlDb
         $args = func_get_args();
 
         if (count($args) == 0) {
-            trigger_error("mysql: Bad number of args (No args)", E_USER_ERROR) && exit;
+            $this->queryError($query, "Wrong number of arguments supplied (No args).");
         }
 
         if (count($args) == 1) {
@@ -251,7 +248,7 @@ class MysqlDb
         $query = array_shift($parts);
 
         if (count($parts) != count($args)) {
-            trigger_error("Wrong number of args to prepare for $query", E_USER_ERROR) && exit;
+            $this->queryError($query, "Wrong number of arguments supplied.");
         }
 
         for ($i = 0; $i < count($args); $i++) {
@@ -289,24 +286,13 @@ class MysqlDb
                 }
                 return implode(',', $ret);
             default:
-                $backtrace = debug_backtrace();
-                foreach ($backtrace as $i => $stuff) {
-                    if ($stuff['function'] == 'pquery') {
-                        $line = $stuff['line'];
-                        $file_err = $stuff['file'];
-                    }
-                }
-
-                $Err = "Bad type passed to the database!! Type: " . gettype($part) . ", $file_err:$line ";
-                trigger_error($Err);
-                exit;
+                $this->queryError(gettype($part), "Bad type passed to the database!!");
         }
     }
 
     public function pquery()
     {
         $args = func_get_args();
-        $this->preparedq = $args[0];
         $query = call_user_func_array(array($this, 'prepare'), $args);
 
         return $this->query($query);
@@ -314,7 +300,6 @@ class MysqlDb
 
     public function pqueryArray($args)
     {
-        $this->preparedq = $args[0];
         $query = call_user_func_array(array($this, 'prepare'), $args);
 
         return $this->query($query);
@@ -366,20 +351,4 @@ class MysqlDb
             return $this->getSeqID($id1, $id2, $area, $table, $start);
         }
     }
-    /*
-    function debug_query($query){
-        if(substr($query, 0, 7) != "EXPLAIN" && substr($query, 0, 6) == "SELECT"){
-            $explain = $this->query('EXPLAIN ' . $query,false)->fetchRow();
-            $text = 'EXPLAIN ' . "<br />\n<table><tr>";
-            foreach($explain as $name => $var)
-                $text .= '<td>' . $name . '</td>';
-            $text .= '</tr><tr>';
-            foreach($explain as $var)
-                $text .= '<td>' . $var . '</td>';
-            $text .= '</tr></table>';
-            $this->queries[] = array($text, $this->querytime);
-        }
-        return;
-    }
-    */
 }
