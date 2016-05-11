@@ -29,6 +29,8 @@ namespace EmPHyre;
 abstract class Migrations
 {
     protected static $db; //the database
+    protected static $toV;
+    protected static $fromV;
 
     public static function db($db = null)
     {
@@ -41,5 +43,15 @@ abstract class Migrations
     protected function out($string)
     {
         trigger_error($string, E_USER_NOTICE);
+    }
+
+    protected function outUpgraded()
+    {
+        $this->out("Upgraded to version ".self::$toV);
+    }
+
+    protected function outDowngraded()
+    {
+        $this->out("Downgraded to version ".self::$fromV);
     }
 }
