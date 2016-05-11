@@ -47,35 +47,35 @@ abstract class Migrations
 
     protected function outUpgraded()
     {
-        $this->out("Upgraded to version ".self::$toV);
+        $this->out("Upgraded to version ".static::$toV);
     }
 
     protected function outDowngraded()
     {
-        $this->out("Downgraded to version ".self::$fromV);
+        $this->out("Downgraded to version ".static::$fromV);
     }
 
     protected function setVersionUp()
     {
-        if (!self::$db) {
-            $this->db();
+        if (!static::$db) {
+            static::db();
         }
-        return self::$db->pquery(
+        return static::$db->pquery(
             "UPDATE version SET version = ? WHERE version = ?",
-            self::$toV,
-            self::$fromV
+            static::$toV,
+            static::$fromV
         )->affectedRows();
     }
 
     protected function setVersionDown()
     {
-        if (!self::$db) {
+        if (!static::$db) {
             $this->db();
         }
-        return self::$db->pquery(
+        return static::$db->pquery(
             "UPDATE version SET version = ? WHERE version = ?",
-            self::$fromV,
-            self::$toV
+            static::$fromV,
+            static::$toV
         )->affectedRows();
     }
 }
