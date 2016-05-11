@@ -54,4 +54,28 @@ abstract class Migrations
     {
         $this->out("Downgraded to version ".self::$fromV);
     }
+
+    protected function setVersionUp()
+    {
+        if (!self::$db) {
+            $this->db();
+        }
+        return self::$db->pquery(
+            "UPDATE version SET version = ? WHERE version = ?",
+            self::$toV,
+            self::$fromV
+        )->affectedRows();
+    }
+
+    protected function setVersionDown()
+    {
+        if (!self::$db) {
+            $this->db();
+        }
+        return self::$db->pquery(
+            "UPDATE version SET version = ? WHERE version = ?",
+            self::$fromV,
+            self::$toV
+        )->affectedRows();
+    }
 }
