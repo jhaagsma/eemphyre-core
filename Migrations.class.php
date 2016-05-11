@@ -22,7 +22,7 @@
  * @author   Julian Haagsma <jhaagsma@gmail.com>
  * @license  All files are licensed under the MIT License.
  * @link     https://github.com/jhaagsma/emPHyre
- * @since    Pulled out of PHPRouter.class.php 2016-03-15
+ * @since    May 2016
  */
 namespace EmPHyre;
 
