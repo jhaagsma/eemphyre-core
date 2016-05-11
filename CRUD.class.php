@@ -1,8 +1,9 @@
 <?php
 /**
- * Route is the route information holder for the routing object
+ * CRUD is the create/request/update/delete base class to extend for various
+ * classes and objects
  *
- * PHP version 5
+ * PHP version 7
  *
  * ------
  * These files are part of the empiresPHPframework;
@@ -20,9 +21,6 @@
  * @category Core
  * @package  EmPHyre
  * @author   Julian Haagsma <jhaagsma@gmail.com>
- * @author   Timo Ewalds <tewalds@gmail.com>
- * @author   Dave McVittie <dave.mcvittie@gmail.com>
- * @author   Joe Obbish <slagpit@earthempires.com>
  * @license  All files are licensed under the MIT License.
  * @link     https://github.com/jhaagsma/emPHyre
  * @since    Pulled out of PHPRouter.class.php 2016-03-15
@@ -30,7 +28,7 @@
 
 namespace EmPHyre;
 
-class CRUD
+abstract class CRUD
 {
     protected static $db; //the database
     protected static $_table_name = null;
