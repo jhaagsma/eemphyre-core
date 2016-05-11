@@ -48,7 +48,7 @@ class MysqlDbResult
         $this->insertid = $insertid;
         $this->querytime = $qt;
     }
-    
+
     public function __destruct()
     {
         $this->free();
