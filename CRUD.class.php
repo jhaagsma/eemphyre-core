@@ -153,7 +153,6 @@ class CRUD
                 $query .= '`' . $w[0] '`' . $w[1] . '?';
             }
         }
-           
     }
 */
     public function display()
