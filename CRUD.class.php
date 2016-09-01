@@ -116,7 +116,7 @@ abstract class CRUD
         $call_args[0] = null;
 
         foreach ($update as $key => $value) {
-            $bits[] "`$key` = ?";
+            $bits[] = "`$key` = ?";
             $call_args[] = $value;
         }
 
