@@ -87,6 +87,47 @@ abstract class CRUD
         }
     }
 
+    protected function commit()
+    {
+        $update = [];
+        foreach ($this->_data as $key => $value) {
+            if ($key == $this->$pk) {
+                //never commit a change to the primary key, that would be weird
+                continue;
+            }
+
+            if ($value != $this->$key) {
+                $update[$key] = $value;
+            }
+        }
+
+        if (empty($update)) {
+            return;
+        }
+
+        $call_args = [];
+        $call_args[0] = null;
+
+        foreach ($update as $key => $value) {
+            $bits .= "`$key` = ?";
+            $call_args[] = $value;
+        }
+
+        $query = "UPDATE `".static::$_table_name."` SET ".implode(", ", $bits).
+            ' WHERE `' . static::$_primary_key . '`=?';
+        $call_args[0] = $query;
+        $call_args[] = static::$_primary_key;
+
+        $updated = self::$db->pqueryArray($call_args)->affectedRows();
+
+        if ($updated) {
+            $this->initialize();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public static function primaryList($limit = null, $offset = 0, $asc = true)
     {
         if (!static::$db) {
