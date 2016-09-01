@@ -93,7 +93,7 @@ abstract class CRUD
         $pk = static::$_primary_key;
 
         foreach ($this->_data as $key => $value) {
-            if (!isset($this->$pk) || $key == $this->$pk) {
+            if (!isset($this->$pk) || $key == $this->$pk || $this->$pk != $this->_data[$pk]) {
                 //never commit a change to the primary key, that would be weird
                 continue;
             }
@@ -104,7 +104,7 @@ abstract class CRUD
             }
 
             if ($value != $this->$key) {
-                $update[$key] = $value;
+                $update[$key] = $this->$key;
             }
         }
 
@@ -123,9 +123,10 @@ abstract class CRUD
         $query = "UPDATE `".static::$_table_name."` SET ".implode(", ", $bits).
             ' WHERE `' . static::$_primary_key . '`=?';
         $call_args[0] = $query;
-        $call_args[] = static::$_primary_key;
+        $call_args[] = $this->$pk;
 
-        $updated = self::$db->pqueryArray($call_args)->affectedRows();
+
+        $updated = static::$db->pqueryArray($call_args)->affectedRows();
 
         if ($updated) {
             $this->initialize();
