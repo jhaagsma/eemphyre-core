@@ -112,7 +112,7 @@ abstract class CRUD
             return;
         }
 
-        $call_args = [];
+        $call_args = $bits = [];
         $call_args[0] = null;
 
         foreach ($update as $key => $value) {
