@@ -236,7 +236,7 @@ class MysqlDb
         $args = func_get_args();
 
         if (count($args) == 0) {
-            $this->queryError($query, "Wrong number of arguments supplied (No args).");
+            $this->queryError("Wrong number of arguments supplied (No args).");
         }
 
         if (count($args) == 1) {
