@@ -90,13 +90,16 @@ abstract class CRUD
     protected function commit()
     {
         $update = [];
+        $pk = static::$_primary_key;
+
         foreach ($this->_data as $key => $value) {
-            if (!isset($this->$pk)) {
+            if (!isset($this->$pk) || $key == $this->$pk) {
+                //never commit a change to the primary key, that would be weird
                 continue;
             }
 
-            if ($key == $this->$pk) {
-                //never commit a change to the primary key, that would be weird
+            if (!isset($this->$key)) {
+                //make sure the key exists
                 continue;
             }
 
