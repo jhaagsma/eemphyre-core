@@ -33,7 +33,7 @@ class PHPRouter
         $this->paths = array("GET" => array(), "POST" =>  array());
         $this->clearDefaults();
     }
-    
+
     public function clearDefaults()
     {
         $this->area = array();
@@ -44,17 +44,17 @@ class PHPRouter
         $this->post_inputs = array();
 
     }
-    
+
     public function dirSet($dir = null)
     {
         $this->dir = rtrim($dir, '/');
     }
-    
+
     public function defaultAuth($auth = null)
     {
         $this->auth = $auth;
     }
-    
+
     public function defaultSkin($skin = null)
     {
         $this->skin = $skin;
@@ -83,7 +83,7 @@ class PHPRouter
         //this function is to allow me to avoid putting in /{server=>string}/ for like 200 entries in the registry
         $this->area = array_merge($this->area, explode('/', trim($area, '/')));
     }
-    
+
     public function areaPop()
     {
         array_pop($this->area);
@@ -98,7 +98,7 @@ class PHPRouter
             $this->buildBranch($uri_parts, $this->paths[$type], $node);
         }
     }
-    
+
     function buildBranch($uri_parts, &$r, $node){
         $current = array_shift($uri_parts);
         if(!$current){ //ie we've moved to the end of the url
@@ -110,7 +110,7 @@ class PHPRouter
                 trigger_error("Different node already set for this path!") &&
                  die("Different node already set for this path!");
         }
-        
+
         if($vinfo = $this->isVariable($current)){
             if(!isset($r->v))
                 $r->v = new VUriPart($vinfo[1], $vinfo[2]);
@@ -118,13 +118,13 @@ class PHPRouter
                 //this must be 1 because isVariable returns 0 for matches 1 for name and 2 for type in {name=>type}
                 trigger_error("Different variable already set for this path!") &&
                  die("Different variable already set for this path!");
-        
+
             return $this->buildBranch($uri_parts, $r->v, $node);
         }
         else{
             if(!isset($r->s[$current]))
                 $r->s[$current] = new UriPart();
-            
+
             return $this->buildBranch($uri_parts, $r->s[$current], $node);
         }
     }*/
@@ -134,13 +134,13 @@ class PHPRouter
         //add a shorthand version
         $this->add('GET', $url, $file, $function, $inputs, $auth, $skin);
     }
-    
+
     public function post($url, $file, $function, $inputs = array(), $auth = false, $skin = false)
     {
         //add a shorthand version
         $this->add('POST', $url, $file, $function, $inputs, $auth, $skin);
     }
-    
+
     public function add($type, $url, $file, $function, $inputs = array(), $auth = false, $skin = false)
     {
         //Testing out array version
@@ -174,10 +174,10 @@ class PHPRouter
         } elseif ($inputs) {
             $node[2] = $inputs;
         }
-        
+
         $this->buildBranch($uri_parts, $this->paths[$type], $node, $url);
     }
-    
+
     private function buildBranch($uri_parts, &$r, $node, $url)
     {
         //comments on 'r': mapping
@@ -196,7 +196,7 @@ class PHPRouter
                 return;
             }
         }
-        
+
         if ($vinfo = $this->isVariable($current)) {
             if (!isset($r[1])) {
                 $r[1] = array(3=>$vinfo[1], 4=>$vinfo[2]);
@@ -205,21 +205,21 @@ class PHPRouter
                 trigger_error("Ignoring Branch!: Different variable already set for this path: $url");
                 return;
             }
-        
+
             return $this->buildBranch($uri_parts, $r[1], $node, $url);
         } else {
             if (!isset($r[2])) {
                 $r[2] = array();
             }
-                
+
             if (!isset($r[2][$current])) {
                 $r[2][$current] = array();
             }
-            
+
             return $this->buildBranch($uri_parts, $r[2][$current], $node, $url);
         }
     }
-    
+
     private function isVariable($string)
     {
         preg_match("/{([A-z0-9]*)=>([A-z0-9]*)}/", $string, $matches);
@@ -241,7 +241,7 @@ class PHPRouter
         }
         return false;
     }*/
-    
+
     /**
      *@param array $s
      */
@@ -275,13 +275,13 @@ class PHPRouter
         $uri  = $_SERVER['REQUEST_URI'];
 
         $url = explode('?', $uri, 2);
-        
+
         $path = new Path($url = rtrim($url[0], '/'));
 
         //trigger_error("A: " . var_export($path, true));
-            
+
         $s = explode('/', ltrim($path->url, '/'));
-        
+
         $data = array();
         $node = $this->urlRoute($s, $this->paths[$type], $path);
 
@@ -293,7 +293,7 @@ class PHPRouter
 
         //trigger_error("C: " . var_export($path, true));
 
-        
+
         if (is_array($node->inputs)) {
             $source = ($type == "GET" ? $_GET : $_POST);
 
@@ -301,7 +301,7 @@ class PHPRouter
                 $data[$k] = $this->validate($source, $k, $v);
             }
         }
-        
+
         $path->skin = $node->skin;
         return new Route($node->file, $node->function, $data, $path, $node->auth);
     }
@@ -321,31 +321,31 @@ class PHPRouter
             Types Must be specified in the following manner (variable_name => type)
                 //variable name with type
                 'testuint'=>'u_int'
-                
+
                 //variable name with type and default
                 'testuint'=>array('u_int',1337)
-                
+
                 //one dimensional array with default for base layer and type
                 'testarray2'=>array('array',null,'int'),
                 'testarray2a'=>array('array',13,'int'),
-                
+
                 //one dimensional array with default for base layer and type and type for array keys
                 'testarray2'=>array('array',null,'int','u_int'),
                 'testarray2a'=>array('array',13,'int','int'),
-                
+
                 //one dimensional array with default for base layer and type with default for array elements
                 'testarray2b'=>array('array',null,array('int',136)),
-                
+
                 //two dimensoinal array with default bool for top layer, and key validation for both layers
                 'countries'=>array('array', false, array('array', false, 'bool', 'u_int'), 'u_int')
-                
+
                 //two dimensional array with default for base layer
                  //and second layer and type for array elements WITHOUT default for array elements
                 'testarray3'=>array('array',null,array('array',3,'int')),
                 //two dimensional array with default for base layer
                  //and second layer and type for array elements with default for array elements
                 'testarray3b'=>array('array',null,array('array',3,array('int',136))),
-                
+
                 //these can be extended to further dimensions as following (a four dimensional array in this case)
                 'testarray4'=>array('array',null,array('array',null,array('array',null,array('array',3,'int'))))
         */
@@ -358,7 +358,7 @@ class PHPRouter
                 } else {
                     $innertype = $type[2];
                 }
-                
+
                 if (isset($type[3])) {
                     $keytype = $type[3];
                 }
@@ -376,7 +376,7 @@ class PHPRouter
             case "u_int":
                 if (isset($source[$key]) && $source[$key] !== "") {
                     $ret = $source[$key];
-                    
+
                     if (!is_numeric($ret)) {
                         $ret = $this->doSiPrefixes($ret); //make k's into 000's and m's into 000000
                     }
@@ -389,7 +389,7 @@ class PHPRouter
                 }
                 settype($default, "int");
                 return $default;
-                
+
             case "int":
             case "integer":
             case "bool":
@@ -406,7 +406,7 @@ class PHPRouter
                 }
                 settype($default, $type);
                 return $default;
-            
+
             case "array":
                 if (isset($source[$key])) {
                     $ret = $source[$key];
@@ -444,7 +444,7 @@ class PHPRouter
                 die("Unknown validation type: $type\n" .($type ? null : $noTypeErr));
         }
     }
-    
+
     private function doSiPrefixes($ret)
     {
         //make k's into 000's and m's into 000000
