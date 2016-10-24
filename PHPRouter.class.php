@@ -308,14 +308,34 @@ class PHPRouter
 
     private function validate($source, $key, $type)
     {
-        if ($type == 'arr1D_bool_uint') {
-            $type = array('array', false, 'bool', 'u_int');
-        } elseif ($type == 'arr2D_bool_uint') {
-            $type = array('array', false, array('array', false, 'bool', 'u_int'), 'u_int');
-        } elseif ($type == 'arr1D_str_str') {
-            $type = array('array', false, 'string', 'string');
-        } elseif ($type == 'arr2D_str_str') {
-            $type = array('array', false, array('array', false, 'string', 'string'), 'string');
+
+        //type aliases
+        switch ($type) {
+            case 'a1Dbu':
+            case 'arr1D_bool_uint':
+                $type = array('array', false, 'bool', 'u_int');
+                break;
+            case 'a1Dss':
+            case 'arr1D_str_str':
+                $type = array('array', false, 'string', 'string');
+                break;
+            case 'a2Dbu':
+            case 'arr2D_bool_uint':
+                $type = array('array', false, array('array', false, 'bool', 'u_int'), 'u_int');
+                break;
+            case 'a2Dss':
+            case 'arr2D_str_str':
+                $type = array('array', false, array('array', false, 'string', 'string'), 'string');
+                break;
+            case 's':
+            case 'str':
+                $type = 'string';
+                break;
+            case 'u':
+                $type = 'u_int';
+                break;
+            default:
+                //do nothing;
         }
         /*Added true multi-dim functionality
             Types Must be specified in the following manner (variable_name => type)
@@ -364,19 +384,6 @@ class PHPRouter
                 }
             }
             $type = $type[0];
-        }
-
-        //type aliases
-        switch ($type) {
-            case 's':
-            case 'str':
-                $type = 'string';
-                break;
-            case 'u':
-                $type = 'u_int';
-                break;
-            default:
-                //do nothing;
         }
 
         switch ($type) {
