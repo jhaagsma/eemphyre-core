@@ -366,10 +366,17 @@ class PHPRouter
             $type = $type[0];
         }
 
-        if ($type == "s") {
-            $type = "string";
-        } elseif ($type == "str") {
-            $type = "string";
+        //type aliases
+        switch ($type) {
+            case 's':
+            case 'str':
+                $type = 'string';
+                break;
+            case 'u':
+                $type = 'u_int';
+                break;
+            default:
+                //do nothing;
         }
 
         switch ($type) {
