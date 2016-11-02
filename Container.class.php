@@ -108,4 +108,14 @@ class Container
         $db = self::$instances[$database];
         $db->pquery('CREATE DATABASE IF NOT EXISTS ?', $database);
     }
+
+    public static function tableExists($tableName, $database = null)
+    {
+        $database = self::getDbName($database);
+
+        $db = self::$instances[$database];
+        $exists = self::$db->pquery("SHOW TABLES LIKE ?", $database)->fetchField();
+
+        return $exists ? true : false;
+    }
 }
