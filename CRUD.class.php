@@ -81,6 +81,9 @@ abstract class CRUD
 
     protected function setVars()
     {
+        if (!isset($this->_data)) {
+            return;
+        }
         //implements array_to_obj_values from general.php; by Slagpit
         foreach ($this->_data as $key => $value) {
             $this->$key = $value;
