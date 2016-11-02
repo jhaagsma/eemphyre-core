@@ -100,4 +100,12 @@ class Container
 
         return $exists ? true : false;
     }
+
+    public static function createDb($database = null)
+    {
+        $database = self::getDbName($database);
+
+        $db = self::$instances[$database];
+        $db->pquery('CREATE DATABASE IF NOT EXISTS ?', $database);
+    }
 }
