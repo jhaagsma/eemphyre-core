@@ -90,4 +90,14 @@ class Container
 
         return self::$instances[$database];
     }
+
+    public static function checkDbExists($database = null)
+    {
+        $database = self::getDbName($database);
+
+        $db = self::$instances[$database];
+        $exists = $db->pquery('SHOW DATABASES LIKE ?', $database)->fetchField();
+
+        return $exists ? true : false;
+    }
 }
