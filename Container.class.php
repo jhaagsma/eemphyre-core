@@ -88,34 +88,8 @@ class Container
             ); //make 3 more things to handle more parameters
         }
 
+        self::$instances[$database]->createIfNotExists();
+
         return self::$instances[$database];
-    }
-
-    public static function checkDbExists($database = null)
-    {
-        $database = self::getDbName($database);
-
-        $db = self::$instances[$database];
-        $exists = $db->pquery('SHOW DATABASES LIKE ?', $database)->fetchField();
-
-        return $exists ? true : false;
-    }
-
-    public static function createDb($database = null)
-    {
-        $database = self::getDbName($database);
-
-        $db = self::$instances[$database];
-        $db->pquery('CREATE DATABASE IF NOT EXISTS ?', $database);
-    }
-
-    public static function tableExists($tableName, $database = null)
-    {
-        $database = self::getDbName($database);
-
-        $db = self::$instances[$database];
-        $exists = self::$db->pquery("SHOW TABLES LIKE ?", $database)->fetchField();
-
-        return $exists ? true : false;
     }
 }
