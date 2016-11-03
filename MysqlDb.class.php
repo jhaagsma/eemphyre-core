@@ -31,6 +31,7 @@ class MysqlDb
     private $user;
     private $pass;
     private $persist;
+    private $setDb = false;
 
     private $con = null;
     private $lasttime = 0;
@@ -63,9 +64,9 @@ class MysqlDb
     private function canConnect()
     {
         if (!$this->persist) {
-            $this->con = new \mysqli($this->host, $this->user, $this->pass, $this->db);
+            $this->con = new \mysqli($this->host, $this->user, $this->pass);
         } else {
-            $this->con = new \mysqli('p:' . $this->host, $this->user, $this->pass, $this->db);
+            $this->con = new \mysqli('p:' . $this->host, $this->user, $this->pass);
         }
 
         if ($this->con->connect_errno) {
@@ -77,6 +78,11 @@ class MysqlDb
 
     private function connect()
     {
+        if (!$this->setDb) {
+            $this->con->select_db($this->db);
+            $this->setDb = true;
+        }
+
         if ($this->con) {
             if ($this->lasttime > time()-10) {
                 return $this->con->ping();
@@ -350,5 +356,46 @@ class MysqlDb
         } else {
             return $this->getSeqID($id1, $id2, $area, $table, $start);
         }
+    }
+
+    public function createIfNotExists($database = null)
+    {
+        $this->setDb = true; //fake like we've set the db
+        if (!$this->checkDbExists($database)) {
+            $this->createDb($database);
+        }
+        $this->setDb = false; //un-fake
+    }
+
+    public function checkDbExists($database = null)
+    {
+        $database = $database ? $database : $this->db;
+        $exists = $this->pquery('SHOW DATABASES LIKE ?', $database)->fetchField();
+        $exists ? null : self::out("DATABASE DOEST NOT EXIST: ".$database);
+
+        return $exists ? true : false;
+    }
+
+    public function createDb($database = null)
+    {
+        $database = $database ? $database : $this->db;
+
+        if ($database != preg_replace("/[^a-z0-9_]/i", null, strtolower($database))) {
+            return self::out("INVALID DATABASE NAME: $database");
+        }
+
+        $this->pquery("CREATE DATABASE IF NOT EXISTS $database");
+        self::out("CREATED DATABASE: ".$database);
+    }
+
+    public function tableExists($tableName)
+    {
+        $exists = $this->pquery("SHOW TABLES LIKE ?", $database)->fetchField();
+        return $exists ? true : false;
+    }
+
+    protected static function out($string)
+    {
+        trigger_error($string, E_USER_NOTICE);
     }
 }
