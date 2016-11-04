@@ -1,4 +1,5 @@
-<?php
+<?php namespace EmPHyre;
+
 /**
  * Migrations is the migration abstract class for migrations
  *
@@ -24,7 +25,6 @@
  * @link     https://github.com/jhaagsma/emPHyre
  * @since    May 2016
  */
-namespace EmPHyre;
 
 abstract class Migrations
 {
