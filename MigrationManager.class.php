@@ -156,7 +156,7 @@ abstract class MigrationManager
         }
     }
 
-    protected static function out($string)
+    public static function out($string)
     {
         trigger_error($string, E_USER_NOTICE);
     }
