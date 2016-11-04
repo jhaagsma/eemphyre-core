@@ -244,7 +244,7 @@ class User
 
     public function checkPassword($password)
     {
-        return Password::cryptSHA512($password, $this->salt) == $this->password ? true : false;
+        return \EmPHyre\Password::cryptSHA512($password, $this->salt) == $this->password ? true : false;
     }
 
     public function loggedIn()
