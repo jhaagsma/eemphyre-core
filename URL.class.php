@@ -22,9 +22,7 @@
  * @category Core
  * @package  EmPHyre
  * @author   Julian Haagsma <jhaagsma@gmail.com>
- * @author   Timo Ewalds <tewalds@gmail.com>
  * @author   Dave McVittie <dave.mcvittie@gmail.com>
- * @author   Joe Obbish <slagpit@earthempires.com>
  * @license  All files are licensed under the MIT License.
  * @link     https://github.com/jhaagsma/emPHyre
  * @since    Recombined from empiresPHPframework extensions on Nov 4 2016
