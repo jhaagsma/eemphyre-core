@@ -48,7 +48,7 @@ abstract class MigrationManager
         self::checkVersion();
         static::buildChain();
 
-        if (self::$maxregistered != self::dotName()) {
+        if (static::$maxregistered != self::dotName()) {
             self::doUpgrades();
         }
     }
@@ -58,10 +58,10 @@ abstract class MigrationManager
     protected static function dotName($maj = null, $min = null, $rel = null, $build = null)
     {
         if ($maj === null) {
-            $maj = self::$major ? self::$major : 0;
-            $min = self::$minor ? self::$minor : 0;
-            $rel = self::$release ? self::$release : 0;
-            $build = self::$build ? self::$build : null;
+            $maj = static::$major ? static::$major : 0;
+            $min = static::$minor ? static::$minor : 0;
+            $rel = static::$release ? static::$release : 0;
+            $build = static::$build ? static::$build : null;
         }
 
         if ($build !== null) {
@@ -114,17 +114,17 @@ abstract class MigrationManager
                 LIMIT 1"
             )->fetchRow();
 
-            self::$major = $version['major'];
-            self::$minor = $version['minor'];
-            self::$release = $version['rel'];
-            self::$build = $version['build'];
+            static::$major = $version['major'];
+            static::$minor = $version['minor'];
+            static::$release = $version['rel'];
+            static::$build = $version['build'];
         }
     }
 
     protected static function register($dotName, $class)
     {
-        self::$maxregisetered = $dotName;
-        self::$upgradeChain[] = ['name'=>$dotName, 'class'=>$class];
+        static::$maxregisetered = $dotName;
+        static::$upgradeChain[] = ['name'=>$dotName, 'class'=>$class];
     }
 
     protected static function doUpgrades()
