@@ -53,7 +53,7 @@ abstract class MigrationManager
         self::checkVersion();
         static::buildChain();
 
-        if (static::$maxregistered != self::dotName()) {
+        if (self::$maxregistered != self::dotName()) {
             self::doUpgrades();
         }
     }
@@ -138,6 +138,27 @@ abstract class MigrationManager
             $name = $upgrade['name'];
             $class = $upgrade['class'];
 
+            $dotName = self::explodeDotName($name);
+            $maj = $dotName['major'];
+            $min = $dotName['minor'];
+            $rel = $dotName['release'];
+            $bui = $dotName['build'];
+
+            $upgrade = false;
+            if ($maj > static::$major) {
+                $upgrade = true;
+            } elseif ($min > static::$minor) {
+                $upgrade = true;
+            } elseif ($rel > static::$release) {
+                $upgrade = true;
+            } elseif ($bui > static::$build) {
+                $upgrade = true;
+            }
+
+            if (!$upgrade) {
+                continue;
+            }
+
             $migration = new $class($name);
             $worked = $migration->up();
 
@@ -146,15 +167,13 @@ abstract class MigrationManager
                 return; //in case migrations are dependent, return here
             }
 
-            $dotNameParts = self::explodeDotName($name);
-
             $version_id = self::$db->pquery(
                 "INSERT INTO `version` (`major`, `minor`, `rel`, `build`)
                 VALUES (?, ?, ?, ?)",
-                $dotNameParts['major'],
-                $dotNameParts['minor'],
-                $dotNameParts['release'],
-                $dotNameParts['build']
+                $dotName['major'],
+                $dotName['minor'],
+                $dotName['release'],
+                $dotName['build']
             )->insertid();
 
             self::out("UPGRADED TO $name");
