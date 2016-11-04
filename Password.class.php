@@ -9,7 +9,7 @@
  * This project uses the EmPHyre microframework,
  * and is built off the EmPHyre example files
  *
- * Written for PhaseSensors Julian Haagsma.
+ * Written by Julian Haagsma.
  *
  * @category Classes
  * @package  EmPHyre
