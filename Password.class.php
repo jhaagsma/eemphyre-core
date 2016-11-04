@@ -1,0 +1,51 @@
+<?php namespace EmPHyre;
+
+/**
+ * Password is the password object for the EmPHyre project
+ *
+ * PHP version 5
+ *
+ * ------
+ * This project uses the EmPHyre microframework,
+ * and is built off the EmPHyre example files
+ *
+ * Written for PhaseSensors Julian Haagsma.
+ *
+ * @category Classes
+ * @package  EmPHyre
+ * @author   Julian Haagsma <jhaagsma@gmail.com>
+ * @license  All files are licensed under the MIT License.
+ * @link     https://demo3.phasesensors.com
+ * @since    EmPHyre was created 2014-09, modernized to current in 2016-03
+ */
+
+
+class Password
+{
+    protected function __construct()
+    {
+        //this ensures nobody can instantiate
+    }
+
+
+    //FUNCTIONS FOR LOGIN AND USER REGISTRATION
+    public static function cryptSHA512($password, $salt)
+    {
+        $bits = explode('$', $salt, 2);
+        $rounds = $bits[0];
+        $salt = $bits[1];
+
+        for ($i = 0; $i < $rounds; $i++) {
+            $password = hash('sha512', $password . $salt);
+        }
+
+        return $password;
+    }
+
+    public static function generateSalt()
+    {
+        $rounds = mt_rand(1000, 9999);
+        $salt = uniqid('', true);
+        return $rounds . '$' . $salt;
+    }
+}
