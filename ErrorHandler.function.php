@@ -92,17 +92,17 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars)
         //only show 4 levels deep
         for ($i = 1; $i < 5 && $i < count($backtrace); $i++) {
             $errfile = (isset($backtrace[$i]['file']) ? $backtrace[$i]['file'] : '');
-            
+
             if (strpos($errfile, $sitebasedir) === 0) {
                 $errfile = substr($errfile, strlen($sitebasedir));
             }
-            
+
             $line = (isset($backtrace[$i]['line']) ? $backtrace[$i]['line'] : '');
             $function = (isset($backtrace[$i]['function']) ? $backtrace[$i]['function'] : '');
             $args = (isset($backtrace[$i]['args']) ? count($backtrace[$i]['args']) : '');
-            
+
             $backoutput .= "$errfile:$line:$function($args)";
-            
+
             //show if there are more levels that were cut off
             if ($i+1 < count($backtrace)) {
                 $backoutput .= "<-";
@@ -122,18 +122,18 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars)
     if (isset($debug) && $debug) {
         echo $str;
     }
-        
+
     $errfile=fopen($file, "a");
     fputs($errfile, $str);
     fclose($errfile);
-    
+
     if ($output_errors_to_irc) { //THIS PART IS ONLY FOR IF YOU HAVE THE BOT CLUSTER WORKING, TO SEND ERRORS TO IRC!
         if (strncmp($errmsg, '{NODETAIL_IRC}', 14) == 0) {
             $str2 = str_replace('{NODETAIL_IRC}', null, $errmsg);
         } else {
             $str2 = "($errlevel) $errmsg,$filename:$linenum,$_SERVER[PHP_SELF],$user,$ip\r\n";
         }
-        
+
         $comm = new CommClient();
         $comm->send('forward', array('type' => 'website_error', 'data' =>$str2));
     }
