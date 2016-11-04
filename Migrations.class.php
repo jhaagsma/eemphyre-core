@@ -29,12 +29,12 @@
 abstract class Migrations
 {
     protected static $db; //the database
-    protected static $version;
+    protected $version;
 
     public function __construct($name)
     {
         $this->db();
-        $this->$version = $name;
+        $this->version = $name;
     }
 
     public static function db($db = null)
