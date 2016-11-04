@@ -123,8 +123,11 @@ abstract class MigrationManager
 
     protected static function register($dotName, $class)
     {
-        static::$maxregisetered = $dotName;
-        static::$upgradeChain[] = ['name'=>$dotName, 'class'=>$class];
+        static::$maxregistered = $dotName;
+        $namespace = __NAMESPACE__;
+        $namespace .= "\\";
+
+        static::$upgradeChain[] = ['name'=>$dotName, 'class'=>$namespace.$class];
     }
 
     protected static function doUpgrades()
