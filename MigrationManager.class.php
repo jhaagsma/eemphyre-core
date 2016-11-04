@@ -147,12 +147,20 @@ abstract class MigrationManager
             $upgrade = false;
             if ($maj > static::$major) {
                 $upgrade = true;
+            } elseif ($maj < static::$major) {
+                continue;
             } elseif ($min > static::$minor) {
                 $upgrade = true;
-            } elseif ($rel > static::$release) {
+            } elseif ($maj < static::$major) {
+                continue;
+            } elseif ($rel != 0 && $rel > static::$release) {
                 $upgrade = true;
-            } elseif ($bui > static::$build) {
+            } elseif ($rel < static::$release) {
+                continue;
+            } elseif ($bui !== null && $bui > static::$build) {
                 $upgrade = true;
+            } elseif ($bui < static::$build) {
+                continue;
             }
 
             if (!$upgrade) {
