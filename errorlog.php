@@ -31,7 +31,6 @@
 global $errorlogging;
 
 if ($errorlogging) {
-    
     include_once('/core/ErrorHander.function.php');
 
     set_error_handler("userErrorHandler");
