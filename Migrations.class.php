@@ -45,7 +45,7 @@ abstract class Migrations
     abstract public function up();
     abstract public function down();
 
-    protected function out($string)
+    public function out($string)
     {
         trigger_error($string, E_USER_NOTICE);
     }
