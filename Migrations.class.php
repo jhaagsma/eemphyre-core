@@ -29,8 +29,12 @@ namespace EmPHyre;
 abstract class Migrations
 {
     protected static $db; //the database
-    protected static $toV;
-    protected static $fromV;
+    protected static $version;
+
+    protected function __construct($name)
+    {
+        static::$version = $name;
+    }
 
     public static function db($db = null)
     {
@@ -47,35 +51,11 @@ abstract class Migrations
 
     protected function outUpgraded()
     {
-        $this->out("Upgraded to version ".static::$toV);
+        $this->out("Upgraded to version ".static::$version);
     }
 
     protected function outDowngraded()
     {
-        $this->out("Downgraded to version ".static::$fromV);
-    }
-
-    protected function setVersionUp()
-    {
-        if (!static::$db) {
-            static::db();
-        }
-        return static::$db->pquery(
-            "UPDATE version SET version = ? WHERE version = ?",
-            static::$toV,
-            static::$fromV
-        )->affectedRows();
-    }
-
-    protected function setVersionDown()
-    {
-        if (!static::$db) {
-            $this->db();
-        }
-        return static::$db->pquery(
-            "UPDATE version SET version = ? WHERE version = ?",
-            static::$fromV,
-            static::$toV
-        )->affectedRows();
+        $this->out("Downgraded to version ".static::$version);
     }
 }
