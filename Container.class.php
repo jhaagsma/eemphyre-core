@@ -1,4 +1,5 @@
-<?php
+<?php namespace EmPHyre;
+
 /**
  * Container is the class creation object for the EmPHyre project
  *
@@ -8,17 +9,15 @@
  * This project uses the EmPHyre microframework,
  * and is built off the EmPHyre example files
  *
- * Written for PhaseSensors Julian Haagsma.
+ * Written by Julian Haagsma.
  *
  * @category Classes
- * @package  PhaseWeb
+ * @package  EmPHyre
  * @author   Julian Haagsma <jhaagsma@gmail.com>
  * @license  All files are licensed under the MIT License.
  * @link     https://demo3.phasesensors.com
  * @since    March 2016
  */
-
-namespace EmPHyre;
 
 //prototype from http://code.tutsplus.com/tutorials/dependency-injection-huh--net-26903
 class Container
