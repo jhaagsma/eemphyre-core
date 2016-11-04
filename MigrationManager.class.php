@@ -134,6 +134,7 @@ abstract class MigrationManager
 
     protected static function doUpgrades()
     {
+        // self::out(var_export(self::$upgradeChain, true));
         foreach (self::$upgradeChain as $upgrade) {
             $name = $upgrade['name'];
             $class = $upgrade['class'];
@@ -143,6 +144,9 @@ abstract class MigrationManager
             $min = $dotName['minor'];
             $rel = $dotName['release'];
             $bui = $dotName['build'];
+
+
+            // self::out($name . ' --- ' . $class . ' --- ' . self::$maxregistered);
 
             $upgrade = false;
             if ($maj > static::$major) {
@@ -157,15 +161,20 @@ abstract class MigrationManager
                 $upgrade = true;
             } elseif ($rel < static::$release) {
                 continue;
-            } elseif ($bui !== null && $bui > static::$build) {
-                $upgrade = true;
-            } elseif ($bui < static::$build) {
-                continue;
+            } elseif ($bui !== null) {
+                // self::out($bui);
+                if ($bui > static::$build) {
+                    $upgrade = true;
+                } elseif ($bui < static::$build) {
+                    continue;
+                }
             }
 
             if (!$upgrade) {
                 continue;
             }
+
+            // self::out($name . ' --- ' . self::$maxregistered);
 
             $migration = new $class($name);
             $worked = $migration->up();
