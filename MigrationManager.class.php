@@ -144,8 +144,8 @@ abstract class MigrationManager
             $dotNameParts = self::explodeDotName($name);
 
             $version_id = self::$db->pquery(
-                "INSERT INTO `version` (`major`,`minor`,`rel`,`build`
-                VALUES (?,?,?,?)",
+                "INSERT INTO `version` (`major`, `minor`, `rel`, `build`)
+                VALUES (?, ?, ?, ?)",
                 $dotNameParts['major'],
                 $dotNameParts['minor'],
                 $dotNameParts['release'],
