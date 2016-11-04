@@ -88,7 +88,7 @@ abstract class MigrationManager
 
     protected static function checkVersion()
     {
-        if (!self::$db::tableExists('version')) {
+        if (!self::$db->tableExists('version')) {
             self::$major = self::$minor = self::$release = 0;
             self::$build = null;
 
