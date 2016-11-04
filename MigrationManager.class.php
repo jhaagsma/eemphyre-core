@@ -133,7 +133,7 @@ abstract class MigrationManager
             $name = $upgrade['name'];
             $class = $upgrade['class'];
 
-            $migration = new $class();
+            $migration = new $class($name);
             $worked = $migration->up();
 
             if (!$worked) {
