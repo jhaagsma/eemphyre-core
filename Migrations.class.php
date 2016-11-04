@@ -33,6 +33,7 @@ abstract class Migrations
 
     protected function __construct($name)
     {
+        $this->db();
         static::$version = $name;
     }
 
