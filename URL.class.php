@@ -1,4 +1,4 @@
-<?php
+<?php namespace EmPHyre;
 
 /**
  * URL is a class to handle all sorts of URL-related functions
@@ -28,8 +28,6 @@
  * @link     https://github.com/jhaagsma/emPHyre
  * @since    Pulled out of errorlog.php 2016-03-15
  */
-
-namespace PhaseWeb;
 
 class URL
 {
