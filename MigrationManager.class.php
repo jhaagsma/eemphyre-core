@@ -46,7 +46,7 @@ abstract class MigrationManager
     {
         self::setDb();
         self::checkVersion();
-        self::buildChain();
+        static::buildChain();
 
         if (self::$maxregistered != self::dotName()) {
             self::doUpgrades();
@@ -112,7 +112,7 @@ abstract class MigrationManager
                 "SELECT `major`, `minor`, `rel`, `build` FROM `version`
                 ORDER BY `major` DESC, `minor` DESC, `rel` DESC, `build` DESC
                 LIMIT 1"
-            )->fetchField();
+            )->fetchRow();
 
             self::$major = $version['major'];
             self::$minor = $version['minor'];
