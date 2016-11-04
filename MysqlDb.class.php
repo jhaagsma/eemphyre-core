@@ -390,7 +390,7 @@ class MysqlDb
 
     public function tableExists($tableName)
     {
-        $exists = $this->pquery("SHOW TABLES LIKE ?", $database)->fetchField();
+        $exists = $this->pquery("SHOW TABLES LIKE ?", $tableName)->fetchField();
         return $exists ? true : false;
     }
 
