@@ -1,11 +1,10 @@
 <?php
 /**
- * Container is the class creation object for the PhaseWeb project
+ * Container is the class creation object for the EmPHyre project
  *
- * PHP version 5
+ * PHP version 7
  *
  * ------
- * These files are part of the PhaseWeb project;
  * This project uses the EmPHyre microframework,
  * and is built off the EmPHyre example files
  *
@@ -16,7 +15,7 @@
  * @author   Julian Haagsma <jhaagsma@gmail.com>
  * @license  All files are licensed under the MIT License.
  * @link     https://demo3.phasesensors.com
- * @since    PhaseWeb was created 2014-09, modernized to current in 2016-03
+ * @since    March 2016
  */
 
 namespace EmPHyre;
