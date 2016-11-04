@@ -16,8 +16,8 @@
  * @author   Julian Haagsma <jhaagsma@gmail.com>
  * @license  All files are licensed under the MIT License.
  * @link     https://demo3.phasesensors.com
- * @since    EmPHyre was created 2014-09, modernized to current in 2016-03
- */
+ * @since    Nov 2016
+ * */
 
 
 class Password
