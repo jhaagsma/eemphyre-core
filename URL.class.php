@@ -2,8 +2,9 @@
 
 /**
  * URL is a class to handle all sorts of URL-related functions
+ * An object for the EmPHyre project
  *
- * PHP version 5
+ * PHP version 7
  *
  * ------
  * These files are part of the empiresPHPframework;
@@ -26,7 +27,7 @@
  * @author   Joe Obbish <slagpit@earthempires.com>
  * @license  All files are licensed under the MIT License.
  * @link     https://github.com/jhaagsma/emPHyre
- * @since    Pulled out of errorlog.php 2016-03-15
+ * @since    Recombined from empiresPHPframework extensions on Nov 4 2016
  */
 
 class URL
