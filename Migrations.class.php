@@ -34,7 +34,7 @@ abstract class Migrations
     public function __construct($name)
     {
         $this->db();
-        static::$version = $name;
+        $this->$version = $name;
     }
 
     public static function db($db = null)
@@ -52,11 +52,11 @@ abstract class Migrations
 
     protected function outUpgraded()
     {
-        $this->out("Upgraded to version ".static::$version);
+        $this->out("Upgraded to version ".$this->version);
     }
 
     protected function outDowngraded()
     {
-        $this->out("Downgraded to version ".static::$version);
+        $this->out("Downgraded to version ".$this->version);
     }
 }
