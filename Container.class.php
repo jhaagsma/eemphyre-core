@@ -92,4 +92,24 @@ class Container
 
         return self::$instances[$database];
     }
+
+    public static function newUserFromUUID($uuid = null, $clearcache = false)
+    {
+        $userid = User::getUseridFromUUID($uuid);
+        return self::newUser($userid, $clearcache);
+    }
+
+    public static function newUser($userid = 0, $clearcache = false)
+    {
+        $user = new User($userid);
+        $user->setDb(self::getDb()); //use the default database
+        $user->initialize($clearcache);
+        return $user;
+    }
+
+    public static function newUserFromName($username = null, $clearcache = false)
+    {
+        $userid = User::getUseridFromName($username);
+        return self::newUser($userid, $clearcache);
+    }
 }
