@@ -94,7 +94,7 @@ abstract class MigrationManager
 
             self::$db->pquery(
                 "
-                CREATE TABLE `version` (
+                CREATE TABLE IF NOT EXISTS `version` (
                  `version_id` SMALLINT NOT NULL AUTO_INCREMENT ,
                  `major` TINYINT NOT NULL DEFAULT '0' ,
                  `minor` TINYINT NOT NULL DEFAULT '0' ,
@@ -124,10 +124,7 @@ abstract class MigrationManager
     protected static function register($dotName, $class)
     {
         static::$maxregistered = $dotName;
-        $namespace = __NAMESPACE__;
-        $namespace .= "\\";
-
-        static::$upgradeChain[] = ['name'=>$dotName, 'class'=>$namespace.$class];
+        static::$upgradeChain[] = ['name'=>$dotName, 'class'=>$class];
     }
 
     protected static function doUpgrades()
@@ -154,6 +151,13 @@ abstract class MigrationManager
                 $dotNameParts['release'],
                 $dotNameParts['build']
             )->insertid();
+
+            self::out("UPGRADED TO $name");
         }
+    }
+
+    protected static function out($string)
+    {
+        trigger_error($string, E_USER_NOTICE);
     }
 }
