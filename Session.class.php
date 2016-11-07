@@ -42,7 +42,7 @@ abstract class Session
     private static $cookieUser = null;
     private static $cookieKey = null;
 
-    private static $loginid = null;
+    private static $login_id = null;
     private static $expiretime = null;
     private static $lastreal = null;
 
@@ -141,7 +141,7 @@ abstract class Session
             }
             $activerow['lastreal'] = 0;
         }
-        self::$loginid = $activerow['login_id'];
+        self::$login_id = $activerow['login_id'];
         self::$expiretime = $activerow['expiretime'];
         self::$lastreal = $activerow['lastreal'];
 
@@ -157,7 +157,7 @@ abstract class Session
             $clearids = self::$db->pquery('SELECT * FROM active_sessions WHERE expiretime < ?', time())->fetchRowSet();
             foreach ($clearids as $clearid) {
                 \EmPHyre\Cache::delete(APC_ACTIVE_SESSION_PREFIX . $clearid['user_id']);
-                self::$db->pquery('DELETE FROM active_sessions WHERE login_id = ?', $clearid['loginid']);
+                self::$db->pquery('DELETE FROM active_sessions WHERE login_id = ?', $clearid['login_id']);
             }
             return true;
         }
@@ -168,7 +168,7 @@ abstract class Session
     {
         $activerow = array(
             'lastreal'=>self::$lastreal,
-            'login_id'=>self::$loginid,
+            'login_id'=>self::$login_id,
             'cookieval'=>self::$cookieKey,
             'expiretime'=>$expiretime
         );
@@ -178,7 +178,7 @@ abstract class Session
             $good = self::$db->pquery(
                 'UPDATE active_sessions SET expiretime = ? WHERE login_id = ?',
                 $expiretime,
-                self::$loginid
+                self::$login_id
             )->affectedRows();
 
             if (!$good) {
