@@ -55,7 +55,7 @@ class User
     public static function definePrependAPC($prepend = null)
     {
         //this needs to be called so that we don't conflict with other projects
-        if (defined('APC_USER_PREPEND')) {
+        if (!defined('APC_USER_PREPEND')) {
             $prepend = ($prepend ? $prepend.'-' : null);
             define('APC_USER_PREPEND', $prepend.'ul-');
         }
