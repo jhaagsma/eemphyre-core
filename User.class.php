@@ -117,7 +117,7 @@ class User
         )->fetchFieldSet();
     }
 
-    public static function addUser($user_name, $pw1, $pw2, $client_id = -1)
+    public static function addUser($user_name, $pw1, $pw2)
     {
         if ($error = Validate::email($user_name)) {
             return $error;
