@@ -64,7 +64,7 @@ class User
         $this->getValues();
     }
 
-    public static function getuser_idFromName($user_name = null)
+    public static function getUserIdFromName($user_name = null)
     {
         self::$db = Container::getDb();
         return self::$db->pquery(
@@ -73,7 +73,7 @@ class User
         )->fetchField();
     }
 
-    public static function getuser_idFromUUID($uuid = null)
+    public static function getUserIdFromUUID($uuid = null)
     {
         $uuid = URL::decode64($uuid);
         self::$db = Container::getDb();
