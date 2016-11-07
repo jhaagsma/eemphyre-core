@@ -94,7 +94,7 @@ class Container
 
     public static function newUserFromUUID($uuid = null, $clearcache = false)
     {
-        $userid = User::getUseridFromUUID($uuid);
+        $userid = User::getUserIdFromUUID($uuid);
         return self::newUser($userid, $clearcache);
     }
 
@@ -113,7 +113,7 @@ class Container
 
     public static function newUserFromName($username = null, $clearcache = false)
     {
-        $userid = User::getUseridFromName($username);
+        $userid = User::getUserIdFromName($username);
         return self::newUser($userid, $clearcache);
     }
 }
