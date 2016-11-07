@@ -200,7 +200,7 @@ class User
         return new Result('NOEXIST_USER', $user_name, true);
     }
 
-    public function edit($user_name, $pw1, $pw2, $client_id)
+    public function edit($user_name, $pw1, $pw2)
     {
         $changed = false;
         if ($user_name != $this->user_name) {
@@ -230,8 +230,6 @@ class User
 
             $changed = true;
         }
-
-        $result = $this->editClientid($client_id);
 
         if ($result->success) {
             $changed = true;
