@@ -32,6 +32,7 @@ class Container
 
     private static $instances = array();
     public static $params = array();
+    public static $userNamespace = null;
 
     /*public function __construct($params)
     {
@@ -99,7 +100,12 @@ class Container
 
     public static function newUser($userid = 0, $clearcache = false)
     {
-        $user = new User($userid);
+        if (static::$userNamespace) {
+            $class = "\\".static::$userNamespace."\\User";
+            $user = new $class($userid);
+        } else {
+            $user = new User($userid);
+        }
         $user->setDb(self::getDb()); //use the default database
         $user->initialize($clearcache);
         return $user;
