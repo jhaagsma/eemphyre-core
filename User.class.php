@@ -30,7 +30,7 @@
  */
 
 //should we define these in the Container, or in the Cache object, perhaps...?
-define('APC_USER_PREPEND', 'd3-ul-');
+//define('APC_USER_PREPEND', 'd3-ul-');
 
 class User
 {
@@ -42,11 +42,23 @@ class User
     {
         $this->user_id = $user_id;
 
+        //ensure APC_UER_PREPEND is defined
+        self::definePrependAPC();
+
         //this is a hack for when the user_id isn't defined
         //honestly that shouldn't ever come up, but it did (error in the log manager)
         //so better to handle it than not?
         $this->user_name = null;
         $this->uuid = null;
+    }
+
+    public static function definePrependAPC($prepend = null)
+    {
+        //this needs to be called so that we don't conflict with other projects
+        if (defined('APC_USER_PREPEND')) {
+            $prepend = ($prepend ? $prepend.'-' : null);
+            define('APC_USER_PREPEND', $prepend.'ul-');
+        }
     }
 
     public function setDb($db)
