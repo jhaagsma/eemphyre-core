@@ -342,7 +342,7 @@ class User
     {
         //can merge the queries from this and the last_ip if we like
         return self::$db->pquery(
-            "SELECT time FROM user_logins WHERE user_id = ? ORDER BY loginid DESC LIMIT 1",
+            "SELECT time FROM user_logins WHERE user_id = ? ORDER BY login_id DESC LIMIT 1",
             $this->userid
         )->fetchField();
     }
@@ -350,7 +350,7 @@ class User
     public function lastIP()
     {
         $long = self::$db->pquery(
-            "SELECT ipv4 FROM user_logins WHERE user_id = ? ORDER BY loginid DESC LIMIT 1",
+            "SELECT ipv4 FROM user_logins WHERE user_id = ? ORDER BY login_id DESC LIMIT 1",
             $this->userid
         )->fetchField();
 
