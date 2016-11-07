@@ -32,7 +32,7 @@
 //should we define these in the Container, or in the Cache object, perhaps...?
 define('APC_USER_PREPEND', 'max-ul-');
 
-abstract class User
+class User
 {
     public $userid;
     private static $db;
