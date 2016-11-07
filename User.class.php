@@ -64,12 +64,12 @@ class User
         $this->getValues();
     }
 
-    public static function getuser_idFromName($username = null)
+    public static function getuser_idFromName($user_name = null)
     {
         self::$db = Container::getDb();
         return self::$db->pquery(
             "SELECT user_id FROM users WHERE user_name = ?",
-            $username
+            $user_name
         )->fetchField();
     }
 
@@ -105,15 +105,15 @@ class User
         )->fetchFieldSet();
     }
 
-    public static function addUser($username, $pw1, $pw2, $client_id = -1)
+    public static function addUser($user_name, $pw1, $pw2, $client_id = -1)
     {
-        if ($error = Validate::email($username)) {
+        if ($error = Validate::email($user_name)) {
             return $error;
         }
 
         self::$db = Container::getDb();
 
-        $result = self::checkExists($username);
+        $result = self::checkExists($user_name);
         if ($result->isError()) {
             return $result;
         }
@@ -133,7 +133,7 @@ class User
         $user_id = self::$db->pquery(
             "INSERT INTO users SET uuid = ?, user_name = ?",
             self::newUUID(),
-            $username
+            $user_name
         )->insertid();
 
         if (!$user_id) {
@@ -172,31 +172,31 @@ class User
         return $this->disabled ? true : false;
     }
 
-    public static function checkExists($username = null)
+    public static function checkExists($user_name = null)
     {
-        if ($username === null) {
-            return new Result('INVALID_INPUT', $username);
+        if ($user_name === null) {
+            return new Result('INVALID_INPUT', $user_name);
         }
 
         //reuse functions
-        $user_id = self::getuser_idFromName($username);
+        $user_id = self::getuser_idFromName($user_name);
         if ($user_id) {
-            return new Result('EXISTS_USERNAME', $username);
+            return new Result('EXISTS_user_name', $user_name);
         }
 
         //this is a success because this function is used for finding collisions
-        return new Result('NOEXIST_USER', $username, true);
+        return new Result('NOEXIST_USER', $user_name, true);
     }
 
-    public function edit($username, $pw1, $pw2, $client_id)
+    public function edit($user_name, $pw1, $pw2, $client_id)
     {
         $changed = false;
-        if ($username != $this->user_name) {
-            if ($error = Validate::email($username)) {
+        if ($user_name != $this->user_name) {
+            if ($error = Validate::email($user_name)) {
                 return $error;
             }
 
-            if ($error = self::checkExists($username)) {
+            if ($error = self::checkExists($user_name)) {
                 return $error;
             }
         }
@@ -208,8 +208,8 @@ class User
             $changed = true;
         }
 
-        if ($username != $this->user_name) {
-            $this->user_name = $username;
+        if ($user_name != $this->user_name) {
+            $this->user_name = $user_name;
 
             $result = $this->commit();
             if ($result->isError()) {
