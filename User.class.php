@@ -34,15 +34,15 @@ define('APC_USER_PREPEND', 'd3-ul-');
 
 class User
 {
-    public $userid;
+    public $user_id;
     private static $db;
     private static $apcu_userline;
 
-    public function __construct($userid)
+    public function __construct($user_id)
     {
-        $this->userid = $userid;
+        $this->user_id = $user_id;
 
-        //this is a hack for when the userid isn't defined
+        //this is a hack for when the user_id isn't defined
         //honestly that shouldn't ever come up, but it did (error in the log manager)
         //so better to handle it than not?
         $this->user_name = null;
@@ -56,7 +56,7 @@ class User
 
     public function initialize($clearcache = false)
     {
-        self::$apcu_userline = APC_USER_PREPEND . $this->userid;
+        self::$apcu_userline = APC_USER_PREPEND . $this->user_id;
         if ($clearcache) {
             $this->apcDelUserline();
         }
@@ -64,7 +64,7 @@ class User
         $this->getValues();
     }
 
-    public static function getUseridFromName($username = null)
+    public static function getuser_idFromName($username = null)
     {
         self::$db = Container::getDb();
         return self::$db->pquery(
@@ -73,7 +73,7 @@ class User
         )->fetchField();
     }
 
-    public static function getUseridFromUUID($uuid = null)
+    public static function getuser_idFromUUID($uuid = null)
     {
         $uuid = URL::decode64($uuid);
         self::$db = Container::getDb();
@@ -179,7 +179,7 @@ class User
         }
 
         //reuse functions
-        $user_id = self::getUseridFromName($username);
+        $user_id = self::getuser_idFromName($username);
         if ($user_id) {
             return new Result('EXISTS_USERNAME', $username);
         }
@@ -251,7 +251,7 @@ class User
     public function loggedIn()
     {
         $ip = ip2long($_SERVER['REMOTE_ADDR']);
-        self::$db->pquery("INSERT INTO user_logins SET user_id = ?, time = ?, ipv4 = ?", $this->userid, time(), $ip);
+        self::$db->pquery("INSERT INTO user_logins SET user_id = ?, time = ?, ipv4 = ?", $this->user_id, time(), $ip);
         return;
     }
 
@@ -259,10 +259,10 @@ class User
     {
         $this->ul = $this->apcUserline();
         if (!$this->ul) {
-            $this->userid = null;
+            $this->user_id = null;
             return;
         }
-        //we don't want anything to be able to change their userid, that would be seriously messed up
+        //we don't want anything to be able to change their user_id, that would be seriously messed up
         unset($this->ul['user_id']);
         array_to_obj_vals($this, $this->ul);
     }
@@ -275,7 +275,7 @@ class User
 
     public function commit()
     {
-        //we want don't anything to be able to change their userid, that would be seriously messed up
+        //we want don't anything to be able to change their user_id, that would be seriously messed up
         unset($this->ul['user_id']);
 
         //i'm pretty sure we don't ever want to change the uuid ??
@@ -293,7 +293,7 @@ class User
         //check if there are things to update
         if (count($partsA)==0) {
             //neutral result;
-            return new Result("UNCHANGED_USER", $this->userid, false, false);
+            return new Result("UNCHANGED_USER", $this->user_id, false, false);
         }
 
         $query = "UPDATE users SET " . implode(", ", $partsA) . " WHERE user_id = ?";
@@ -304,7 +304,7 @@ class User
             $call_args[] = $p;
             $checkcount++;
         }
-        $call_args[] = $this->userid;
+        $call_args[] = $this->user_id;
 
         if ($partcount != $checkcount) {
          //this should never happen, but we should check regardless
@@ -314,10 +314,10 @@ class User
         $row = self::$db->pqueryArray($call_args);
 
         if ($row->affectedRows()) {
-            $this->refreshValues($this->userid);
-            return new Result("CHANGED_USER", $this->userid, true);
+            $this->refreshValues($this->user_id);
+            return new Result("CHANGED_USER", $this->user_id, true);
         } else {
-            return new Result("UNCHANGED_USER", $this->userid, false, false);
+            return new Result("UNCHANGED_USER", $this->user_id, false, false);
         }
     }
 
@@ -327,7 +327,7 @@ class User
         $user_line = \EmPHyre\Cache::Fetch(self::$apcu_userline);
         if (!$user_line) {
              //this ideally shouldn't select *, but for now we'll do it for convenience
-            $user_line = self::$db->pquery('SELECT * FROM users WHERE user_id = ?', $this->userid)->fetchRow();
+            $user_line = self::$db->pquery('SELECT * FROM users WHERE user_id = ?', $this->user_id)->fetchRow();
             \EmPHyre\Cache::Store(self::$apcu_userline, $user_line, 1800);
         }
         return ($column ? $user_line[$column] : $user_line);
@@ -343,7 +343,7 @@ class User
         //can merge the queries from this and the last_ip if we like
         return self::$db->pquery(
             "SELECT time FROM user_logins WHERE user_id = ? ORDER BY login_id DESC LIMIT 1",
-            $this->userid
+            $this->user_id
         )->fetchField();
     }
 
@@ -351,7 +351,7 @@ class User
     {
         $long = self::$db->pquery(
             "SELECT ipv4 FROM user_logins WHERE user_id = ? ORDER BY login_id DESC LIMIT 1",
-            $this->userid
+            $this->user_id
         )->fetchField();
 
         return long2ip((float)$long);
@@ -372,7 +372,7 @@ class User
                 return $result;
             }
         }
-        return new Result('EDITED_PASSWORD', $this->userid, true);
+        return new Result('EDITED_PASSWORD', $this->user_id, true);
     }
 
     public function display()
@@ -383,7 +383,7 @@ class User
     public function getId()
     {
         //this function will have an analogue in each class
-        return $this->userid;
+        return $this->user_id;
     }
 
     public function getUUID()
