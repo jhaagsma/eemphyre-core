@@ -29,9 +29,10 @@
  * @since    Pulled out of MysqlDb.class.php 2016-03-15
  */
 
-define('APC_USER_PREPEND', 'ul-');
+//should we define these in the Container, or in the Cache object, perhaps...?
+define('APC_USER_PREPEND', 'max-ul-');
 
-class User
+abstract class User
 {
     public $userid;
     private static $db;
