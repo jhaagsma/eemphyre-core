@@ -32,9 +32,9 @@
 
 class Auth
 {
-    public static function authUsernamePassword($username, $password)
+    public static function authUsernamePassword($user_name, $password)
     {
-        $user = Container::newUserFromName($username, true);
+        $user = Container::newUserFromName($user_name, true);
         if (!is_object($user) || !$user->user_id) {
             URL::redirect("/login?result=FAIL");
         } elseif (!$user->checkPassword($password)) {
