@@ -394,6 +394,14 @@ class MysqlDb
         return $exists ? true : false;
     }
 
+    public function columnExists($columnName, $tableName)
+    {
+        //sanitize, just in case
+        $tableName = $this->con->real_escape_string($tableName);
+        $exists = $this->pquery("SHOW COLUMNS FROM `$tableName` LIKE ?", $columnName)->fetchField();
+        return $exists ? true : false;
+    }
+
     protected static function out($string)
     {
         trigger_error($string, E_USER_NOTICE);
