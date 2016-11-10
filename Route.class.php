@@ -37,7 +37,7 @@ class Route
     public $path;
     public $auth;
     public $data;
-    
+
     public function __construct($file, $function, $data, $path = null, $auth = null)
     {
         $this->file = $file;
