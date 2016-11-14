@@ -1,4 +1,4 @@
-<?php namespace EmPhyre;
+<?php namespace EmPHyre;
 
 /**
  * User is the user class for the EmPHyre Framework Example
@@ -191,7 +191,7 @@ class User
         }
 
         //reuse functions
-        $user_id = self::getuser_idFromName($user_name);
+        $user_id = self::getUserIdFromName($user_name);
         if ($user_id) {
             return new Result('EXISTS_user_name', $user_name);
         }
