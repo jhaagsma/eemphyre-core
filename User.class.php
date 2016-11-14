@@ -224,14 +224,10 @@ class User
             $this->user_name = $user_name;
 
             $result = $this->commit();
-            if ($result->isError()) {
+            if (is_object($result) && $result->isError()) {
                 return $result;
             }
 
-            $changed = true;
-        }
-
-        if ($result->success) {
             $changed = true;
         }
 
@@ -325,7 +321,7 @@ class User
 
         if ($row->affectedRows()) {
             $this->refreshValues($this->user_id);
-            return new Result("CHANGED_USER", $this->user_id, true);
+            return new Result("EDITED_USER", $this->user_id, true);
         } else {
             return new Result("UNCHANGED_USER", $this->user_id, false, false);
         }
