@@ -327,6 +327,9 @@ class PHPRouter
             case 'arr2D_str_str':
                 $type = array('array', false, array('array', false, 'string', 'string'), 'string');
                 break;
+            case 'b':
+                $type = 'bool';
+                break;
             case 's':
             case 'str':
                 $type = 'string';
