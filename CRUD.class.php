@@ -59,7 +59,7 @@ abstract class CRUD
 
     public static function db()
     {
-        if (!static::$db && !$db) {
+        if (!static::$db) {
             static::$db = Container::getDb();
         }
     }
