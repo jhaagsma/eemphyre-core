@@ -168,7 +168,7 @@ class User extends \EmPHyre\CRUD
         //reuse functions
         $user_id = self::getUserIdFromName($user_name);
         if ($user_id) {
-            return new Result('EXISTS_user_name', $user_name);
+            return new Result('EXISTS', $user_name);
         }
 
         //this is a success because this function is used for finding collisions
