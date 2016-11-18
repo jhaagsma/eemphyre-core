@@ -207,7 +207,7 @@ abstract class CRUD
         )->fetchField();
     }
 
-    private static function newUUID($uuidColumn = 'uuid')
+    protected static function newUUID($uuidColumn = 'uuid')
     {
         static::db();
         $uuid = static::$db->newUUID();
@@ -217,11 +217,11 @@ abstract class CRUD
         return $uuid;
     }
 
-    public static function checkUUIDCollision($uuid = null, $uuidColumn = 'uuid')
+    protected static function checkUUIDCollision($uuid = null, $uuidColumn = 'uuid')
     {
         static::db();
         $check = static::$db->pquery(
-            "SELECT `".$uuidColumn."` FROM `".$_table_name."` WHERE uuid = ?",
+            "SELECT `".$uuidColumn."` FROM `".static::$_table_name."` WHERE uuid = ?",
             $uuid
         )->fetchField();
 
