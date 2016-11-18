@@ -57,9 +57,11 @@ abstract class CRUD
         static::$db = $db;
     }
 
-    public static function db($db = null)
+    public static function db()
     {
-        static::$db = Container::getDb();
+        if (!static::$db && !$db) {
+            static::$db = Container::getDb();
+        }
     }
 
     public function initialize()
@@ -139,11 +141,31 @@ abstract class CRUD
         }
     }
 
+    protected static function addByArray($keyValue = [])
+    {
+        static::db();
+        if (empty($columnValue)) {
+            return;
+        }
+
+        $call_args = $bits = [];
+        $call_args[0] = null;
+
+        foreach ($keyValue as $key => $value) {
+            $bits[] = "`$key` = ?";
+            $call_args[] = $value;
+        }
+
+        $query = "INSERT INTO `".static::$_table_name."` SET ".implode(", ", $bits);
+        $call_args[0] = $query;
+
+        //return insertid; not sure what to do for insert fail...
+        return static::$db->pqueryArray($call_args)->insertid();
+    }
+
     public static function primaryList($limit = null, $offset = 0, $asc = true)
     {
-        if (!static::$db) {
-            static::$db = Container::getDb();
-        }
+        static::db();
 
         $dir = ($asc ? 'ASC' : 'DESC');
 
