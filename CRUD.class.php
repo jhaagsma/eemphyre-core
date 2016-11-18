@@ -177,20 +177,25 @@ abstract class CRUD
         )->fetchFieldSet();
     }
 
-    public static function primaryListNotDisabled($limit = null, $offset = 0, $asc = true)
+    public static function filterColumn($column, $value, $limit = null, $offset = 0, $asc = true)
     {
-        if (!static::$db) {
-            static::$db = Container::getDb();
-        }
+        static::db();
 
         $dir = ($asc ? 'ASC' : 'DESC');
 
         return static::$db->pquery(
-            'SELECT `' . static::$_primary_key .
-            '` FROM `' . static::$_table_name .
-            '` WHERE NOT disabled' .
-            ' ORDER BY `'.static::$_primary_key.'` '.$dir
+            'SELECT `'.static::$_primary_key.
+            '` FROM `'.static::$_table_name.
+            '` WHERE `'.$column.'`=?'.
+            ' ORDER BY `'.static::$_primary_key.'` '.$dir,
+            $value
         )->fetchFieldSet();
+
+    }
+
+    public static function primaryListNotDisabled($limit = null, $offset = 0, $asc = true)
+    {
+        return static::filterColumn('disabled', 'false');
     }
 
     public static function verifyExists($primary_key)
