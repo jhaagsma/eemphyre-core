@@ -108,7 +108,7 @@ class MysqlDbResult
     {
         return $this->insertid;
     }
-    
+
     public function rows()
     {
         return $this->numrows;
@@ -119,7 +119,7 @@ class MysqlDbResult
         if (!is_object($this->result)) {
             return false;
         }
-            
+
         return $this->result->free();
     }
 }
