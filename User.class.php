@@ -83,10 +83,10 @@ class User extends \EmPHyre\CRUD
 
     public static function users($group_id = null)
     {
-        self::$db = Container::getDb();
+        self::db();
         if (!$group_id) {
             //normal query
-            parent::primaryListNotDisabled();
+            return parent::primaryListNotDisabled();
         }
 
         //query A, then "join" with users to check disabled
@@ -256,46 +256,12 @@ class User extends \EmPHyre\CRUD
 
     public function commit()
     {
-        //we want don't anything to be able to change their user_id, that would be seriously messed up
-        unset($this->ul['user_id']);
-
         //i'm pretty sure we don't ever want to change the uuid ??
-        unset($this->ul['uuid']);
+        unset($this->_data['uuid']);
 
-        $partcount = 0;
-        $partsA = $partsB = array();
-        foreach ($this->ul as $k => $v) {
-            if ($v != $this->$k) {
-                $partsA[] = "$k = ?";
-                $partsB[] = $this->$k;
-                $partcount++;
-            }
-        }
-        //check if there are things to update
-        if (count($partsA)==0) {
-            //neutral result;
-            return new Result("UNCHANGED_USER", $this->user_id, false, false);
-        }
+        $result = parent::commit();
 
-        $query = "UPDATE users SET " . implode(", ", $partsA) . " WHERE user_id = ?";
-        $call_args = array();
-        $call_args[] = $query;
-        $checkcount = 0;
-        foreach ($partsB as $p) {
-            $call_args[] = $p;
-            $checkcount++;
-        }
-        $call_args[] = $this->user_id;
-
-        if ($partcount != $checkcount) {
-         //this should never happen, but we should check regardless
-            return new Result("FAIL_PARTCOUNT");
-        }
-
-        $row = self::$db->pqueryArray($call_args);
-
-        if ($row->affectedRows()) {
-            $this->refreshValues($this->user_id);
+        if ($result) {
             return new Result("EDITED_USER", $this->user_id, true);
         } else {
             return new Result("UNCHANGED_USER", $this->user_id, false, false);
