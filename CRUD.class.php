@@ -193,6 +193,27 @@ abstract class CRUD
 
     }
 
+    public static function filterPKArray($keys, $column, $value, $limit = null, $offset = 0, $asc = true)
+    {
+        static::db();
+
+        $dir = ($asc ? 'ASC' : 'DESC');
+
+        if (empty($keys)) {
+            return [];
+        }
+
+        return static::$db->pquery(
+            'SELECT `'.static::$_primary_key.
+            '` FROM `'.static::$_table_name.
+            '` WHERE `'.static::$_primary_key.
+            '` IN(?) AND `'.$column.'`=?'.
+            ' ORDER BY `'.static::$_primary_key.'` '.$dir,
+            $keys,
+            $value
+        )->fetchFieldSet();
+    }
+
     public static function primaryListNotDisabled($limit = null, $offset = 0, $asc = true)
     {
         return static::filterColumn('disabled', 'false');
