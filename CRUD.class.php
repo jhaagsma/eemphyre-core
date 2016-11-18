@@ -57,6 +57,7 @@ abstract class CRUD
         static::$db = $db;
     }
 
+    //simple version for basic classes
     public static function db()
     {
         if (!static::$db) {
