@@ -32,15 +32,16 @@
 //should we define these in the Container, or in the Cache object, perhaps...?
 //define('APC_USER_PREPEND', 'd3-ul-');
 
-class User
+class User extends \EmPHyre\CRUD
 {
-    public $user_id;
-    private static $db;
+    protected static $db;
+    protected static $_table_name = 'users';
+    protected static $_primary_key = 'user_id';
     private static $apcu_userline;
 
     public function __construct($user_id)
     {
-        $this->user_id = $user_id;
+        parent::__construct($user_id);
 
         //ensure APC_UER_PREPEND is defined
         self::definePrependAPC();
@@ -59,21 +60,6 @@ class User
             $prepend = ($prepend ? $prepend.'-' : null);
             define('APC_USER_PREPEND', $prepend.'ul-');
         }
-    }
-
-    public function setDb($db)
-    {
-        self::$db = $db;
-    }
-
-    public function initialize($clearcache = false)
-    {
-        self::$apcu_userline = APC_USER_PREPEND . $this->user_id;
-        if ($clearcache) {
-            $this->apcDelUserline();
-        }
-
-        $this->getValues();
     }
 
     public static function getUserIdFromName($user_name = null)
@@ -100,9 +86,7 @@ class User
         self::$db = Container::getDb();
         if (!$group_id) {
             //normal query
-            return self::$db->pquery(
-                "SELECT user_id FROM users WHERE NOT disabled ORDER BY user_name ASC"
-            )->fetchFieldSet();
+            parent::primaryListNotDisabled();
         }
 
         //query A, then "join" with users to check disabled
@@ -130,23 +114,14 @@ class User
             return $result;
         }
 
-        //need to change good_password with whatever password rules we want;
+        //need to change Validate::password with whatever password rules we want
         if ($error = Validate::password($pw1, $pw2)) {
             return $error;
         }
 
-        //perhaps this should all be rolled into the user class somehow?
-        //OR INTO A PASSWORD CLASS!!!!!
-
-        //user the change password function?
-        //$salt = Password::generateSalt();
-        //$password = Password::cryptSHA512($pw1, $salt);
-
-        $user_id = self::$db->pquery(
-            "INSERT INTO users SET uuid = ?, user_name = ?",
-            self::newUUID(),
-            $user_name
-        )->insertid();
+        $user_id = parent::addByArray(
+            ['uuid'=>self::newUUID(), 'user_name'=>$user_name]
+        );
 
         if (!$user_id) {
             return new Result("FAIL_INSERT");
