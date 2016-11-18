@@ -207,21 +207,21 @@ abstract class CRUD
         )->fetchField();
     }
 
-    private static function newUUID()
+    private static function newUUID($uuidColumn = 'uuid')
     {
         static::db();
         $uuid = static::$db->newUUID();
-        while (static::checkUUIDCollision($uuid)) {
+        while (static::checkUUIDCollision($uuid, $uuidColumn)) {
             $uuid = static::$db->newUUID();
         }
         return $uuid;
     }
 
-    public static function checkUUIDCollision($uuid = null)
+    public static function checkUUIDCollision($uuid = null, $uuidColumn = 'uuid')
     {
         static::db();
         $check = static::$db->pquery(
-            "SELECT uuid FROM `".$_table_name."` WHERE uuid = ?",
+            "SELECT `".$uuidColumn."` FROM `".$_table_name."` WHERE uuid = ?",
             $uuid
         )->fetchField();
 
