@@ -91,7 +91,7 @@ class User extends \EmPHyre\CRUD
 
         //query A, then "join" with users to check disabled
         $users = self::$db->pquery(
-            "SELECT user_id FROM user_groups WHERE group_id = ?",
+            "SELECT user_id FROM user_permission_groups WHERE group_id = ?",
             $group_id
         )->fetchFieldSet();
 
@@ -133,25 +133,6 @@ class User extends \EmPHyre\CRUD
         }
 
         return new Result('ADDED_USER', $user_id, true);
-    }
-
-    private static function newUUID()
-    {
-        $uuid = self::$db->newUUID();
-        while (self::checkUUIDCollision($uuid)) {
-            $uuid = self::$db->newUUID();
-        }
-        return $uuid;
-    }
-
-    public static function checkUUIDCollision($uuid = null)
-    {
-        $check = self::$db->pquery(
-            "SELECT uuid FROM users WHERE uuid = ?",
-            $uuid
-        )->fetchField();
-
-        return $check || $uuid === null ? true : false;
     }
 
     public function isDisabled()
