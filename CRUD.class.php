@@ -145,7 +145,7 @@ abstract class CRUD
     protected static function addByArray($keyValue = [])
     {
         static::db();
-        if (empty($columnValue)) {
+        if (empty($keyValue)) {
             return;
         }
 
