@@ -207,11 +207,11 @@ abstract class CRUD
         )->fetchField();
     }
 
-    protected static function newUUID($uuidColumn = 'uuid')
+    protected static function newUUID($check = true, $uuidColumn = 'uuid')
     {
         static::db();
         $uuid = static::$db->newUUID();
-        while (static::checkUUIDCollision($uuid, $uuidColumn)) {
+        while ($check && static::checkUUIDCollision($uuid, $uuidColumn)) {
             $uuid = static::$db->newUUID();
         }
         return $uuid;
