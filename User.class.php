@@ -90,15 +90,10 @@ class User extends \EmPHyre\CRUD
         }
 
         //query A, then "join" with users to check disabled
-        $users = self::$db->pquery(
-            "SELECT user_id FROM user_permission_groups WHERE group_id = ?",
-            $group_id
-        )->fetchFieldSet();
+        $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
+        $users = $permissions->getM2M($group_id, true);
 
-        return self::$db->pquery(
-            "SELECT user_id FROM users WHERE user_id IN(?) AND NOT disabled ORDER BY user_name ASC",
-            $users
-        )->fetchFieldSet();
+        return self::filterPKArray($users, 'disabled', false);
     }
 
     public static function addUser($user_name, $pw1, $pw2)
