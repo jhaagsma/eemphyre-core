@@ -299,7 +299,7 @@ class User extends \EmPHyre\CRUD
 
     public function groups()
     {
-        return Group::userGroups($this->user_id);
+        return Group::userGroups($this->getId());
     }
 
     public function display()
