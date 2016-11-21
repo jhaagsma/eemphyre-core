@@ -66,13 +66,51 @@ class Group extends \EmPHyre\CRUD
 
     public function addUser($user_id)
     {
-        $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
-        $permissions->add($user_id, $this->getId());
+        return static::_addUser($user_id, $this->getId());
     }
 
-    public function deleteUser($user_id)
+    protected static function _addUser($user_id, $group_id)
     {
         $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
-        $permissions->delete($user_id, $this->getId());
+        return $permissions->add($user_id, $group_id);
+    }
+
+    public function delUser($user_id)
+    {
+        return static::_delUser($user_id, $this->getId());
+    }
+
+    protected static function _delUser($user_id, $group_id)
+    {
+        $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
+        return $permissions->add($user_id, $group_id);
+    }
+
+    public static function userGroups($user_id)
+    {
+        $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
+        return $permissions->getM2M($user_id);
+    }
+
+    public static function alterUserGroups($user_id, $newPermissions)
+    {
+        $changed = false;
+
+        $currentPermissions = static::userGroups($user_id);
+
+        $add = array_diff($newPermissions, $currentPermissions);
+        $delete = array_diff($currentPermissions, $newPermissions);
+
+        if (empty($add) && empty($delete)) {
+            return new Result("UNCHANGED_USER", $user_id, true, false);
+        }
+
+        foreach ($delete as $group_id) {
+            self::delProperty($type_id, $property_id);
+        }
+
+        foreach ($add as $group_id) {
+            self::addProperty($type_id, $property_id);
+        }
     }
 }
