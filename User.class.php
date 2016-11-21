@@ -297,6 +297,11 @@ class User extends \EmPHyre\CRUD
         return new Result('EDITED_PASSWORD', $this->user_id, true);
     }
 
+    public function groups()
+    {
+        return Group::userGroups($this->user_id);
+    }
+
     public function display()
     {
         return $this->user_name; //for now
