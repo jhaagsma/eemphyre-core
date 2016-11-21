@@ -63,4 +63,10 @@ class Group extends \EmPHyre\CRUD
     {
         return $this->group_name;
     }
+
+    public function addUser($user_id)
+    {
+        $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
+        $permissions->add($user_id, $this->getId());
+    }
 }
