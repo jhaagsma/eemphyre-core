@@ -112,5 +112,7 @@ class Group extends \EmPHyre\CRUD
         foreach ($add as $group_id) {
             static::_addUser($user_id, $group_id);
         }
+
+        return new Result("EDITED_USER", $user_id, true);
     }
 }
