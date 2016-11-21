@@ -320,7 +320,7 @@ class User extends \EmPHyre\CRUD
     {
         return Group::alterUserGroups(
             $this->getId(),
-            array_keys($data['groups'])
+            $newPermissions
         );
     }
 
