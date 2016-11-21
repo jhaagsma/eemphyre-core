@@ -35,9 +35,9 @@ class Group extends \EmPHyre\CRUD
         return $permissions->countM2M($this->group_id, true);
     }
 
-    public static function add($group_name = null)
+    public static function add($name = null)
     {
-        $group_id = parent::addByArray(['group_name'=>$group_name]);
+        $group_id = parent::addByArray(['group_name'=>$name]);
 
         if (!$group_id) {
             return new Result("FAIL_INSERT");
@@ -46,9 +46,9 @@ class Group extends \EmPHyre\CRUD
         return new Result('ADDED_GROUP', $group_id, true);
     }
 
-    public function edit($group_name = null)
+    public function edit($name = null)
     {
-        $this->group_name = $group_name;
+        $this->group_name = $name;
         $this->commit();
     }
 
