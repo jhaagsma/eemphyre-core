@@ -42,7 +42,7 @@ class User extends \EmPHyre\CRUD
     {
         parent::__construct($user_id);
 
-        // ensure APC_UER_PREPEND is defined
+        // ensure APC_USER_PREPEND is defined
         self::definePrependAPC();
 
         // this is a hack for when the user_id isn't defined
