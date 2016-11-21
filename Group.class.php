@@ -44,12 +44,19 @@ class Group extends \EmPHyre\CRUD
         }
 
         return new Result('ADDED_GROUP', $group_id, true);
+
     }
 
     public function edit($name = null)
     {
         $this->group_name = $name;
-        $this->commit();
+        $success = $this->commit();
+
+        if (!$success) {
+            return new Result('UNCHANGED_GROUP', $this->getId(), false, false);
+        }
+
+        return new Result('EDITED_GROUP', $this->getId(), true);
     }
 
     public function display()
