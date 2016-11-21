@@ -69,4 +69,10 @@ class Group extends \EmPHyre\CRUD
         $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
         $permissions->add($user_id, $this->getId());
     }
+
+    public function deleteUser($user_id)
+    {
+        $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
+        $permissions->delete($user_id, $this->getId());
+    }
 }
