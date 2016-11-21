@@ -83,7 +83,7 @@ class Group extends \EmPHyre\CRUD
     protected static function _delUser($user_id, $group_id)
     {
         $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
-        return $permissions->add($user_id, $group_id);
+        return $permissions->delete($user_id, $group_id);
     }
 
     public static function userGroups($user_id)
@@ -100,6 +100,12 @@ class Group extends \EmPHyre\CRUD
 
         $add = array_diff($newPermissions, $currentPermissions);
         $delete = array_diff($currentPermissions, $newPermissions);
+
+        // new dBug($currentPermissions);
+        // new dBug($newPermissions);
+        // new dBug($add);
+        // new dBug($delete);
+        // exit;
 
         if (empty($add) && empty($delete)) {
             return new Result("UNCHANGED_USER", $user_id, true, false);
