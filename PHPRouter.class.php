@@ -312,7 +312,7 @@ class PHPRouter
         switch ($type) {
             case 'a1Dbu':
             case 'arr1D_bool_uint':
-                // var ......TYPE...DEFAULT..INDEX..VALUES
+                // var ......TYPE...DEFAULT..VALUES..INDEX
                 $type = array('array', [], 'bool', 'u_int');
                 break;
             case 'a1Dss':
