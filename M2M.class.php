@@ -102,6 +102,18 @@ class M2M
             static::$_primary_key_2."`=?",
             $pk1_value,
             $pk2_value
-        )->insertid();
+        )->affectedRows();
+    }
+
+    public function delete($pk1_value, $pk2_value, $use_pk2 = false)
+    {
+        static::db();
+        return static::$db->pquery(
+            "DELETE FROM `".static::$_table_name.'` WHERE `'.
+            static::$_primary_key_1."`=? AND `".
+            static::$_primary_key_2."`=?",
+            $pk1_value,
+            $pk2_value
+        )->affectedRows();
     }
 }
