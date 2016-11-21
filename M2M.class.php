@@ -92,4 +92,16 @@ class M2M
             $pk_value
         )->fetchField();
     }
+
+    public function add($pk1_value, $pk2_value, $use_pk2 = false)
+    {
+        static::db();
+        return static::$db->pquery(
+            "INSERT INTO `".static::$_table_name.'` SET `'.
+            static::$_primary_key_1."`=?, `".
+            static::$_primary_key_2."`=?",
+            $pk1_value,
+            $pk2_value
+        )->insertid();
+    }
 }
