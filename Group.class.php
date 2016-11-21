@@ -106,11 +106,11 @@ class Group extends \EmPHyre\CRUD
         }
 
         foreach ($delete as $group_id) {
-            self::delProperty($type_id, $property_id);
+            static::_delUser($user_id, $group_id);
         }
 
         foreach ($add as $group_id) {
-            self::addProperty($type_id, $property_id);
+            static::_addUser($user_id, $group_id);
         }
     }
 }
