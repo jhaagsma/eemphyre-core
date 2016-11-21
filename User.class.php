@@ -42,12 +42,13 @@ class User extends \EmPHyre\CRUD
     {
         parent::__construct($user_id);
 
-        //ensure APC_UER_PREPEND is defined
+        // ensure APC_UER_PREPEND is defined
         self::definePrependAPC();
 
-        //this is a hack for when the user_id isn't defined
-        //honestly that shouldn't ever come up, but it did (error in the log manager)
-        //so better to handle it than not?
+        // this is a hack for when the user_id isn't defined
+        // honestly that shouldn't ever come up,
+        // but it did (error in the log manager)
+        // so better to handle it than not?
         $this->user_name = null;
         $this->uuid = null;
     }
@@ -201,13 +202,19 @@ class User extends \EmPHyre\CRUD
 
     public function checkPassword($password)
     {
-        return \EmPHyre\Password::cryptSHA512($password, $this->salt) == $this->password ? true : false;
+        $cryptPass = \EmPHyre\Password::cryptSHA512($password, $this->salt);
+        return $cryptPass == $this->password ? true : false;
     }
 
     public function loggedIn()
     {
         $ip = ip2long($_SERVER['REMOTE_ADDR']);
-        self::$db->pquery("INSERT INTO user_logins SET user_id = ?, time = ?, ipv4 = ?", $this->user_id, time(), $ip);
+        self::$db->pquery(
+            "INSERT INTO user_logins SET user_id = ?, time = ?, ipv4 = ?",
+            $this->user_id,
+            time(),
+            $ip
+        );
         return;
     }
 
@@ -218,7 +225,8 @@ class User extends \EmPHyre\CRUD
             $this->user_id = null;
             return;
         }
-        //we don't want anything to be able to change their user_id, that would be seriously messed up
+        // we don't want anything to be able to change their user_id,
+        // that would be seriously messed up
         unset($this->ul['user_id']);
         array_to_obj_vals($this, $this->ul);
     }
@@ -231,15 +239,15 @@ class User extends \EmPHyre\CRUD
 
     public function commit()
     {
-        //i'm pretty sure we don't ever want to change the uuid ??
+        // i'm pretty sure we don't ever want to change the uuid ??
         unset($this->_data['uuid']);
 
         $result = parent::commit();
 
         if ($result) {
-            return new Result("EDITED_USER", $this->user_id, true);
+            return new Result("EDITED_USER", $this->getId(), true);
         } else {
-            return new Result("UNCHANGED_USER", $this->user_id, false, false);
+            return new Result("UNCHANGED_USER", $this->getId(), false, false);
         }
     }
 
@@ -248,8 +256,12 @@ class User extends \EmPHyre\CRUD
         //deliberately errors if column isn't in the array
         $user_line = \EmPHyre\Cache::Fetch(self::$apcu_userline);
         if (!$user_line) {
-             //this ideally shouldn't select *, but for now we'll do it for convenience
-            $user_line = self::$db->pquery('SELECT * FROM users WHERE user_id = ?', $this->user_id)->fetchRow();
+             // this ideally shouldn't select *,
+             // but for now we'll do it for convenience
+            $user_line = self::$db->pquery(
+                'SELECT * FROM users WHERE user_id = ?',
+                $this->getId()
+            )->fetchRow();
             \EmPHyre\Cache::Store(self::$apcu_userline, $user_line, 1800);
         }
         return ($column ? $user_line[$column] : $user_line);
@@ -264,16 +276,18 @@ class User extends \EmPHyre\CRUD
     {
         //can merge the queries from this and the last_ip if we like
         return self::$db->pquery(
-            "SELECT time FROM user_logins WHERE user_id = ? ORDER BY login_id DESC LIMIT 1",
-            $this->user_id
+            "SELECT time FROM user_logins
+                WHERE user_id = ? ORDER BY login_id DESC LIMIT 1",
+            $this->getId()
         )->fetchField();
     }
 
     public function lastIP()
     {
         $long = self::$db->pquery(
-            "SELECT ipv4 FROM user_logins WHERE user_id = ? ORDER BY login_id DESC LIMIT 1",
-            $this->user_id
+            "SELECT ipv4 FROM user_logins
+                WHERE user_id = ? ORDER BY login_id DESC LIMIT 1",
+            $this->getId()
         )->fetchField();
 
         return long2ip((float)$long);
@@ -294,12 +308,20 @@ class User extends \EmPHyre\CRUD
                 return $result;
             }
         }
-        return new Result('EDITED_PASSWORD', $this->user_id, true);
+        return new Result('EDITED_PASSWORD', $this->getId(), true);
     }
 
     public function groups()
     {
         return Group::userGroups($this->getId());
+    }
+
+    public function editGroups($newPermissions = [])
+    {
+        return Group::alterUserGroups(
+            $this->getId(),
+            array_keys($data['groups'])
+        );
     }
 
     public function display()
