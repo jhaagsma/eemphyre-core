@@ -313,19 +313,19 @@ class PHPRouter
         switch ($type) {
             case 'a1Dbu':
             case 'arr1D_bool_uint':
-                $type = array('array', false, 'bool', 'u_int');
+                $type = array('array', [], 'bool', 'u_int');
                 break;
             case 'a1Dss':
             case 'arr1D_str_str':
-                $type = array('array', false, 'string', 'string');
+                $type = array('array', [], 'string', 'string');
                 break;
             case 'a2Dbu':
             case 'arr2D_bool_uint':
-                $type = array('array', false, array('array', false, 'bool', 'u_int'), 'u_int');
+                $type = array('array', [], array('array', [], 'bool', 'u_int'), 'u_int');
                 break;
             case 'a2Dss':
             case 'arr2D_str_str':
-                $type = array('array', false, array('array', false, 'string', 'string'), 'string');
+                $type = array('array', [], array('array', [], 'string', 'string'), 'string');
                 break;
             case 'b':
                 $type = 'bool';
@@ -429,8 +429,10 @@ class PHPRouter
                     $ret = $source[$key];
 
                     if (settype($ret, 'array')) {
-                        //iff type is set as an array (eg 'countries'=>array('array', 0, 'int') )
-                         //with type array (which is how we got here) default, and internal type
+                        // iff type is set as an array
+                        // eg 'countries'=>array('array', 0, 'int') )
+                        // with type array (which is how we got here) default,
+                        // and internal type
                         foreach ($ret as $k => $v) {
                             if ($keytype) {
                                 //validate the keys as well --
@@ -451,7 +453,7 @@ class PHPRouter
                         return $ret;
                     }
                 }
-                return def($default, array());
+                return def($default, []);
 
             case "file":
                 return def($_FILES[$key], null);
