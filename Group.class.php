@@ -92,7 +92,7 @@ class Group extends \EmPHyre\CRUD
         return $permissions->getM2M($user_id);
     }
 
-    public static function alterUserGroups($user_id, $newPermissions)
+    public static function alterUserGroups($user_id, $newPermissions = [])
     {
         $changed = false;
 
