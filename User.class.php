@@ -123,8 +123,9 @@ class User extends \EmPHyre\CRUD
         }
 
         $newuser = Container::newUser($user_id);
-        if ($error = $newuser->changePassword($pw1, $pw2)) {
-            return $error;
+        $passResult = $newuser->changePassword($pw1, $pw2);
+        if ($passResult->isError()) {
+            return $passResult;
         }
 
         return new Result('ADDED_USER', $user_id, true);
