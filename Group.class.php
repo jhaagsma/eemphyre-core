@@ -31,10 +31,8 @@ class Group extends \EmPHyre\CRUD
 
     public function members()
     {
-        return self::$db->pquery(
-            "SELECT COUNT(user_id) FROM user_permission_groups WHERE group_id = ?",
-            $this->group_id
-        )->fetchField();
+        $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
+        return $permissions->countM2M($this->group_id, true);
     }
 
     public static function add($group_name = null)
