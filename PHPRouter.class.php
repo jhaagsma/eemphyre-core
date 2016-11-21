@@ -308,11 +308,11 @@ class PHPRouter
 
     private function validate($source, $key, $type)
     {
-
         //type aliases
         switch ($type) {
             case 'a1Dbu':
             case 'arr1D_bool_uint':
+                // var ......TYPE...DEFAULT..INDEX..VALUES
                 $type = array('array', [], 'bool', 'u_int');
                 break;
             case 'a1Dss':
