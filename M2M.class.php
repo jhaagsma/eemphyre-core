@@ -79,4 +79,17 @@ class M2M
             $pk_value
         )->fetchFieldSet();
     }
+
+    public function countM2M($pk_value = 0, $use_pk2 = false)
+    {
+        static::db();
+        return static::$db->pquery(
+            "SELECT COUNT(`".
+            ($use_pk2 ? static::$_primary_key_1 : static::$_primary_key_2 ).
+            "`) FROM `".static::$_table_name."` WHERE `".
+            ($use_pk2 ? static::$_primary_key_2 : static::$_primary_key_1 ).
+            "`=?",
+            $pk_value
+        )->fetchField();
+    }
 }
