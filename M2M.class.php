@@ -31,16 +31,16 @@ namespace EmPHyre;
 class M2M
 {
     protected static $db; //the database
-    protected static $_table_name = null;
-    protected static $_primary_key_1 = 'id1';
-    protected static $_primary_key_2 = 'id2';
+    protected static $tableName = null;
+    protected static $primaryKey_1 = 'id1';
+    protected static $primaryKey_2 = 'id2';
     protected $_data;
 
     public function __construct($table_name, $primary_key_1 = 'id1', $primary_key_2 = 'id2')
     {
-        static::$_table_name = $table_name;
-        static::$_primary_key_1 = $primary_key_1;
-        static::$_primary_key_2 = $primary_key_2;
+        static::$tableName = $table_name;
+        static::$primaryKey_1 = $primary_key_1;
+        static::$primaryKey_2 = $primary_key_2;
         $this->initialize();
     }
 
@@ -62,7 +62,7 @@ class M2M
 
     public function initialize()
     {
-        if (!static::$_table_name) {
+        if (!static::$tableName) {
             trigger_error('TABLE NAME NOT SET IN ' . get_class($this));
         }
     }
@@ -75,9 +75,9 @@ class M2M
 
         static::db();
         return static::$db->pquery(
-            "SELECT 1 FROM `".static::$_table_name."` WHERE `".
-            static::$_primary_key_1."`=? AND `".
-            static::$_primary_key_2."` IN(?)",
+            "SELECT 1 FROM `".static::$tableName."` WHERE `".
+            static::$primaryKey_1."`=? AND `".
+            static::$primaryKey_2."` IN(?)",
             $pk1_value,
             $pk2_array
         )->fetchField();
@@ -88,9 +88,9 @@ class M2M
         static::db();
         return static::$db->pquery(
             "SELECT `".
-            ($use_pk2 ? static::$_primary_key_1 : static::$_primary_key_2 ).
-            "` FROM `".static::$_table_name."` WHERE `".
-            ($use_pk2 ? static::$_primary_key_2 : static::$_primary_key_1 ).
+            ($use_pk2 ? static::$primaryKey_1 : static::$primaryKey_2 ).
+            "` FROM `".static::$tableName."` WHERE `".
+            ($use_pk2 ? static::$primaryKey_2 : static::$primaryKey_1 ).
             "`=?",
             $pk_value
         )->fetchFieldSet();
@@ -101,9 +101,9 @@ class M2M
         static::db();
         return static::$db->pquery(
             "SELECT COUNT(`".
-            ($use_pk2 ? static::$_primary_key_1 : static::$_primary_key_2 ).
-            "`) FROM `".static::$_table_name."` WHERE `".
-            ($use_pk2 ? static::$_primary_key_2 : static::$_primary_key_1 ).
+            ($use_pk2 ? static::$primaryKey_1 : static::$primaryKey_2 ).
+            "`) FROM `".static::$tableName."` WHERE `".
+            ($use_pk2 ? static::$primaryKey_2 : static::$primaryKey_1 ).
             "`=?",
             $pk_value
         )->fetchField();
@@ -113,9 +113,9 @@ class M2M
     {
         static::db();
         return static::$db->pquery(
-            "INSERT INTO `".static::$_table_name.'` SET `'.
-            static::$_primary_key_1."`=?, `".
-            static::$_primary_key_2."`=?",
+            "INSERT INTO `".static::$tableName.'` SET `'.
+            static::$primaryKey_1."`=?, `".
+            static::$primaryKey_2."`=?",
             $pk1_value,
             $pk2_value
         )->affectedRows();
@@ -125,9 +125,9 @@ class M2M
     {
         static::db();
         return static::$db->pquery(
-            "DELETE FROM `".static::$_table_name.'` WHERE `'.
-            static::$_primary_key_1."`=? AND `".
-            static::$_primary_key_2."`=?",
+            "DELETE FROM `".static::$tableName.'` WHERE `'.
+            static::$primaryKey_1."`=? AND `".
+            static::$primaryKey_2."`=?",
             $pk1_value,
             $pk2_value
         )->affectedRows();

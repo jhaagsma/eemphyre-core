@@ -17,7 +17,6 @@
  * @link     https://demo3.phasesensors.com
  * @since    Pulled apart Nov 2016
  */
-
 namespace EmPHyre;
 
 class Action extends \EmPHyre\CRUD
