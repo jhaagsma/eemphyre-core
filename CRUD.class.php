@@ -31,21 +31,21 @@ namespace EmPHyre;
 abstract class CRUD
 {
     protected static $db; //the database
-    protected static $_table_name = null;
-    protected static $_primary_key = 'id';
+    protected static $tableName = null;
+    protected static $primaryKey = 'id';
     protected $_data;
 
 
     //this from FuelPHP
     protected static function primaryKey()
     {
-        return isset(static::$_primary_key) ? static::$_primary_key : 'id';
+        return isset(static::$primaryKey) ? static::$primaryKey : 'id';
     }
 
     public function __construct($primary_key = 0)
     {
         //do nothing, for now
-        $pk = static::$_primary_key;
+        $pk = static::$primaryKey;
         $this->$pk = $primary_key;
     }
 
@@ -67,15 +67,15 @@ abstract class CRUD
 
     public function initialize()
     {
-        if (!static::$_table_name) {
+        if (!static::$tableName) {
             trigger_error('TABLE NAME NOT SET IN ' . get_class($this));
         }
-        $pk = static::$_primary_key;
+        $pk = static::$primaryKey;
         //changed $info to $this->_data; adopting FuelPHP ideas
         $this->_data = static::$db->pquery(
-            'SELECT `' . static::$_table_name . '`.* '.
-            'FROM `'  . static::$_table_name .
-            '` WHERE `' . static::$_primary_key . '`=?',
+            'SELECT `' . static::$tableName . '`.* '.
+            'FROM `'  . static::$tableName .
+            '` WHERE `' . static::$primaryKey . '`=?',
             $this->$pk
         )->fetchRow();
 
@@ -96,7 +96,7 @@ abstract class CRUD
     protected function commit()
     {
         $update = [];
-        $pk = static::$_primary_key;
+        $pk = static::$primaryKey;
 
         foreach ($this->_data as $key => $value) {
             if (!isset($this->$pk) || $key == $this->$pk || $this->$pk != $this->_data[$pk]) {
@@ -126,8 +126,8 @@ abstract class CRUD
             $call_args[] = $value;
         }
 
-        $query = "UPDATE `".static::$_table_name."` SET ".implode(", ", $bits).
-            ' WHERE `' . static::$_primary_key . '`=?';
+        $query = "UPDATE `".static::$tableName."` SET ".implode(", ", $bits).
+            ' WHERE `' . static::$primaryKey . '`=?';
         $call_args[0] = $query;
         $call_args[] = $this->$pk;
 
@@ -157,7 +157,7 @@ abstract class CRUD
             $call_args[] = $value;
         }
 
-        $query = "INSERT INTO `".static::$_table_name."` SET ".implode(", ", $bits);
+        $query = "INSERT INTO `".static::$tableName."` SET ".implode(", ", $bits);
         $call_args[0] = $query;
 
         //return insertid; not sure what to do for insert fail...
@@ -171,9 +171,9 @@ abstract class CRUD
         $dir = ($asc ? 'ASC' : 'DESC');
 
         return static::$db->pquery(
-            'SELECT `' . static::$_primary_key .
-            '` FROM `' . static::$_table_name .
-            '` ORDER BY `'.static::$_primary_key.'` '.$dir
+            'SELECT `' . static::$primaryKey .
+            '` FROM `' . static::$tableName .
+            '` ORDER BY `'.static::$primaryKey.'` '.$dir
         )->fetchFieldSet();
     }
 
@@ -184,10 +184,10 @@ abstract class CRUD
         $dir = ($asc ? 'ASC' : 'DESC');
 
         return static::$db->pquery(
-            'SELECT `'.static::$_primary_key.
-            '` FROM `'.static::$_table_name.
+            'SELECT `'.static::$primaryKey.
+            '` FROM `'.static::$tableName.
             '` WHERE `'.$column.'`=?'.
-            ' ORDER BY `'.static::$_primary_key.'` '.$dir,
+            ' ORDER BY `'.static::$primaryKey.'` '.$dir,
             $value
         )->fetchFieldSet();
 
@@ -204,11 +204,11 @@ abstract class CRUD
         }
 
         return static::$db->pquery(
-            'SELECT `'.static::$_primary_key.
-            '` FROM `'.static::$_table_name.
-            '` WHERE `'.static::$_primary_key.
+            'SELECT `'.static::$primaryKey.
+            '` FROM `'.static::$tableName.
+            '` WHERE `'.static::$primaryKey.
             '` IN(?) AND `'.$column.'`=?'.
-            ' ORDER BY `'.static::$_primary_key.'` '.$dir,
+            ' ORDER BY `'.static::$primaryKey.'` '.$dir,
             $keys,
             $value
         )->fetchFieldSet();
@@ -226,9 +226,9 @@ abstract class CRUD
         }
 
         return static::$db->pquery(
-            'SELECT `' . static::$_primary_key .
-            '` FROM `' . static::$_table_name .
-            '` WHERE `' . static::$_primary_key . '`=?',
+            'SELECT `' . static::$primaryKey .
+            '` FROM `' . static::$tableName .
+            '` WHERE `' . static::$primaryKey . '`=?',
             $primary_key
         )->fetchField();
     }
@@ -247,7 +247,7 @@ abstract class CRUD
     {
         static::db();
         $check = static::$db->pquery(
-            "SELECT `".$uuidColumn."` FROM `".static::$_table_name."` WHERE uuid = ?",
+            "SELECT `".$uuidColumn."` FROM `".static::$tableName."` WHERE uuid = ?",
             $uuid
         )->fetchField();
 
@@ -266,7 +266,7 @@ abstract class CRUD
     public static function find($config = array())
     {
         $config = $config + array(
-            'select' => array(static::$_table_name.'.*'),
+            'select' => array(static::$tableName.'.*'),
             'where' => array(),
             'order_by' => array(),
             'limit' => null,
@@ -279,7 +279,7 @@ abstract class CRUD
         is_string($select) && $select = array($select);
 
         $query = 'SELECT ' . implode(',',$select);
-        $query .= ' FROM ' . static::$_table_name;
+        $query .= ' FROM ' . static::$tableName;
         if (!empty($where)) {
             $query .= ' WHERE ';
             $first = true;
@@ -300,7 +300,7 @@ abstract class CRUD
 
     public function getId()
     {
-        $pk = static::$_primary_key;
+        $pk = static::$primaryKey;
         return $this->$pk;
     }
 }
