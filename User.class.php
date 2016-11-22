@@ -1,5 +1,4 @@
-<?php namespace EmPHyre;
-
+<?php
 /**
  * User is the user class for the EmPHyre Framework Example
  *
@@ -27,15 +26,26 @@
  * @link     https://github.com/jhaagsma/emPHyre
  * @since    Pulled out of MysqlDb.class.php 2016-03-15
  */
+ namespace EmPHyre;
 
-//should we define these in the Container, or in the Cache object, perhaps...?
-//define('APC_USER_PREPEND', 'd3-ul-');
+// should we define these in the Container, or in the Cache object, perhaps...?
+// define('APC_USER_PREPEND', 'd3-ul-');
 
+/**
+ * User Class
+ *
+ * @category CRUD
+ * @package  EmPhyre
+ * @author   Julian Haagsma <jhaagsma@gmail.com>
+ * @license  https://opensource.org/licenses/MIT The MIT License (MIT)
+ * @link     https://github.com/jhaagsma/emPHyre
+ * @since    Nov 2016
+ */
 class User extends \EmPHyre\CRUD
 {
     protected static $db;
-    protected static $_table_name = 'users';
-    protected static $_primary_key = 'user_id';
+    protected static $tableName = 'users';
+    protected static $primaryKey = 'user_id';
     private static $apcu_userline;
 
     public function __construct($user_id)
