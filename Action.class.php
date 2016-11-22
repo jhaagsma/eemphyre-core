@@ -1,5 +1,4 @@
-<?php namespace EmPHyre;
-
+<?php
 /**
  * Action object for the E project
  *
@@ -19,10 +18,12 @@
  * @since    Pulled apart Nov 2016
  */
 
+namespace EmPHyre;
+
 class Action extends \EmPHyre\CRUD
 {
-    protected static $_table_name = 'user_actions';
-    protected static $_primary_key = 'action_id';
+    protected static $tableName = 'user_actions';
+    protected static $primaryKey = 'action_id';
     private static $flags = null;
 
     public function initialize()
