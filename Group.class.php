@@ -1,5 +1,4 @@
-<?php namespace EmPHyre;
-
+<?php
 /**
  * Group is the permission group object for the eemphyre project
  *
@@ -18,22 +17,44 @@
  * @category Classes
  * @package  EmPHyre
  * @author   Julian Haagsma <jhaagsma@gmail.com>
- * @license  All files are licensed under the MIT License.
+ * @license  https://opensource.org/licenses/MIT The MIT License (MIT)
  * @link     https://github.com/jhaagsma/emPHyre
  * @since    Nov 2016
  */
 
+namespace EmPHyre;
+
+/**
+ * Group class for EmPhyre;
+ * For "groups" table
+ * Link to "user" table through "user_permission_groups" table
+ *
+ * @category CRUD
+ * @package  EmPhyre
+ * @author   Julian Haagsma <jhaagsma@gmail.com>
+ * @license  https://opensource.org/licenses/MIT The MIT License (MIT)
+ * @link     https://github.com/jhaagsma/emPHyre
+ * @since    Nov 2016
+ */
 class Group extends \EmPHyre\CRUD
 {
     protected static $db;
-    protected static $_table_name = 'groups';
-    protected static $_primary_key = 'group_id';
+    protected static $tableName  = 'groups';
+    protected static $primaryKey = 'group_id';
 
+
+    /**
+     * Get Group members
+     *
+     * @return int sum of user_id belonging to group_id
+     */
     public function members()
     {
         $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
         return $permissions->countM2M($this->group_id, true);
-    }
+
+    }//end members()
+
 
     public static function add($name = null)
     {
