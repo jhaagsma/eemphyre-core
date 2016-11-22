@@ -67,6 +67,22 @@ class M2M
         }
     }
 
+    public function checkArray($pk1_value = 0, $pk2_array = [])
+    {
+        if (empty($pk2_array)) {
+            return false;
+        }
+
+        static::db();
+        return static::$db->pquery(
+            "SELECT 1 FROM `".static::$_table_name."` WHERE `".
+            static::$_primary_key_1."`=? AND `".
+            static::$_primary_key_2."` IN(?)",
+            $pk1_value,
+            $pk2_array
+        )->fetchField();
+    }
+
     public function getM2M($pk_value = 0, $use_pk2 = false)
     {
         static::db();
