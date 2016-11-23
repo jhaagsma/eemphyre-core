@@ -30,7 +30,6 @@
 
 // should we define these in the Container, or in the Cache object, perhaps...?
 // define('APC_USER_PREPEND', 'd3-ul-');
-
 /**
  * User Class
  *
@@ -44,9 +43,10 @@
 class User extends \EmPHyre\CRUD
 {
     protected static $db;
-    protected static $tableName = 'users';
+    protected static $tableName  = 'users';
     protected static $primaryKey = 'user_id';
     private static $apcu_userline;
+
 
     public function __construct($user_id)
     {
@@ -60,17 +60,21 @@ class User extends \EmPHyre\CRUD
         // but it did (error in the log manager)
         // so better to handle it than not?
         $this->user_name = null;
-        $this->uuid = null;
-    }
+        $this->uuid      = null;
+
+    }//end __construct()
+
 
     public static function definePrependAPC($prepend = null)
     {
-        //this needs to be called so that we don't conflict with other projects
+        // this needs to be called so that we don't conflict with other projects
         if (!defined('APC_USER_PREPEND')) {
             $prepend = ($prepend ? $prepend.'-' : null);
             define('APC_USER_PREPEND', $prepend.'ul-');
         }
-    }
+
+    }//end definePrependAPC()
+
 
     public static function getUserIdFromName($user_name = null)
     {
@@ -79,32 +83,38 @@ class User extends \EmPHyre\CRUD
             "SELECT user_id FROM users WHERE user_name = ?",
             $user_name
         )->fetchField();
-    }
+
+    }//end getUserIdFromName()
+
 
     public static function getUserIdFromUUID($uuid = null)
     {
-        $uuid = URL::decode64($uuid);
+        $uuid     = URL::decode64($uuid);
         self::$db = Container::getDb();
         return self::$db->pquery(
             "SELECT user_id FROM users WHERE uuid = ?",
             $uuid
         )->fetchField();
-    }
+
+    }//end getUserIdFromUUID()
+
 
     public static function users($group_id = null)
     {
         self::db();
         if (!$group_id) {
-            //normal query
+            // normal query
             return parent::primaryListNotDisabled();
         }
 
-        //query A, then "join" with users to check disabled
+        // query A, then "join" with users to check disabled
         $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
-        $users = $permissions->getM2M($group_id, true);
+        $users       = $permissions->getM2M($group_id, true);
 
         return self::filterPKArray($users, 'disabled', false);
-    }
+
+    }//end users()
+
 
     public static function addUser($user_name, $pw1, $pw2)
     {
@@ -119,32 +129,39 @@ class User extends \EmPHyre\CRUD
             return $result;
         }
 
-        //need to change Validate::password with whatever password rules we want
+        // need to change Validate::password with whatever password rules we want
         if ($error = Validate::password($pw1, $pw2)) {
             return $error;
         }
 
         $user_id = parent::addByArray(
-            ['uuid'=>self::newUUID(), 'user_name'=>$user_name]
+            [
+             'uuid'      => self::newUUID(),
+             'user_name' => $user_name,
+            ]
         );
 
         if (!$user_id) {
             return new Result("FAIL_INSERT");
         }
 
-        $newuser = Container::newUser($user_id);
+        $newuser    = Container::newUser($user_id);
         $passResult = $newuser->changePassword($pw1, $pw2);
         if ($passResult->isError()) {
             return $passResult;
         }
 
         return new Result('ADDED_USER', $user_id, true);
-    }
+
+    }//end addUser()
+
 
     public function isDisabled()
     {
         return $this->disabled ? true : false;
-    }
+
+    }//end isDisabled()
+
 
     public static function checkExists($user_name = null)
     {
@@ -152,15 +169,17 @@ class User extends \EmPHyre\CRUD
             return new Result('INVALID_INPUT', $user_name);
         }
 
-        //reuse functions
+        // reuse functions
         $user_id = self::getUserIdFromName($user_name);
         if ($user_id) {
             return new Result('EXISTS', $user_name);
         }
 
-        //this is a success because this function is used for finding collisions
+        // this is a success because this function is used for finding collisions
         return new Result('NOEXIST_USER', $user_name, true);
-    }
+
+    }//end checkExists()
+
 
     public function edit($user_name, $pw1, $pw2)
     {
@@ -179,6 +198,7 @@ class User extends \EmPHyre\CRUD
             if ($error = $this->changePassword($pw1, $pw2)) {
                 return $error;
             }
+
             $changed = true;
         }
 
@@ -198,24 +218,30 @@ class User extends \EmPHyre\CRUD
         }
 
         return new Result('EDITED_USER', $this->getId(), true);
-    }
+
+    }//end edit()
+
 
     public function disableUser()
     {
         $this->disabled = true;
-        $result = $this->commit();
+        $result         = $this->commit();
         if ($result->isError()) {
             return $result;
         }
 
         return new Result('DISABLED_USER', $this->getId(), true);
-    }
+
+    }//end disableUser()
+
 
     public function checkPassword($password)
     {
         $cryptPass = \EmPHyre\Password::cryptSHA512($password, $this->salt);
         return $cryptPass == $this->password ? true : false;
-    }
+
+    }//end checkPassword()
+
 
     public function loggedIn()
     {
@@ -227,7 +253,9 @@ class User extends \EmPHyre\CRUD
             $ip
         );
         return;
-    }
+
+    }//end loggedIn()
+
 
     private function getValues()
     {
@@ -236,17 +264,22 @@ class User extends \EmPHyre\CRUD
             $this->user_id = null;
             return;
         }
+
         // we don't want anything to be able to change their user_id,
         // that would be seriously messed up
         unset($this->ul['user_id']);
         array_to_obj_vals($this, $this->ul);
-    }
+
+    }//end getValues()
+
 
     private function refreshValues()
     {
         $this->apcDelUserline();
         $this->getValues();
-    }
+
+    }//end refreshValues()
+
 
     public function commit()
     {
@@ -260,11 +293,13 @@ class User extends \EmPHyre\CRUD
         } else {
             return new Result("UNCHANGED_USER", $this->getId(), false, false);
         }
-    }
+
+    }//end commit()
+
 
     private function apcUserline($column = null)
     {
-        //deliberately errors if column isn't in the array
+        // deliberately errors if column isn't in the array
         $user_line = \EmPHyre\Cache::Fetch(self::$apcu_userline);
         if (!$user_line) {
              // this ideally shouldn't select *,
@@ -275,23 +310,30 @@ class User extends \EmPHyre\CRUD
             )->fetchRow();
             \EmPHyre\Cache::Store(self::$apcu_userline, $user_line, 1800);
         }
+
         return ($column ? $user_line[$column] : $user_line);
-    }
+
+    }//end apcUserline()
+
 
     private function apcDelUserline()
     {
         \EmPHyre\Cache::Delete(self::$apcu_userline);
-    }
+
+    }//end apcDelUserline()
+
 
     public function lastLogin()
     {
-        //can merge the queries from this and the last_ip if we like
+        // can merge the queries from this and the last_ip if we like
         return self::$db->pquery(
             "SELECT time FROM user_logins
                 WHERE user_id = ? ORDER BY login_id DESC LIMIT 1",
             $this->getId()
         )->fetchField();
-    }
+
+    }//end lastLogin()
+
 
     public function lastIP()
     {
@@ -301,31 +343,38 @@ class User extends \EmPHyre\CRUD
             $this->getId()
         )->fetchField();
 
-        return long2ip((float)$long);
-    }
+        return long2ip((float) $long);
+
+    }//end lastIP()
+
 
     public function changePassword($pw1 = null, $pw2 = null)
     {
         if ($error = Validate::password($pw1, $pw2)) {
             return $error;
         } else {
-            $salt = Password::generateSalt();
-            $password = Password::cryptSHA512($pw1, $salt);
+            $salt           = Password::generateSalt();
+            $password       = Password::cryptSHA512($pw1, $salt);
             $this->password = $password;
-            $this->salt = $salt;
+            $this->salt     = $salt;
 
             $result = $this->commit();
             if ($result->isError()) {
                 return $result;
             }
         }
+
         return new Result('EDITED_PASSWORD', $this->getId(), true);
-    }
+
+    }//end changePassword()
+
 
     public function groups()
     {
         return Group::userGroups($this->getId());
-    }
+
+    }//end groups()
+
 
     public function editGroups($newPermissions = [])
     {
@@ -333,21 +382,29 @@ class User extends \EmPHyre\CRUD
             $this->getId(),
             $newPermissions
         );
-    }
+
+    }//end editGroups()
+
 
     public function display()
     {
-        return $this->user_name; //for now
-    }
+        return $this->user_name;
+        // for now
+
+    }//end display()
+
 
     public function getId()
     {
-        //this function will have an analogue in each class
+        // this function will have an analogue in each class
         return $this->user_id;
-    }
+
+    }//end getId()
+
 
     public function getUUID()
     {
         return URL::encode64($this->uuid);
-    }
-}
+
+    }//end getUUID()
+}//end class
