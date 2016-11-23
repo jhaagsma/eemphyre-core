@@ -22,30 +22,35 @@
 
 class Password
 {
+
+
     protected function __construct()
     {
-        //this ensures nobody can instantiate
-    }
+        // this ensures nobody can instantiate
+    }//end __construct()
 
 
-    //FUNCTIONS FOR LOGIN AND USER REGISTRATION
+    // FUNCTIONS FOR LOGIN AND USER REGISTRATION
     public static function cryptSHA512($password, $salt)
     {
-        $bits = explode('$', $salt, 2);
+        $bits   = explode('$', $salt, 2);
         $rounds = $bits[0];
-        $salt = $bits[1];
+        $salt   = $bits[1];
 
         for ($i = 0; $i < $rounds; $i++) {
-            $password = hash('sha512', $password . $salt);
+            $password = hash('sha512', $password.$salt);
         }
 
         return $password;
-    }
+
+    }//end cryptSHA512()
+
 
     public static function generateSalt()
     {
         $rounds = mt_rand(1000, 9999);
-        $salt = uniqid('', true);
-        return $rounds . '$' . $salt;
-    }
-}
+        $salt   = uniqid('', true);
+        return $rounds.'$'.$salt;
+
+    }//end generateSalt()
+}//end class

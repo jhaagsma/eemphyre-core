@@ -32,6 +32,8 @@
 
 class Auth
 {
+
+
     public static function authUsernamePassword($user_name, $password)
     {
         $user = Container::newUserFromName($user_name, true);
@@ -40,17 +42,22 @@ class Auth
         } elseif (!$user->checkPassword($password)) {
             URL::redirect("/login?result=FAIL");
         } elseif ($user->isDisabled()) {
-            //make result= from Result returned from class?
+            // make result= from Result returned from class?
             URL::redirect("/login?result=DISABLED_USER");
         }
+
         $user->loggedIn();
         return $user;
-    }
+
+    }//end authUsernamePassword()
+
 
     public static function authPublic($data, $path, $user)
     {
         return false;
-    }
+
+    }//end authPublic()
+
 
     public static function authLogin($data, $path, $user)
     {
@@ -59,5 +66,6 @@ class Auth
         }
 
         return false;
-    }
-}
+
+    }//end authLogin()
+}//end class

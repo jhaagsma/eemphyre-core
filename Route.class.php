@@ -38,12 +38,14 @@ class Route
     public $auth;
     public $data;
 
+
     public function __construct($file, $function, $data, $path = null, $auth = null)
     {
-        $this->file = $file;
+        $this->file     = $file;
         $this->function = $function;
-        $this->data = $data;
-        $this->path = $path;
-        $this->auth = $auth;
-    }
-}
+        $this->data     = $data;
+        $this->path     = $path;
+        $this->auth     = $auth;
+
+    }//end __construct()
+}//end class

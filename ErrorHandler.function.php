@@ -29,44 +29,47 @@
  * @since    Pulled out of errorlog.php 2016-03-15
  */
 
+
  /**
- * Custom Error Handler
- *
- * @param power_of_2 $errno    the php error number
- * @param string     $errmsg   the php error message
- * @param string     $filename the filename of the error
- * @param int        $linenum  the line number of the error
- * @param array      $vars     the error context
- *
- * @return null
- */
+  * Custom Error Handler
+  *
+  * @param power_of_2 $errno    the php error number
+  * @param string     $errmsg   the php error message
+  * @param string     $filename the filename of the error
+  * @param int        $linenum  the line number of the error
+  * @param array      $vars     the error context
+  *
+  * @return null
+  */
 function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars)
 {
     global $base_dir, $user, $debug;
     $userid = (get_class($user) == "User" ? $user->userid : 0);
-    if (error_reporting() == 0) { //likely disabled with the @ operator
+    if (error_reporting() == 0) {
+        // likely disabled with the @ operator
         return;
     }
 
     $time = gmdate("M d Y H:i:s");
 
     // Get the error type from the error number
-    static $errortype = array ( 1   => "Error",
-                                2   => "Warning",
-                                4   => "Parsing Error",
-                                8   => "Notice",
-                                16  => "Core Error",
-                                32  => "Core Warning",
-                                64  => "Compile Error",
-                                128 => "Compile Warning",
-                                256 => "User Error",
-                                512 => "User Warning",
-                                1024=> "User Notice",
-                                2048=> "PHP Strict",
-                            );
-    $errlevel=$errortype[$errno];
+    static $errortype = array(
+                         1    => "Error",
+                         2    => "Warning",
+                         4    => "Parsing Error",
+                         8    => "Notice",
+                         16   => "Core Error",
+                         32   => "Core Warning",
+                         64   => "Compile Error",
+                         128  => "Compile Warning",
+                         256  => "User Error",
+                         512  => "User Warning",
+                         1024 => "User Notice",
+                         2048 => "PHP Strict",
+                        );
+    $errlevel         = $errortype[$errno];
 
-    //Write error to log file (CSV format)
+    // Write error to log file (CSV format)
     if ($errno <= 128) {
         $file = "$sitebasedir/logs/errors.csv";
     } elseif ($errno == 256) {
@@ -76,7 +79,7 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars)
     }
 
     $user = (isset($userid) ? $userid : 0);
-    $ip = $_SERVER['REMOTE_ADDR'];
+    $ip   = $_SERVER['REMOTE_ADDR'];
 
     if (strpos($filename, $sitebasedir) === 0) {
         $filename = substr($filename, strlen($sitebasedir));
@@ -88,8 +91,8 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars)
 
     if (function_exists('debug_backtrace')) {
         $backtrace = debug_backtrace();
-        //ignore $backtrace[0] as that is this function, the errorlogger
-        //only show 4 levels deep
+        // ignore $backtrace[0] as that is this function, the errorlogger
+        // only show 4 levels deep
         for ($i = 1; $i < 5 && $i < count($backtrace); $i++) {
             $errfile = (isset($backtrace[$i]['file']) ? $backtrace[$i]['file'] : '');
 
@@ -97,20 +100,20 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars)
                 $errfile = substr($errfile, strlen($sitebasedir));
             }
 
-            $line = (isset($backtrace[$i]['line']) ? $backtrace[$i]['line'] : '');
+            $line     = (isset($backtrace[$i]['line']) ? $backtrace[$i]['line'] : '');
             $function = (isset($backtrace[$i]['function']) ? $backtrace[$i]['function'] : '');
-            $args = (isset($backtrace[$i]['args']) ? count($backtrace[$i]['args']) : '');
+            $args     = (isset($backtrace[$i]['args']) ? count($backtrace[$i]['args']) : '');
 
             $backoutput .= "$errfile:$line:$function($args)";
 
-            //show if there are more levels that were cut off
-            if ($i+1 < count($backtrace)) {
+            // show if there are more levels that were cut off
+            if (($i + 1) < count($backtrace)) {
                 $backoutput .= "<-";
             }
         }
-    }
+    }//end if
 
-    $str = "\"$time\",";
+    $str  = "\"$time\",";
     $str .= "\"$_SERVER[PHP_SELF]\",";
     $str .= "\"$user\",";
     $str .= "\"$ip\",";
@@ -123,11 +126,12 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars)
         echo $str;
     }
 
-    $errfile=fopen($file, "a");
+    $errfile = fopen($file, "a");
     fputs($errfile, $str);
     fclose($errfile);
 
-    if ($output_errors_to_irc) { //THIS PART IS ONLY FOR IF YOU HAVE THE BOT CLUSTER WORKING, TO SEND ERRORS TO IRC!
+    if ($output_errors_to_irc) {
+        // THIS PART IS ONLY FOR IF YOU HAVE THE BOT CLUSTER WORKING, TO SEND ERRORS TO IRC!
         if (strncmp($errmsg, '{NODETAIL_IRC}', 14) == 0) {
             $str2 = str_replace('{NODETAIL_IRC}', null, $errmsg);
         } else {
@@ -135,9 +139,10 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars)
         }
 
         $comm = new CommClient();
-        $comm->send('forward', array('type' => 'website_error', 'data' =>$str2));
+        $comm->send('forward', array('type' => 'website_error', 'data' => $str2));
     }
-    //Terminate script if fatal error
+
+    // Terminate script if fatal error
     if ($errno != 2 && $errno != 8 && $errno != 512 && $errno != 1024 && $errno != 2048) {
         if ($errorlogging >= 2 || $user && $debug) {
             die("A fatal error has occured. Script execution has been aborted:<br>\n$str");
@@ -145,4 +150,5 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars)
             die("A fatal error has occured. Script execution has been aborted");
         }
     }
-}
+
+}//end userErrorHandler()

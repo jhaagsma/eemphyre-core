@@ -21,15 +21,18 @@ namespace EmPHyre;
 
 class Action extends \EmPHyre\CRUD
 {
-    protected static $tableName = 'user_actions';
+    protected static $tableName  = 'user_actions';
     protected static $primaryKey = 'action_id';
-    private static $flags = null;
+    private static $flags        = null;
+
 
     public function initialize()
     {
         parent::initialize();
         $this->action_flag = self::getActionFlag($this->action_type);
-    }
+
+    }//end initialize()
+
 
     public static function actions($user_id = null)
     {
@@ -40,21 +43,28 @@ class Action extends \EmPHyre\CRUD
                 $user_id
             )->fetchFieldSet();
         }
+
         return self::$db->pquery(
             "SELECT action_id FROM user_actions ORDER BY `time` DESC"
         )->fetchFieldSet();
-    }
+
+    }//end actions()
+
 
     public function getUserID()
     {
         return $this->user_id;
-    }
+
+    }//end getUserID()
+
 
     public function userDisplay()
     {
         $user = Container::newUser($this->user_id);
         return $user->display();
-    }
+
+    }//end userDisplay()
+
 
     public function timeDisplay($extra = false)
     {
@@ -62,26 +72,35 @@ class Action extends \EmPHyre\CRUD
         if (!$extra) {
             return $display;
         }
-        return $display . '&nbsp;(' . datetime($this->time) . ')';
-    }
+
+        return $display.'&nbsp;('.datetime($this->time).')';
+
+    }//end timeDisplay()
+
 
     public function display()
     {
         switch ($this->action_flag) {
             default:
-                return $this->action_flag . ': ' . $this->foreign_key;
+                return $this->action_flag.': '.$this->foreign_key;
         }
-    }
+
+    }//end display()
+
 
     public function getActionTime()
     {
         return $this->time;
-    }
+
+    }//end getActionTime()
+
 
     public function getActionUserTime($extra = false)
     {
-        return $this->userDisplay() . ' at ' . $this->timeDisplay($extra);
-    }
+        return $this->userDisplay().' at '.$this->timeDisplay($extra);
+
+    }//end getActionUserTime()
+
 
     public static function addAction(
         $user_id,
@@ -109,7 +128,9 @@ class Action extends \EmPHyre\CRUD
         )->insertId();
 
         return new Result("ADDED_ACTION", $action_id, true);
-    }
+
+    }//end addAction()
+
 
     public static function getActionType($action_flag)
     {
@@ -126,7 +147,9 @@ class Action extends \EmPHyre\CRUD
         }
 
         return $action_type;
-    }
+
+    }//end getActionType()
+
 
     public static function getActionFlag($action_type)
     {
@@ -136,5 +159,6 @@ class Action extends \EmPHyre\CRUD
         )->fetchField();
 
         return $action_flag;
-    }
-}
+
+    }//end getActionFlag()
+}//end class

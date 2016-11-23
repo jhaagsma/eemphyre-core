@@ -39,13 +39,15 @@ class Path
     public $language;
     public $variables;
 
+
     public function __construct($url, $skin = null)
     {
-        $this->url = $url;
-        $this->skin = null;
+        $this->url        = $url;
+        $this->skin       = null;
         $this->page_title = null;
-        $this->meta_desc = null;
-        $this->language = null;
-        $this->variables = array();
-    }
-}
+        $this->meta_desc  = null;
+        $this->language   = null;
+        $this->variables  = array();
+
+    }//end __construct()
+}//end class

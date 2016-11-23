@@ -58,7 +58,7 @@ class Group extends \EmPHyre\CRUD
 
     public static function add($name = null)
     {
-        $group_id = parent::addByArray(['group_name'=>$name]);
+        $group_id = parent::addByArray(['group_name' => $name]);
 
         if (!$group_id) {
             return new Result("FAIL_INSERT");
@@ -66,52 +66,67 @@ class Group extends \EmPHyre\CRUD
 
         return new Result('ADDED_GROUP', $group_id, true);
 
-    }
+    }//end add()
+
 
     public function edit($name = null)
     {
         $this->group_name = $name;
-        $success = $this->commit();
+        $success          = $this->commit();
 
         if (!$success) {
             return new Result('UNCHANGED_GROUP', $this->getId(), false, false);
         }
 
         return new Result('EDITED_GROUP', $this->getId(), true);
-    }
+
+    }//end edit()
+
 
     public function display()
     {
         return $this->group_name;
-    }
+
+    }//end display()
+
 
     public function addUser($user_id)
     {
         return static::_addUser($user_id, $this->getId());
-    }
+
+    }//end addUser()
+
 
     protected static function _addUser($user_id, $group_id)
     {
         $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
         return $permissions->add($user_id, $group_id);
-    }
+
+    }//end _addUser()
+
 
     public function delUser($user_id)
     {
         return static::_delUser($user_id, $this->getId());
-    }
+
+    }//end delUser()
+
 
     protected static function _delUser($user_id, $group_id)
     {
         $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
         return $permissions->delete($user_id, $group_id);
-    }
+
+    }//end _delUser()
+
 
     public static function userGroups($user_id)
     {
         $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
         return $permissions->getM2M($user_id);
-    }
+
+    }//end userGroups()
+
 
     public static function alterUserGroups($user_id, $newPermissions = [])
     {
@@ -119,7 +134,7 @@ class Group extends \EmPHyre\CRUD
 
         $currentPermissions = static::userGroups($user_id);
 
-        $add = array_diff($newPermissions, $currentPermissions);
+        $add    = array_diff($newPermissions, $currentPermissions);
         $delete = array_diff($currentPermissions, $newPermissions);
 
         // new dBug($currentPermissions);
@@ -127,7 +142,6 @@ class Group extends \EmPHyre\CRUD
         // new dBug($add);
         // new dBug($delete);
         // exit;
-
         if (empty($add) && empty($delete)) {
             return new Result("UNCHANGED_USER", $user_id, true, false);
         }
@@ -141,5 +155,6 @@ class Group extends \EmPHyre\CRUD
         }
 
         return new Result("EDITED_USER", $user_id, true);
-    }
-}
+
+    }//end alterUserGroups()
+}//end class

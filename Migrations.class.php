@@ -28,35 +28,49 @@
 
 abstract class Migrations
 {
-    protected static $db; //the database
+    protected static $db;
+    // the database
     protected $version;
+
 
     public function __construct($name)
     {
         $this->db();
         $this->version = $name;
-    }
+
+    }//end __construct()
+
 
     public static function db($db = null)
     {
         static::$db = Container::getDb();
-    }
+
+    }//end db()
+
 
     abstract public function up();
+
+
     abstract public function down();
+
 
     public function out($string)
     {
         trigger_error($string, E_USER_NOTICE);
-    }
+
+    }//end out()
+
 
     protected function outUpgraded()
     {
         $this->out("Upgraded to version ".$this->version);
-    }
+
+    }//end outUpgraded()
+
 
     protected function outDowngraded()
     {
         $this->out("Downgraded to version ".$this->version);
-    }
-}
+
+    }//end outDowngraded()
+}//end class

@@ -24,25 +24,33 @@ class Result
 {
 
     public $type;
+
+
     public function __construct($type, $val = null, $success = false, $error = true)
     {
-        $this->type = $type;
-        $this->val = $val;
-        $this->error = $success ? false : $error;
+        $this->type    = $type;
+        $this->val     = $val;
+        $this->error   = $success ? false : $error;
         $this->success = $success;
-    }
+
+    }//end __construct()
+
 
     private function setSuccess()
     {
-        $this->error = false;
+        $this->error   = false;
         $this->success = true;
-    }
+
+    }//end setSuccess()
+
 
     private function setNeutral()
     {
-        $this->error = false;
+        $this->error   = false;
         $this->success = false;
-    }
+
+    }//end setNeutral()
+
 
     private function restOfTheBits($bits)
     {
@@ -52,7 +60,9 @@ class Result
         }
 
         return implode(' ', $bits);
-    }
+
+    }//end restOfTheBits()
+
 
     public function message()
     {
@@ -65,27 +75,26 @@ class Result
         $bits = explode('_', $this->type);
         if ($bits[0] == 'ADDED') {
             $this->setSuccess();
-            return self::restOfTheBits($bits) . ' added successfully.';
+            return self::restOfTheBits($bits).' added successfully.';
         } elseif ($bits[0] == 'EDITED') {
             $this->setSuccess();
-            return self::restOfTheBits($bits) . ' edited successfully.';
+            return self::restOfTheBits($bits).' edited successfully.';
         } elseif ($bits[0] == 'DISABLED') {
             $this->setSuccess();
-            return self::restOfTheBits($bits) . ' disabled successfully.';
+            return self::restOfTheBits($bits).' disabled successfully.';
         } elseif ($bits[0] == 'EXISTS') {
-            return 'This ' . self::restOfTheBits($bits) . ' already exists.';
+            return 'This '.self::restOfTheBits($bits).' already exists.';
         } elseif ($bits[0] == 'INVALID') {
-            return 'Invalid ' . self::restOfTheBits($bits).($this->val ? ': '.$this->val : null);
+            return 'Invalid '.self::restOfTheBits($bits).($this->val ? ': '.$this->val : null);
         } elseif ($bits[0] == 'REQUIRED') {
-            return 'You must specify a ' . self::restOfTheBits($bits) . '.';
+            return 'You must specify a '.self::restOfTheBits($bits).'.';
         } elseif ($bits[0] == 'UNCHANGED') {
             $this->setNeutral();
-            return 'The ' . self::restOfTheBits($bits) . ' was unchanged.';
+            return 'The '.self::restOfTheBits($bits).' was unchanged.';
         } elseif ($bits[0] == 'LOGGED') {
             $this->setNeutral();
-            return 'The ' . self::restOfTheBits($bits) . ' was logged.';
-        }
-
+            return 'The '.self::restOfTheBits($bits).' was logged.';
+        }//end if
 
         switch ($this->type) {
             case 'NOT_LOGGED_IN':
@@ -97,7 +106,7 @@ class Result
             case 'PASSWORD_NOMATCH':
                 return 'Passwords do not match.';
             case 'PASSWORD_SHORT':
-                return 'Password is too short.' . ($this->val ? " (Minimum {$this->val})" : null);
+                return 'Password is too short.'.($this->val ? " (Minimum {$this->val})" : null);
             case 'PASSWORD_NO_LETTER':
                 return 'Password must contain a letter (as well as a number and special character).';
             case 'PASSWORD_NO_NUMBER':
@@ -105,41 +114,48 @@ class Result
             case 'PASSWORD_NO_SPECIAL':
                 return 'Password must contain a special character (as well as a number).';
             case 'INVALID_INPUT':
-                return 'Invalid Input' . ($this->val ? ': ' . $this->val : null);
+                return 'Invalid Input'.($this->val ? ': '.$this->val : null);
             case 'INSERT_FAIL':
-                return 'Could not insert into Database.' . ($this->val ? ': ' . $this->val : null);
+                return 'Could not insert into Database.'.($this->val ? ': '.$this->val : null);
             case 'UPDATE_FAIL':
-                return 'Could not update the Database.' . ($this->val ? ': ' . $this->val : null);
+                return 'Could not update the Database.'.($this->val ? ': '.$this->val : null);
             default:
-                return 'Error: ' . $this->type . ($this->val ? ': ' . $this->val : null);
-        }
-    }
+                return 'Error: '.$this->type.($this->val ? ': '.$this->val : null);
+        }//end switch
+
+    }//end message()
+
 
     public function isError()
     {
         return $this->error ? true : false;
-    }
+
+    }//end isError()
+
 
     public function __toString()
     {
         return $this->type;
-    }
+
+    }//end __toString()
+
 
     public function toURL()
     {
-        return '&result='.urlencode($this->type)
-            .($this->val ? '&result_val='.urlencode($this->val) : null)
-            .($this->success ? '&result_success=1' : null);
-    }
+        return '&result='.urlencode($this->type).($this->val ? '&result_val='.urlencode($this->val) : null).($this->success ? '&result_success=1' : null);
+
+    }//end toURL()
+
 
     public function __toBool()
     {
         /*
-        Success evaluates us to false so we can do the following for failure:
-        if ($result = someFunction()) {
+            Success evaluates us to false so we can do the following for failure:
+            if ($result = someFunction()) {
             return $result;
-        }
+            }
         */
         return $this->success ? false : true;
-    }
-}
+
+    }//end __toBool()
+}//end class

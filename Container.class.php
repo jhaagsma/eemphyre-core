@@ -19,57 +19,65 @@
  * @since    March 2016
  */
 
-//prototype from http://code.tutsplus.com/tutorials/dependency-injection-huh--net-26903
+// prototype from http://code.tutsplus.com/tutorials/dependency-injection-huh--net-26903
 class Container
 {
+
+
     protected function __construct()
     {
-        //protected so it can't be instantiated
-    }
-    /**
-    * Array of database connections, mysqli
-    **/
+        // protected so it can't be instantiated
+    }//end __construct()
 
-    private static $instances = array();
-    public static $params = array();
+
+    /**
+     * Array of database connections, mysqli
+     **/
+
+    private static $instances    = array();
+    public static $params        = array();
     public static $userNamespace = null;
 
-    /*public function __construct($params)
-    {
+    /*
+        public function __construct($params)
+        {
         self::_params = $params;
     }*/
+
 
     private static function getDbName($database = null)
     {
         return ($database == null ? self::$params['db']['default']['db_name'] : $database);
-    }
+
+    }//end getDbName()
+
 
     private static function getDbHost($database = null)
     {
         $database = self::getDbName($database);
 
-        return ( isset(self::$params['db'][$database]['db_host']) ?
-            self::$params['db'][$database]['db_host'] :
-            self::$params['db']['default']['db_host'] );
-    }
+        return ( isset(self::$params['db'][$database]['db_host']) ? self::$params['db'][$database]['db_host'] : self::$params['db']['default']['db_host'] );
+
+    }//end getDbHost()
+
 
     private static function getDbUser($database = null)
     {
         $database = self::getDbName($database);
 
-        return ( isset(self::$params['db'][$database]['db_user']) ?
-            self::$params['db'][$database]['db_user'] :
-            self::$params['db']['default']['db_user'] );
-    }
+        return ( isset(self::$params['db'][$database]['db_user']) ? self::$params['db'][$database]['db_user'] : self::$params['db']['default']['db_user'] );
+
+    }//end getDbUser()
+
 
     private static function getDbPass($database = null)
     {
         $database = self::getDbName($database);
 
-        return ( isset(self::$params['db'][$database]['db_pass']) ?
-            self::$params['db'][$database]['db_pass'] :
-            self::$params['db']['default']['db_pass'] );
-    }
+        return ( isset(self::$params['db'][$database]['db_pass']) ? self::$params['db'][$database]['db_pass'] : self::$params['db']['default']['db_pass'] );
+
+    }//end getDbPass()
+
 
     public static function getDb($database = null)
     {
@@ -84,36 +92,46 @@ class Container
                 false,
                 'counters',
                 false
-            ); //make 3 more things to handle more parameters
+            );
+            // make 3 more things to handle more parameters
         }
 
         self::$instances[$database]->createIfNotExists();
 
         return self::$instances[$database];
-    }
+
+    }//end getDb()
+
 
     public static function newUserFromUUID($uuid = null, $clearcache = false)
     {
         $userid = User::getUserIdFromUUID($uuid);
         return self::newUser($userid, $clearcache);
-    }
+
+    }//end newUserFromUUID()
+
 
     public static function newUser($userid = 0, $clearcache = false)
     {
         if (static::$userNamespace) {
             $class = "\\".static::$userNamespace."\\User";
-            $user = new $class($userid);
+            $user  = new $class($userid);
         } else {
             $user = new User($userid);
         }
-        $user->setDb(self::getDb()); //use the default database
+
+        $user->setDb(self::getDb());
+        // use the default database
         $user->initialize($clearcache);
         return $user;
-    }
+
+    }//end newUser()
+
 
     public static function newUserFromName($username = null, $clearcache = false)
     {
         $userid = User::getUserIdFromName($username);
         return self::newUser($userid, $clearcache);
-    }
-}
+
+    }//end newUserFromName()
+}//end class

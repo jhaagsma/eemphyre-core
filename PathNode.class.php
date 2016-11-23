@@ -32,26 +32,34 @@ namespace EmPHyre;
 
 class PathNode
 {
-    //shortening names to speed up APC storage and retrieval //debug test
-    public $file; //$file;
-    public $function; //$function;
-    public $inputs; //$inputs;
-    public $auth; //$auth;
-    public $skin; //$skin_name;
-
-    /*function __construct($file, $function, $inputs = null, $auth = null, $skin = null){
+    // shortening names to speed up APC storage and retrieval //debug test
+    public $file;
+    // $file;
+    public $function;
+    // $function;
+    public $inputs;
+    // $inputs;
+    public $auth;
+    // $auth;
+    public $skin;
+    // $skin_name;
+    /*
+        function __construct($file, $function, $inputs = null, $auth = null, $skin = null){
         $this->file = $file;
         $this->function = $function;
         $this->inputs = $inputs;
         $this->auth = $auth;
         $this->skin = $skin;
     }*/
+
+
     public function __construct($r)
     {
-        $this->file = $r['0'];
+        $this->file     = $r['0'];
         $this->function = $r['1'];
-        $this->inputs = def($r['2'], null);
-        $this->auth = def($r['3'], null);
-        $this->skin = def($r['4'], null);
-    }
-}
+        $this->inputs   = def($r['2'], null);
+        $this->auth     = def($r['3'], null);
+        $this->skin     = def($r['4'], null);
+
+    }//end __construct()
+}//end class

@@ -35,20 +35,23 @@ namespace EmPHyre;
 
 class Cache
 {
-    public static $count = 0;
+    public static $count   = 0;
     public static $queries = array();
-    
+
+
     public function __construct()
     {
-        //$this->queries = array();
-        //$this->count = 0;
-    }
+        // $this->queries = array();
+        // $this->count = 0;
+    }//end __construct()
+
 
     public function __destruct()
     {
 
-    }
-    
+    }//end __destruct()
+
+
     private static function addquery($stuff)
     {
         self::$queries[] = $stuff;
@@ -56,77 +59,95 @@ class Cache
         if (count(self::$queries) > 1000) {
             array_shift(self::$queries);
         }
-    }
+
+    }//end addquery()
+
 
     public static function add($key, $val, $ttl = 0)
     {
-        $start = microtime(true);
+        $start   = microtime(true);
         $success = apcu_add($key, $val, $ttl);
-        self::addquery(array('add',$success,microtime(true)-$start,$key,$ttl));
+        self::addquery(array('add', $success, microtime(true) - $start, $key, $ttl));
         return $success;
-    }
-    
+
+    }//end add()
+
+
     public static function store($key, $val, $ttl = 0)
     {
-        $start = microtime(true);
+        $start   = microtime(true);
         $success = apcu_store($key, $val, $ttl);
-        self::addquery(array('store',$success,microtime(true)-$start,$key,$ttl));
+        self::addquery(array('store', $success, microtime(true) - $start, $key, $ttl));
         return $success;
-    }
-    
+
+    }//end store()
+
+
     public static function fetch($key, $default = null)
     {
         $start = microtime(true);
-        $val = apcu_fetch($key, $success);
-        self::addquery(array('fetch',$success,microtime(true)-$start,$key,null));
+        $val   = apcu_fetch($key, $success);
+        self::addquery(array('fetch', $success, microtime(true) - $start, $key, null));
         return ($success ? $val : $default);
-    }
+
+    }//end fetch()
+
 
     public static function multiFetch($keys)
     {
         $return = array();
         foreach ($keys as $key) {
             $start = microtime(true);
-            $val = apcu_fetch($key, $success);
-            self::addquery(array('fetch',$success,microtime(true)-$start,$key,null));
+            $val   = apcu_fetch($key, $success);
+            self::addquery(array('fetch', $success, microtime(true) - $start, $key, null));
             if ($success) {
                 $return[$key] = $val;
             }
         }
+
         return $return;
-    }
-    
+
+    }//end multiFetch()
+
+
     public static function fetchPrefixKeys($prefix, $keys)
     {
         $fetch = array();
         foreach ($keys as $k) {
             $fetch[] = $prefix.$k;
         }
-            
+
         return self::multiFetch($fetch);
-    }
-    
+
+    }//end fetchPrefixKeys()
+
+
     public static function delete($key)
     {
-        $start = microtime(true);
+        $start   = microtime(true);
         $success = apcu_delete($key);
-        self::addquery(array('delete',$success,microtime(true)-$start,$key,null));
+        self::addquery(array('delete', $success, microtime(true) - $start, $key, null));
         return $success;
-    }
-    
+
+    }//end delete()
+
+
     public static function clearUserCache()
     {
-        $start = microtime(true);
+        $start   = microtime(true);
         $success = apcu_clear_cache('user');
-        self::addquery(array('clear user cache',$success,microtime(true)-$start,null,null));
+        self::addquery(array('clear user cache', $success, microtime(true) - $start, null, null));
         return $success;
-    }
-    
+
+    }//end clearUserCache()
+
+
     public static function clearCache()
     {
-        $start = microtime(true);
+        $start   = microtime(true);
         $success = apcu_clear_cache();
-        self::addquery(array('clear cache',$success,microtime(true)-$start,null,null));
+        self::addquery(array('clear cache', $success, microtime(true) - $start, null, null));
         return $success;
-    }
-}
+
+    }//end clearCache()
+}//end class

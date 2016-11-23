@@ -45,7 +45,9 @@ abstract class MigrationManager
         } else {
             self::$db = $db;
         }
-    }
+
+    }//end setDb()
+
 
     public static function goToLatest()
     {
@@ -56,16 +58,19 @@ abstract class MigrationManager
         if (self::$maxregistered != self::dotName()) {
             self::doUpgrades();
         }
-    }
+
+    }//end goToLatest()
+
 
     abstract protected static function buildChain();
+
 
     protected static function dotName($maj = null, $min = null, $rel = null, $build = null)
     {
         if ($maj === null) {
-            $maj = static::$major ? static::$major : 0;
-            $min = static::$minor ? static::$minor : 0;
-            $rel = static::$release ? static::$release : 0;
+            $maj   = static::$major ? static::$major : 0;
+            $min   = static::$minor ? static::$minor : 0;
+            $rel   = static::$release ? static::$release : 0;
             $build = static::$build ? static::$build : null;
         }
 
@@ -76,20 +81,24 @@ abstract class MigrationManager
         } else {
             return "$maj.$min";
         }
-    }
+
+    }//end dotName()
+
 
     protected static function explodeDotName($dotName)
     {
         $partA = explode('-', $dotName, 2);
         $build = isset($partA[1]) ? $partA[1] : null;
-        $partB =  explode('.', $partA[0], 3);
+        $partB = explode('.', $partA[0], 3);
         return [
-            'major' => $partB[0],
-            'minor' => $partB[1],
-            'release' => isset($partB[2]) ? $partB[2] : 0,
-            'build' => $build
-        ];
-    }
+                'major'   => $partB[0],
+                'minor'   => $partB[1],
+                'release' => isset($partB[2]) ? $partB[2] : 0,
+                'build'   => $build,
+               ];
+
+    }//end explodeDotName()
+
 
     protected static function checkVersion()
     {
@@ -119,35 +128,40 @@ abstract class MigrationManager
                 LIMIT 1"
             )->fetchRow();
 
-            static::$major = $version['major'];
-            static::$minor = $version['minor'];
+            static::$major   = $version['major'];
+            static::$minor   = $version['minor'];
             static::$release = $version['rel'];
-            static::$build = $version['build'];
-        }
-    }
+            static::$build   = $version['build'];
+        }//end if
+
+    }//end checkVersion()
+
 
     protected static function register($dotName, $class)
     {
-        static::$maxregistered = $dotName;
-        static::$upgradeChain[] = ['name'=>$dotName, 'class'=>$class];
-    }
+        static::$maxregistered  = $dotName;
+        static::$upgradeChain[] = [
+                                   'name'  => $dotName,
+                                   'class' => $class,
+                                  ];
+
+    }//end register()
+
 
     protected static function doUpgrades()
     {
         // self::out(var_export(self::$upgradeChain, true));
         foreach (self::$upgradeChain as $upgrade) {
-            $name = $upgrade['name'];
+            $name  = $upgrade['name'];
             $class = $upgrade['class'];
 
             $dotName = self::explodeDotName($name);
-            $maj = $dotName['major'];
-            $min = $dotName['minor'];
-            $rel = $dotName['release'];
-            $bui = $dotName['build'];
-
+            $maj     = $dotName['major'];
+            $min     = $dotName['minor'];
+            $rel     = $dotName['release'];
+            $bui     = $dotName['build'];
 
             // self::out($name . ' --- ' . $class . ' --- ' . self::$maxregistered);
-
             $upgrade = false;
             if ($maj > static::$major) {
                 $upgrade = true;
@@ -175,13 +189,13 @@ abstract class MigrationManager
             }
 
             // self::out($name . ' --- ' . self::$maxregistered);
-
             $migration = new $class($name);
-            $worked = $migration->up();
+            $worked    = $migration->up();
 
             if (!$worked) {
                 $migration->out("UPGRADE FAILED");
-                return; //in case migrations are dependent, return here
+                return;
+                // in case migrations are dependent, return here
             }
 
             $version_id = self::$db->pquery(
@@ -194,11 +208,14 @@ abstract class MigrationManager
             )->insertid();
 
             self::out("UPGRADED TO $name");
-        }
-    }
+        }//end foreach
+
+    }//end doUpgrades()
+
 
     public static function out($string)
     {
         trigger_error($string, E_USER_NOTICE);
-    }
-}
+
+    }//end out()
+}//end class

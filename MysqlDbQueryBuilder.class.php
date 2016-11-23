@@ -32,23 +32,30 @@ class MysqlDbQueryBuilder
     public $query;
     private static $db;
 
+
     public function __construct($db = null)
     {
         $this->setDb($db);
-    }
+
+    }//end __construct()
+
 
     public function run()
     {
         if ($this->query) {
             self::$db->query($this->query);
         }
-    }
+
+    }//end run()
+
 
     public function setDb($db = null)
     {
         if ($db == null) {
             static::$db = Container::getDb();
         }
+
         static::$db = $db;
-    }
-}
+
+    }//end setDb()
+}//end class
