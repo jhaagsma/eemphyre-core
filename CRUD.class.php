@@ -68,14 +68,12 @@ abstract class CRUD
     public function initialize()
     {
         if (!static::$tableName) {
-            trigger_error('TABLE NAME NOT SET IN ' . get_class($this));
+            trigger_error('TABLE NAME NOT SET IN '.get_class($this));
         }
         $pk = static::$primaryKey;
         //changed $info to $this->_data; adopting FuelPHP ideas
         $this->_data = static::$db->pquery(
-            'SELECT `' . static::$tableName . '`.* '.
-            'FROM `'  . static::$tableName .
-            '` WHERE `' . static::$primaryKey . '`=?',
+            'SELECT `'.static::$tableName.'`.* '.'FROM `'.static::$tableName.'` WHERE `'.static::$primaryKey.'`=?',
             $this->$pk
         )->fetchRow();
 
@@ -126,8 +124,7 @@ abstract class CRUD
             $call_args[] = $value;
         }
 
-        $query = "UPDATE `".static::$tableName."` SET ".implode(", ", $bits).
-            ' WHERE `' . static::$primaryKey . '`=?';
+        $query = "UPDATE `".static::$tableName."` SET ".implode(", ", $bits).' WHERE `'.static::$primaryKey.'`=?';
         $call_args[0] = $query;
         $call_args[] = $this->$pk;
 
@@ -171,9 +168,7 @@ abstract class CRUD
         $dir = ($asc ? 'ASC' : 'DESC');
 
         return static::$db->pquery(
-            'SELECT `' . static::$primaryKey .
-            '` FROM `' . static::$tableName .
-            '` ORDER BY `'.static::$primaryKey.'` '.$dir
+            'SELECT `'.static::$primaryKey.'` FROM `'.static::$tableName.'` ORDER BY `'.static::$primaryKey.'` '.$dir
         )->fetchFieldSet();
     }
 
@@ -184,10 +179,7 @@ abstract class CRUD
         $dir = ($asc ? 'ASC' : 'DESC');
 
         return static::$db->pquery(
-            'SELECT `'.static::$primaryKey.
-            '` FROM `'.static::$tableName.
-            '` WHERE `'.$column.'`=?'.
-            ' ORDER BY `'.static::$primaryKey.'` '.$dir,
+            'SELECT `'.static::$primaryKey.'` FROM `'.static::$tableName.'` WHERE `'.$column.'`=?'.' ORDER BY `'.static::$primaryKey.'` '.$dir,
             $value
         )->fetchFieldSet();
 
@@ -204,11 +196,7 @@ abstract class CRUD
         }
 
         return static::$db->pquery(
-            'SELECT `'.static::$primaryKey.
-            '` FROM `'.static::$tableName.
-            '` WHERE `'.static::$primaryKey.
-            '` IN(?) AND `'.$column.'`=?'.
-            ' ORDER BY `'.static::$primaryKey.'` '.$dir,
+            'SELECT `'.static::$primaryKey.'` FROM `'.static::$tableName.'` WHERE `'.static::$primaryKey.'` IN(?) AND `'.$column.'`=?'.' ORDER BY `'.static::$primaryKey.'` '.$dir,
             $keys,
             $value
         )->fetchFieldSet();
@@ -226,9 +214,7 @@ abstract class CRUD
         }
 
         return static::$db->pquery(
-            'SELECT `' . static::$primaryKey .
-            '` FROM `' . static::$tableName .
-            '` WHERE `' . static::$primaryKey . '`=?',
+            'SELECT `'.static::$primaryKey.'` FROM `'.static::$tableName.'` WHERE `'.static::$primaryKey.'`=?',
             $primary_key
         )->fetchField();
     }

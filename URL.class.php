@@ -38,14 +38,14 @@ class URL
     public static function redirect($loc)
     {
         header("Location: $loc", true, 303);
-        echo "Redirecting to: <a href='" . htmlentities($loc) . "'>$loc</a>";
+        echo "Redirecting to: <a href='".htmlentities($loc)."'>$loc</a>";
         exit;
     }
 
     public static function moved($loc)
     {
         header("Location: $loc", true, 301);
-        echo "Redirecting to: <a href='" . htmlentities($loc) . "'>$loc</a>";
+        echo "Redirecting to: <a href='".htmlentities($loc)."'>$loc</a>";
         exit;
     }
 
@@ -78,7 +78,7 @@ class URL
 
     public static function getDomainName()
     {
-        return self::getUrlPart(-2) . '.' . self::getUrlPart(-1);
+        return self::getUrlPart(-2).'.'.self::getUrlPart(-1);
     }
 
     public static function oneLessSubdomain($domain_name = null)
@@ -105,7 +105,7 @@ class URL
                 $i++;
             }
         }
-        $url = '/' . implode('/', $url);
+        $url = '/'.implode('/', $url);
         return $url;
     }
 
@@ -120,11 +120,11 @@ class URL
         foreach ($data as $key => $val) {
             if (is_array($val)) {
                 foreach ($val as $subkey => $subval) {
-                    $get .= '&' . urlencode($key) . '[' . $subkey . ']=' . urlencode($subval);
+                    $get .= '&'.urlencode($key).'['.$subkey.']='.urlencode($subval);
                 }
                 continue;
             }
-            $get .= '&' . urlencode($key) . '=' . urlencode($val);
+            $get .= '&'.urlencode($key).'='.urlencode($val);
         }
         return $get;
     }

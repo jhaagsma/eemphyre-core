@@ -70,7 +70,7 @@ abstract class Session
             $expire
         )->insertid();
 
-        setcookie(COOKIE_NAME, "$user_id:$key", 0, "/", '.' . URL::getDomainName(), false, true);
+        setcookie(COOKIE_NAME, "$user_id:$key", 0, "/", '.'.URL::getDomainName(), false, true);
     }
 
     public static function parseCookie()
@@ -128,7 +128,7 @@ abstract class Session
 
     public static function activeSession($force = false)
     {
-        $activerow = \EmPHyre\Cache::fetch(APC_ACTIVE_SESSION_PREFIX . self::$cookieUser);
+        $activerow = \EmPHyre\Cache::fetch(APC_ACTIVE_SESSION_PREFIX.self::$cookieUser);
         if (!$activerow || $activerow['cookieval'] != self::$cookieKey || $force) {
             $activerow = self::$db->pquery(
                 'SELECT login_id, cookieval, expiretime FROM active_sessions WHERE user_id = ? and `cookieval` = ?',
@@ -156,7 +156,7 @@ abstract class Session
             \EmPHyre\Cache::store(APC_LAST_CLEAR_SESSION, true, 120);
             $clearids = self::$db->pquery('SELECT * FROM active_sessions WHERE expiretime < ?', time())->fetchRowSet();
             foreach ($clearids as $clearid) {
-                \EmPHyre\Cache::delete(APC_ACTIVE_SESSION_PREFIX . $clearid['user_id']);
+                \EmPHyre\Cache::delete(APC_ACTIVE_SESSION_PREFIX.$clearid['user_id']);
                 self::$db->pquery('DELETE FROM active_sessions WHERE login_id = ?', $clearid['login_id']);
             }
             return true;
@@ -182,18 +182,18 @@ abstract class Session
             )->affectedRows();
 
             if (!$good) {
-                \EmPHyre\Cache::delete(APC_ACTIVE_SESSION_PREFIX . self::$cookieUser);
+                \EmPHyre\Cache::delete(APC_ACTIVE_SESSION_PREFIX.self::$cookieUser);
                 return;
             }
             self::$lastreal = $activerow['lastreal'] = time();
         }
-        \EmPHyre\Cache::store(APC_ACTIVE_SESSION_PREFIX . self::$cookieUser, $activerow, 120);
+        \EmPHyre\Cache::store(APC_ACTIVE_SESSION_PREFIX.self::$cookieUser, $activerow, 120);
 
         return;
     }
 
     public static function clearActiveSession()
     {
-        \EmPHyre\Cache::delete(APC_ACTIVE_SESSION_PREFIX . self::$cookieUser);
+        \EmPHyre\Cache::delete(APC_ACTIVE_SESSION_PREFIX.self::$cookieUser);
     }
 }

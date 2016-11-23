@@ -66,7 +66,7 @@ class MysqlDb
         if (!$this->persist) {
             $this->con = new \mysqli($this->host, $this->user, $this->pass);
         } else {
-            $this->con = new \mysqli('p:' . $this->host, $this->user, $this->pass);
+            $this->con = new \mysqli('p:'.$this->host, $this->user, $this->pass);
         }
 
         if ($this->con->connect_errno) {
@@ -92,8 +92,8 @@ class MysqlDb
         }
 
         if (!$this->canConnect()) {
-            $connErr = 'Connect Error (' . $this->con->connect_errno . ') ';
-            trigger_error($connErr . $this->con->connect_error, E_USER_ERROR);
+            $connErr = 'Connect Error ('.$this->con->connect_errno.') ';
+            trigger_error($connErr.$this->con->connect_error, E_USER_ERROR);
             $this->con = null;
             exit; //if the redirect doesn't exist??
         }
@@ -119,7 +119,7 @@ class MysqlDb
     /**
      * trims files in a column
      *
-     * @param  array  $files an array of filenames
+     * @param  array $files an array of filenames
      *
      * @return [type]        [description]
      */
@@ -138,7 +138,7 @@ class MysqlDb
         }
 
         foreach ($list as $l => $f) {
-            $list[ $l] = implode('/', $f);
+            $list[$l] = implode('/', $f);
         }
 
         return $list;
@@ -258,7 +258,7 @@ class MysqlDb
         }
 
         for ($i = 0; $i < count($args); $i++) {
-            $query .= $this->preparePart($args[$i]) . $parts[$i];
+            $query .= $this->preparePart($args[$i]).$parts[$i];
         }
 
         return $query;
@@ -280,7 +280,7 @@ class MysqlDb
                 if (is_numeric($part)) {
                     return $part;
                 }
-                return "'" . $this->con->real_escape_string($part) . "'"; // mysql_real_escape_string($part, $this->con)
+                return "'".$this->con->real_escape_string($part)."'"; // mysql_real_escape_string($part, $this->con)
             case 'boolean':
                 return ($part ? 1 : 0);
             case 'NULL':
@@ -325,7 +325,7 @@ class MysqlDb
             }
         }
         $inid = $this->pquery(
-            "UPDATE " . $table . " SET max = LAST_INSERT_ID(max+1)
+            "UPDATE ".$table." SET max = LAST_INSERT_ID(max+1)
             WHERE id1 = ? &&
             id2 = ? &&
             area = ?",
@@ -343,7 +343,7 @@ class MysqlDb
         }
 
         $ignore = $this->pquery(
-            "INSERT IGNORE INTO " . $table . "
+            "INSERT IGNORE INTO ".$table."
             SET max = ?, id1 = ?, id2 = ?, area = ?",
             $start,
             $id1,

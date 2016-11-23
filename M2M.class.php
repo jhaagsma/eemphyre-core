@@ -63,7 +63,7 @@ class M2M
     public function initialize()
     {
         if (!static::$tableName) {
-            trigger_error('TABLE NAME NOT SET IN ' . get_class($this));
+            trigger_error('TABLE NAME NOT SET IN '.get_class($this));
         }
     }
 
@@ -75,9 +75,7 @@ class M2M
 
         static::db();
         return static::$db->pquery(
-            "SELECT 1 FROM `".static::$tableName."` WHERE `".
-            static::$primaryKey_1."`=? AND `".
-            static::$primaryKey_2."` IN(?)",
+            "SELECT 1 FROM `".static::$tableName."` WHERE `".static::$primaryKey_1."`=? AND `".static::$primaryKey_2."` IN(?)",
             $pk1_value,
             $pk2_array
         )->fetchField();
@@ -87,11 +85,7 @@ class M2M
     {
         static::db();
         return static::$db->pquery(
-            "SELECT `".
-            ($use_pk2 ? static::$primaryKey_1 : static::$primaryKey_2 ).
-            "` FROM `".static::$tableName."` WHERE `".
-            ($use_pk2 ? static::$primaryKey_2 : static::$primaryKey_1 ).
-            "`=?",
+            "SELECT `".($use_pk2 ? static::$primaryKey_1 : static::$primaryKey_2 )."` FROM `".static::$tableName."` WHERE `".($use_pk2 ? static::$primaryKey_2 : static::$primaryKey_1 )."`=?",
             $pk_value
         )->fetchFieldSet();
     }
@@ -100,11 +94,7 @@ class M2M
     {
         static::db();
         return static::$db->pquery(
-            "SELECT COUNT(`".
-            ($use_pk2 ? static::$primaryKey_1 : static::$primaryKey_2 ).
-            "`) FROM `".static::$tableName."` WHERE `".
-            ($use_pk2 ? static::$primaryKey_2 : static::$primaryKey_1 ).
-            "`=?",
+            "SELECT COUNT(`".($use_pk2 ? static::$primaryKey_1 : static::$primaryKey_2 )."`) FROM `".static::$tableName."` WHERE `".($use_pk2 ? static::$primaryKey_2 : static::$primaryKey_1 )."`=?",
             $pk_value
         )->fetchField();
     }
@@ -113,9 +103,7 @@ class M2M
     {
         static::db();
         return static::$db->pquery(
-            "INSERT INTO `".static::$tableName.'` SET `'.
-            static::$primaryKey_1."`=?, `".
-            static::$primaryKey_2."`=?",
+            "INSERT INTO `".static::$tableName.'` SET `'.static::$primaryKey_1."`=?, `".static::$primaryKey_2."`=?",
             $pk1_value,
             $pk2_value
         )->affectedRows();
@@ -125,9 +113,7 @@ class M2M
     {
         static::db();
         return static::$db->pquery(
-            "DELETE FROM `".static::$tableName.'` WHERE `'.
-            static::$primaryKey_1."`=? AND `".
-            static::$primaryKey_2."`=?",
+            "DELETE FROM `".static::$tableName.'` WHERE `'.static::$primaryKey_1."`=? AND `".static::$primaryKey_2."`=?",
             $pk1_value,
             $pk2_value
         )->affectedRows();
