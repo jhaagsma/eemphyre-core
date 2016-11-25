@@ -30,7 +30,7 @@
  */
 
 //THIS IS HOW LONG WE WANT LOGIN SESSIONS TO LAST IN SECONDS (obivously)
-define('SESSION_TIME', 16*3600);
+define('SESSION_TIME', 16 * 3600);
 // define('COOKIE_NAME', 'emphyre');
 // define('APC_LAST_CLEAR_SESSION', 'em:lcs');
 // define('APC_ACTIVE_SESSION_PREFIX', 'em:as-');
@@ -40,18 +40,18 @@ abstract class Session
 {
     private static $db;
     private static $cookieUser = null;
-    private static $cookieKey = null;
+    private static $cookieKey  = null;
 
-    private static $login_id = null;
+    private static $login_id   = null;
     private static $expiretime = null;
-    private static $lastreal = null;
+    private static $lastreal   = null;
 
     public static function newSession($user_id)
     {
         self::$db = Container::getDb();
 
         $time = time();
-        $key = md5(rand());
+        $key  = md5(rand());
 
         //THIS IS HOW LONG WE WANT LOGIN SESSIONS TO LAST IN SECONDS (obivously);
         $expire = $time + SESSION_TIME;
@@ -80,9 +80,9 @@ abstract class Session
             return null;
         }
 
-        $cookiebits = explode(":", $cookiebits);
+        $cookiebits       = explode(":", $cookiebits);
         self::$cookieUser = $cookiebits[0];
-        self::$cookieKey = $cookiebits[1];
+        self::$cookieKey  = $cookiebits[1];
     }
 
     public static function doUserCheck()
@@ -122,6 +122,7 @@ abstract class Session
             //ALL of the user's sessions
             self::$db->pquery("DELETE FROM active_sessions WHERE user_id = ?", self::$cookieUser);
         }
+
         //clear the cookie to nothing
         setcookie(COOKIE_NAME, '', 1);
     }
@@ -139,18 +140,20 @@ abstract class Session
             if (!$activerow) {
                 return false;
             }
+
             $activerow['lastreal'] = 0;
         }
-        self::$login_id = $activerow['login_id'];
+
+        self::$login_id   = $activerow['login_id'];
         self::$expiretime = $activerow['expiretime'];
-        self::$lastreal = $activerow['lastreal'];
+        self::$lastreal   = $activerow['lastreal'];
 
         return self::$expiretime > time() ? true : false;
     }
 
     public static function clearOldSessions($forced = false)
     {
-        self::$db = Container::getDb();
+        self::$db    = Container::getDb();
         $not_due_yet = \EmPHyre\Cache::fetch(APC_LAST_CLEAR_SESSION);
         if (!$not_due_yet || $forced) {
             \EmPHyre\Cache::store(APC_LAST_CLEAR_SESSION, true, 120);
@@ -159,18 +162,20 @@ abstract class Session
                 \EmPHyre\Cache::delete(APC_ACTIVE_SESSION_PREFIX.$clearid['user_id']);
                 self::$db->pquery('DELETE FROM active_sessions WHERE login_id = ?', $clearid['login_id']);
             }
+
             return true;
         }
+
         return false;
     }
 
     private static function updateActiveSession($expiretime)
     {
         $activerow = array(
-            'lastreal'=>self::$lastreal,
-            'login_id'=>self::$login_id,
-            'cookieval'=>self::$cookieKey,
-            'expiretime'=>$expiretime
+            'lastreal' => self::$lastreal,
+            'login_id' => self::$login_id,
+            'cookieval' => self::$cookieKey,
+            'expiretime' => $expiretime
         );
 
         self::$db = Container::getDb();
@@ -185,8 +190,10 @@ abstract class Session
                 \EmPHyre\Cache::delete(APC_ACTIVE_SESSION_PREFIX.self::$cookieUser);
                 return;
             }
+
             self::$lastreal = $activerow['lastreal'] = time();
         }
+
         \EmPHyre\Cache::store(APC_ACTIVE_SESSION_PREFIX.self::$cookieUser, $activerow, 120);
 
         return;

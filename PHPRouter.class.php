@@ -562,9 +562,9 @@ class PHPRouter
         $m   = (substr_count($ret, "m") + substr_count($ret, "M"));
         $ret = str_ireplace("k", "", $ret);
         $ret = str_ireplace("m", "", $ret);
-        $ret = ((float) $ret * (pow(1000, $k)));
-        $ret = ((float) $ret * (pow(1000000, $m)));
-        return (int) $ret;
+        $ret = ((float)$ret * (pow(1000, $k)));
+        $ret = ((float)$ret * (pow(1000000, $m)));
+        return (int)$ret;
 
     }//end doSiPrefixes()
 }//end class

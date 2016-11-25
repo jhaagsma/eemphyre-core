@@ -41,12 +41,12 @@ class MysqlDbResult
 
     public function __construct($result, $dbcon, $numrows, $affectedRows, $insertid, $qt)
     {
-        $this->dbcon = $dbcon;
-        $this->result = $result;
-        $this->numrows = $numrows;
+        $this->dbcon        = $dbcon;
+        $this->result       = $result;
+        $this->numrows      = $numrows;
         $this->affectedRows = $affectedRows;
-        $this->insertid = $insertid;
-        $this->querytime = $qt;
+        $this->insertid     = $insertid;
+        $this->querytime    = $qt;
     }
 
     public function __destruct()

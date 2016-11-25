@@ -22,7 +22,7 @@
  * @author   Julian Haagsma <jhaagsma@gmail.com>
  * @author   Dave McVittie <dave.mcvittie@gmail.com>
  * @author   Joe Obbish <slagpit@earthempires.com>
- * @license  All files are licensed under the MIT License.
+ * @license  https://opensource.org/licenses/MIT The MIT License (MIT)
  * @link     https://github.com/jhaagsma/emPHyre
  * @since    Pulled out of MysqlDb.class.php 2016-03-15
  */
@@ -30,14 +30,13 @@
 
 // should we define these in the Container, or in the Cache object, perhaps...?
 // define('APC_USER_PREPEND', 'd3-ul-');
+
 /**
  * User Class
  *
- * @category CRUD
+ * @category Database_Interface
  * @package  EmPhyre
  * @author   Julian Haagsma <jhaagsma@gmail.com>
- * @license  https://opensource.org/licenses/MIT The MIT License (MIT)
- * @link     https://github.com/jhaagsma/emPHyre
  * @since    Nov 2016
  */
 class User extends \EmPHyre\CRUD
@@ -45,14 +44,18 @@ class User extends \EmPHyre\CRUD
     protected static $db;
     protected static $tableName  = 'users';
     protected static $primaryKey = 'user_id';
-    private static $apcu_userline;
+    private static $apcuUserline;
 
-
+    /**
+     * Make a user, from a user_id
+     *
+     * @param [type] $user_id [description]
+     */
     public function __construct($user_id)
     {
         parent::__construct($user_id);
 
-        // ensure APC_USER_PREPEND is defined
+        // ensure APC_USER_PREPEND is defined!
         self::definePrependAPC();
 
         // this is a hack for when the user_id isn't defined
@@ -61,10 +64,16 @@ class User extends \EmPHyre\CRUD
         // so better to handle it than not?
         $this->user_name = null;
         $this->uuid      = null;
-
     }//end __construct()
 
 
+    /**
+     * Comment
+     *
+     * @param string $prepend The string to prepend the APC line with
+     *
+     * @return null
+     */
     public static function definePrependAPC($prepend = null)
     {
         // this needs to be called so that we don't conflict with other projects
@@ -72,8 +81,7 @@ class User extends \EmPHyre\CRUD
             $prepend = ($prepend ? $prepend.'-' : null);
             define('APC_USER_PREPEND', $prepend.'ul-');
         }
-
-    }//end definePrependAPC()
+    }
 
 
     public static function getUserIdFromName($user_name = null)
@@ -83,10 +91,16 @@ class User extends \EmPHyre\CRUD
             "SELECT user_id FROM users WHERE user_name = ?",
             $user_name
         )->fetchField();
-
     }//end getUserIdFromName()
 
 
+    /**
+     * Get the user_id from the UUID
+     *
+     * @param [type] $uuid [description]
+     *
+     * @return [type]       [description]
+     */
     public static function getUserIdFromUUID($uuid = null)
     {
         $uuid     = URL::decode64($uuid);
@@ -95,7 +109,6 @@ class User extends \EmPHyre\CRUD
             "SELECT user_id FROM users WHERE uuid = ?",
             $uuid
         )->fetchField();
-
     }//end getUserIdFromUUID()
 
 
@@ -112,14 +125,14 @@ class User extends \EmPHyre\CRUD
         $users       = $permissions->getM2M($group_id, true);
 
         return self::filterPKArray($users, 'disabled', false);
-
     }//end users()
 
 
     public static function addUser($user_name, $pw1, $pw2)
     {
-        if ($error = Validate::email($user_name)) {
-            return $error;
+        $check = Validate::email($user_name);
+        if ($check->isError()) {
+            return $check;
         }
 
         self::$db = Container::getDb();
@@ -152,14 +165,12 @@ class User extends \EmPHyre\CRUD
         }
 
         return new Result('ADDED_USER', $user_id, true);
-
     }//end addUser()
 
 
     public function isDisabled()
     {
         return $this->disabled ? true : false;
-
     }//end isDisabled()
 
 
@@ -177,7 +188,6 @@ class User extends \EmPHyre\CRUD
 
         // this is a success because this function is used for finding collisions
         return new Result('NOEXIST_USER', $user_name, true);
-
     }//end checkExists()
 
 
@@ -218,7 +228,6 @@ class User extends \EmPHyre\CRUD
         }
 
         return new Result('EDITED_USER', $this->getId(), true);
-
     }//end edit()
 
 
@@ -231,7 +240,6 @@ class User extends \EmPHyre\CRUD
         }
 
         return new Result('DISABLED_USER', $this->getId(), true);
-
     }//end disableUser()
 
 
@@ -239,7 +247,6 @@ class User extends \EmPHyre\CRUD
     {
         $cryptPass = \EmPHyre\Password::cryptSHA512($password, $this->salt);
         return $cryptPass == $this->password ? true : false;
-
     }//end checkPassword()
 
 
@@ -253,7 +260,6 @@ class User extends \EmPHyre\CRUD
             $ip
         );
         return;
-
     }//end loggedIn()
 
 
@@ -269,7 +275,6 @@ class User extends \EmPHyre\CRUD
         // that would be seriously messed up
         unset($this->ul['user_id']);
         array_to_obj_vals($this, $this->ul);
-
     }//end getValues()
 
 
@@ -277,7 +282,6 @@ class User extends \EmPHyre\CRUD
     {
         $this->apcDelUserline();
         $this->getValues();
-
     }//end refreshValues()
 
 
@@ -293,7 +297,6 @@ class User extends \EmPHyre\CRUD
         } else {
             return new Result("UNCHANGED_USER", $this->getId(), false, false);
         }
-
     }//end commit()
 
 
@@ -312,14 +315,12 @@ class User extends \EmPHyre\CRUD
         }
 
         return ($column ? $user_line[$column] : $user_line);
-
     }//end apcUserline()
 
 
     private function apcDelUserline()
     {
         \EmPHyre\Cache::Delete(self::$apcu_userline);
-
     }//end apcDelUserline()
 
 
@@ -331,7 +332,6 @@ class User extends \EmPHyre\CRUD
                 WHERE user_id = ? ORDER BY login_id DESC LIMIT 1",
             $this->getId()
         )->fetchField();
-
     }//end lastLogin()
 
 
@@ -343,8 +343,7 @@ class User extends \EmPHyre\CRUD
             $this->getId()
         )->fetchField();
 
-        return long2ip((float) $long);
-
+        return long2ip((float)$long);
     }//end lastIP()
 
 
@@ -365,14 +364,12 @@ class User extends \EmPHyre\CRUD
         }
 
         return new Result('EDITED_PASSWORD', $this->getId(), true);
-
     }//end changePassword()
 
 
     public function groups()
     {
         return Group::userGroups($this->getId());
-
     }//end groups()
 
 
@@ -382,7 +379,6 @@ class User extends \EmPHyre\CRUD
             $this->getId(),
             $newPermissions
         );
-
     }//end editGroups()
 
 
@@ -390,7 +386,6 @@ class User extends \EmPHyre\CRUD
     {
         return $this->user_name;
         // for now
-
     }//end display()
 
 
@@ -398,13 +393,11 @@ class User extends \EmPHyre\CRUD
     {
         // this function will have an analogue in each class
         return $this->user_id;
-
     }//end getId()
 
 
     public function getUUID()
     {
         return URL::encode64($this->uuid);
-
     }//end getUUID()
 }//end class

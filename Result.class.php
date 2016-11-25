@@ -63,7 +63,12 @@ class Result
 
     }//end restOfTheBits()
 
-    protected function patterned_message()
+    /**
+     * Check the $type for a pattern
+     *
+     * @return String|Bool The message, or FALSE
+     */
+    protected function patternedMessage()
     {
         $bits = explode('_', $this->type);
         if ($bits[0] == 'ADDED') {
@@ -100,7 +105,7 @@ class Result
         // and perhaps call a global function from this file in the
         // Result __construct (with some sort of "is_defined")
         // to load all the custom error messages.
-        $patterned = $this->patterned_message();
+        $patterned = $this->patternedMessage();
         if ($patterned !== false) {
             return $patterned;
         }

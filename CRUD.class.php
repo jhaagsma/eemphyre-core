@@ -31,9 +31,9 @@ namespace EmPHyre;
 abstract class CRUD
 {
     protected static $db; //the database
-    protected static $tableName = null;
+    protected static $tableName  = null;
     protected static $primaryKey = 'id';
-    protected $_data;
+    protected $data;
 
 
     //this from FuelPHP
@@ -45,15 +45,22 @@ abstract class CRUD
     public function __construct($primary_key = 0)
     {
         //do nothing, for now
-        $pk = static::$primaryKey;
+        $pk        = static::$primaryKey;
         $this->$pk = $primary_key;
     }
 
+    /**
+     * Set the database...
+     *
+     * @param Object $db A MysqlDb object
+     */
     public function setDb($db = null)
     {
         if ($db == null) {
             static::$db = Container::getDb();
         }
+
+
         static::$db = $db;
     }
 
@@ -70,6 +77,7 @@ abstract class CRUD
         if (!static::$tableName) {
             trigger_error('TABLE NAME NOT SET IN '.get_class($this));
         }
+
         $pk = static::$primaryKey;
         //changed $info to $this->_data; adopting FuelPHP ideas
         $this->_data = static::$db->pquery(
@@ -85,6 +93,7 @@ abstract class CRUD
         if (!isset($this->_data)) {
             return;
         }
+
         //implements array_to_obj_values from general.php; by Slagpit
         foreach ($this->_data as $key => $value) {
             $this->$key = $value;
@@ -94,6 +103,7 @@ abstract class CRUD
     protected function commit()
     {
         $update = [];
+
         $pk = static::$primaryKey;
 
         foreach ($this->_data as $key => $value) {
@@ -116,17 +126,20 @@ abstract class CRUD
             return;
         }
 
-        $call_args = $bits = [];
+        $call_args    = $bits = [];
         $call_args[0] = null;
 
         foreach ($update as $key => $value) {
-            $bits[] = "`$key` = ?";
+            $bits[]      = "`$key` = ?";
             $call_args[] = $value;
         }
 
-        $query = "UPDATE `".static::$tableName."` SET ".implode(", ", $bits).' WHERE `'.static::$primaryKey.'`=?';
+        $query = "UPDATE `".static::$tableName
+            ."` SET ".implode(", ", $bits)
+            .' WHERE `'.static::$primaryKey.'`=?';
+
         $call_args[0] = $query;
-        $call_args[] = $this->$pk;
+        $call_args[]  = $this->$pk;
 
 
         $updated = static::$db->pqueryArray($call_args)->affectedRows();
@@ -146,15 +159,16 @@ abstract class CRUD
             return;
         }
 
-        $call_args = $bits = [];
+        $call_args    = $bits = [];
         $call_args[0] = null;
 
         foreach ($keyValue as $key => $value) {
-            $bits[] = "`$key` = ?";
+            $bits[]      = "`$key` = ?";
             $call_args[] = $value;
         }
 
         $query = "INSERT INTO `".static::$tableName."` SET ".implode(", ", $bits);
+
         $call_args[0] = $query;
 
         //return insertid; not sure what to do for insert fail...
@@ -179,7 +193,9 @@ abstract class CRUD
         $dir = ($asc ? 'ASC' : 'DESC');
 
         return static::$db->pquery(
-            'SELECT `'.static::$primaryKey.'` FROM `'.static::$tableName.'` WHERE `'.$column.'`=?'.' ORDER BY `'.static::$primaryKey.'` '.$dir,
+            'SELECT `'.static::$primaryKey.'` FROM `'
+            .static::$tableName.'` WHERE `'.$column.'`=?'
+            .' ORDER BY `'.static::$primaryKey.'` '.$dir,
             $value
         )->fetchFieldSet();
 
@@ -196,7 +212,10 @@ abstract class CRUD
         }
 
         return static::$db->pquery(
-            'SELECT `'.static::$primaryKey.'` FROM `'.static::$tableName.'` WHERE `'.static::$primaryKey.'` IN(?) AND `'.$column.'`=?'.' ORDER BY `'.static::$primaryKey.'` '.$dir,
+            'SELECT `'.static::$primaryKey
+            .'` FROM `'.static::$tableName
+            .'` WHERE `'.static::$primaryKey.'` IN(?) AND `'.$column.'`=?'
+            .' ORDER BY `'.static::$primaryKey.'` '.$dir,
             $keys,
             $value
         )->fetchFieldSet();
@@ -226,6 +245,7 @@ abstract class CRUD
         while ($check && static::checkUUIDCollision($uuid, $uuidColumn)) {
             $uuid = static::$db->newUUID();
         }
+
         return $uuid;
     }
 
@@ -283,6 +303,7 @@ abstract class CRUD
         //default return the primary key
         return $this->getId();
     }
+
 
     public function getId()
     {

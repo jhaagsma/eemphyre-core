@@ -43,6 +43,7 @@ class Cache
     {
         // $this->queries = array();
         // $this->count = 0;
+
     }//end __construct()
 
 

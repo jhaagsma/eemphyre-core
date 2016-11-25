@@ -62,8 +62,8 @@ class URL
     public static function getUrlPart($token_num)
     {
         $parts = explode('.', $_SERVER['SERVER_NAME']);
-        if ($token_num<0) {
-            return def($parts[count($parts)+$token_num], false);
+        if ($token_num < 0) {
+            return def($parts[count($parts) + $token_num], false);
         } else {
             return def($parts[$token_num], false);
         }
@@ -95,8 +95,8 @@ class URL
 
     public static function parent($url, $levels = 1)
     {
-        $url = trim($url, '/');
-        $url = explode('/', $url);
+        $url   = trim($url, '/');
+        $url   = explode('/', $url);
         $count = count($url);
         if ($count > $levels - 1) {
             $i = 1;
@@ -105,6 +105,7 @@ class URL
                 $i++;
             }
         }
+
         $url = '/'.implode('/', $url);
         return $url;
     }
@@ -122,10 +123,13 @@ class URL
                 foreach ($val as $subkey => $subval) {
                     $get .= '&'.urlencode($key).'['.$subkey.']='.urlencode($subval);
                 }
+
                 continue;
             }
+
             $get .= '&'.urlencode($key).'='.urlencode($val);
         }
+
         return $get;
     }
 
