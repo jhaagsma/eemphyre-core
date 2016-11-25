@@ -1,22 +1,28 @@
 <?php
-/*---------------------------------------------------
-These files are part of the empiresPHPframework;
-The original framework core (specifically the mysql.php
-the router.php and the errorlog) was started by Timo Ewalds,
-and rewritten to use APC and extended by Julian Haagsma,
-for use in Earth Empires (located at http://www.earthempires.com );
-it was spun out for use on other projects.
-
-The general.php contains content from Earth Empires
-written by Dave McVittie and Joe Obbish.
-
-
-The example website files were written by Julian Haagsma.
-
-All files are licensed under the MIT License.
-
-First release, September 3, 2012
----------------------------------------------------*/
+/**
+ * MysqlDb is the db interface for the Emphyre project
+ *
+ * PHP version 7
+ *
+ * ------
+ * These files are part of the empiresPHPframework;
+ * The original framework core (specifically the mysql.php
+ * the router.php and the errorlog) was started by Timo Ewalds,
+ * and rewritten to use APC and extended by Julian Haagsma,
+ * for use in Earth Empires (located at http://www.earthempires.com );
+ * it was spun out for use on other projects.
+ *
+ * The example website files were written by Julian Haagsma.
+ *
+ * @category Core
+ * @package  EmPHyre
+ * @author   Julian Haagsma <jhaagsma@gmail.com>
+ * @author   Timo Ewalds <tewalds@gmail.com>
+ * @author   Joe Obbish <slagpit@earthempires.com>
+ * @license  https://opensource.org/licenses/MIT The MIT License (MIT)
+ * @link     https://github.com/jhaagsma/emPHyre
+ * @since    First release, September 3, 2012
+ */
 
 namespace EmPHyre;
 
@@ -33,11 +39,23 @@ class MysqlDb
     private $persist;
     private $setDb = false;
 
-    private $con = null;
-    private $lasttime = 0;
-    public $queries = [];
+    private $con       = null;
+    private $lasttime  = 0;
+    public $queries    = [];
     public $querystore = 150;
 
+    /**
+     * The contruct
+     * I need to do something *other than* seqtable;
+     * It's too crude and non-standard;
+     *
+     * @param string  $host     Host address
+     * @param string  $db       Database name
+     * @param string  $user     User name
+     * @param string  $pass     Password
+     * @param boolean $persist  Whether or not to keep the connection open
+     * @param string  $seqtable The table to use for sequencing
+     */
     public function __construct(
         $host,
         $db,
@@ -46,21 +64,29 @@ class MysqlDb
         $persist = false,
         $seqtable = null
     ) {
-        $this->host = $host;
-        $this->db = $db;
-        $this->user = $user;
-        $this->pass = $pass;
-        $this->persist = $persist;
+        $this->host     = $host;
+        $this->db       = $db;
+        $this->user     = $user;
+        $this->pass     = $pass;
+        $this->persist  = $persist;
         $this->seqtable = $seqtable;
         $this->querystore; //number of queries to log in memory
         $this->con = null;
     }
 
+    /**
+     * Destructor
+     */
     public function __destruct()
     {
         $this->close();
     }
 
+    /**
+     * Test if we can connect to the database, and try to handle it
+     *
+     * @return bool Whether or not we can connect
+     */
     private function canConnect()
     {
         if (!$this->persist) {
@@ -76,6 +102,11 @@ class MysqlDb
         return true;
     }
 
+    /**
+     * Actually connect to the database
+     *
+     * @return bool Always true if we didn't exit
+     */
     private function connect()
     {
         if (!$this->setDb) {
@@ -84,7 +115,7 @@ class MysqlDb
         }
 
         if ($this->con) {
-            if ($this->lasttime > time()-10) {
+            if ($this->lasttime > time() - 10) {
                 return $this->con->ping();
             }
 
@@ -101,6 +132,11 @@ class MysqlDb
         return true;
     }
 
+    /**
+     * Close the connection
+     *
+     * @return null
+     */
     private function close()
     {
         if ($this->con) {
@@ -109,11 +145,23 @@ class MysqlDb
         }
     }
 
+    /**
+     * Deletes a column???
+     * I actually have no idea what this does
+     *
+     * @param  array   $array  the input array?
+     * @param  integer $offset Some offset?
+     *
+     * @return [type]         [description]
+     */
     public function deleteCol(&$array, $offset)
     {
-        return array_walk($array, function (&$v) use ($offset) {
-            array_splice($v, $offset, 1);
-        });
+        return array_walk(
+            $array,
+            function (&$v) use ($offset) {
+                array_splice($v, $offset, 1);
+            }
+        );
     }
 
     /**
@@ -130,7 +178,8 @@ class MysqlDb
             $list[] = explode('/', $f);
         }
 
-        for ($i = 0; $i <= count($list); $i++) {
+        $total = count($list);
+        for ($i = 0; $i <= $total; $i++) {
             $column = array_column($list, 0);
             if (count(array_unique($column) === 1)) {
                 $this->deleteCol($list, 0);
@@ -156,32 +205,30 @@ class MysqlDb
     {
         //lets add a bit to tell us where the damned query was called.
         $backtrace = debug_backtrace();
-        $stuff = [];
+        $stuff     = [];
         while ($trace = next($backtrace)) {
-            $a['file'] = isset($trace['file']) ? $trace['file'] : null;
-            $a['line'] = isset($trace['line']) ? $trace['line'] : null;
+            $a['file']     = isset($trace['file']) ? $trace['file'] : null;
+            $a['line']     = isset($trace['line']) ? $trace['line'] : null;
             $a['function'] = explode('\\', $trace['function']);
-            $stuff[] = $a;
+            $stuff[]       = $a;
         }
 
         $files = $this->trimFiles(array_column($stuff, 'file'));
 
         foreach ($stuff as $k => $e) {
-            $fn = end($e['function']);
-            $stuff[$k]['file'] = $files[$k];
+            $fn                    = end($e['function']);
+            $stuff[$k]['file']     = $files[$k];
             $stuff[$k]['function'] = $fn;
-            $stuff[$k] = implode(':', $stuff[$k]);
+            $stuff[$k]             = implode(':', $stuff[$k]);
             if (in_array($fn, ['query','pquery'])) {
                 unset($stuff[$k]);
             }
         }
 
         $stuff = implode(", ", $stuff);
-        $err = (isset($this->con->errno) ? $this->con->errno.":" : null);
-        $err .= (
-            $error ?
-            $error :
-            (isset($this->con->error) ? $this->con->error : 'ERROR')
+        $err   = (isset($this->con->errno) ? $this->con->errno.":" : null);
+        $err  .= (
+            $error ? $error : (isset($this->con->error) ? $this->con->error : 'ERROR')
         );
         if ($this->con->errno == 1064) {
             $err = 'SQL Syntax: '.substr($err, 134); //make it WAY shorter
@@ -194,12 +241,20 @@ class MysqlDb
         exit;
     }
 
+    /**
+     * Execute the query, return a result
+     *
+     * @param  String  $query   The SQL query to run
+     * @param  boolean $logthis Whether or not to log the query (inactive?)
+     *
+     * @return MysqlDbResult    The db result object
+     */
     public function query($query, $logthis = true)
     {
-        $insertid = 0;
+        $insertid     = 0;
         $affectedRows = 0;
-        $numrows = 0;
-        $qt = 0;
+        $numrows      = 0;
+        $qt           = 0;
 
         if (!$this->connect()) {
             return false;
@@ -213,9 +268,9 @@ class MysqlDb
             $this->queryError($query);
         }
 
-        $insertid = $this->con->insert_id;
+        $insertid     = $this->con->insert_id;
         $affectedRows = $this->con->affected_rows;
-        $numrows = (isset($result->num_rows) ? $result->num_rows : 0);
+        $numrows      = (isset($result->num_rows) ? $result->num_rows : 0);
 
         $end = microtime(true);
 
@@ -226,6 +281,7 @@ class MysqlDb
         if ($logthis) {
             $this->queries[] = array($query, $qt);
         }
+
         if (count($this->queries) > $this->querystore) {
             array_shift($this->queries);
         }
@@ -233,6 +289,11 @@ class MysqlDb
         return new MysqlDbResult($result, $this->con, $numrows, $affectedRows, $insertid, $qt);
     }
 
+    /**
+     * Prepare the query & arguments
+     *
+     * @return string An SQL query string
+     */
     public function prepare()
     {
         if (!$this->connect()) {
@@ -257,18 +318,21 @@ class MysqlDb
             $this->queryError($query, "Wrong number of arguments supplied.");
         }
 
-        for ($i = 0; $i < count($args); $i++) {
+        $total = count($args);
+        for ($i = 0; $i < $total; $i++) {
             $query .= $this->preparePart($args[$i]).$parts[$i];
         }
 
         return $query;
     }
 
-    private function prepareArray($query, $array)
-    {
-        return call_user_func_array($query, $array);
-    }
-
+    /**
+     * Prepare a piece of an array
+     *
+     * @param  mixed $part The part being prepared
+     *
+     * @return mixed       The part, post-preparation (real_escape_string)
+     */
     private function preparePart($part)
     {
         switch (gettype($part)) {
@@ -296,14 +360,27 @@ class MysqlDb
         }
     }
 
+    /**
+     * Pquery; prepare the query
+     *
+     * @return MysqlDb Return a MysqlDB object (or false?)
+     */
     public function pquery()
     {
-        $args = func_get_args();
+        $args  = func_get_args();
         $query = call_user_func_array(array($this, 'prepare'), $args);
 
         return $this->query($query);
     }
 
+    /**
+     * Prepare an entire array; args[0] must be the query (with ?)
+     * and subesequent arguments are the values for the ?
+     *
+     * @param  array $args See above
+     *
+     * @return MysqlDb     The result of the query
+     */
     public function pqueryArray($args)
     {
         $query = call_user_func_array(array($this, 'prepare'), $args);
@@ -311,11 +388,27 @@ class MysqlDb
         return $this->query($query);
     }
 
+    /**
+     * Get a new UUID; mysql is better at this than php...
+     *
+     * @return string A uuid
+     */
     public function newUUID()
     {
         return $this->query("SELECT UNHEX(REPLACE(UUID(),'-',''))")->fetchField();
     }
 
+    /**
+     * Get a new sequence
+     *
+     * @param  int            $id1   sequence id #1
+     * @param  int            $id2   sequence id #2
+     * @param  int            $area  area id
+     * @param  string|boolean $table The table to use;
+     * @param  string|boolean $start The starting index;
+     *
+     * @return [type]         [description]
+     */
     public function getSeqID($id1, $id2, $area, $table = false, $start = false)
     {
         if (!$table) {
@@ -324,6 +417,7 @@ class MysqlDb
                 return false;
             }
         }
+
         $inid = $this->pquery(
             "UPDATE ".$table." SET max = LAST_INSERT_ID(max+1)
             WHERE id1 = ? &&
@@ -358,24 +452,46 @@ class MysqlDb
         }
     }
 
+    /**
+     * Create a database if it doesn't exist; perhaps this shoudl be renamed
+     *
+     * @param  String $database Database Name
+     *
+     * @return null
+     */
     public function createIfNotExists($database = null)
     {
         $this->setDb = true; //fake like we've set the db
         if (!$this->checkDbExists($database)) {
             $this->createDb($database);
         }
+
         $this->setDb = false; //un-fake
     }
 
+    /**
+     * Check if a database exists
+     *
+     * @param  string $database Database Name
+     *
+     * @return boolean          Whether or the db exists
+     */
     public function checkDbExists($database = null)
     {
         $database = $database ? $database : $this->db;
-        $exists = $this->pquery('SHOW DATABASES LIKE ?', $database)->fetchField();
+        $exists   = $this->pquery('SHOW DATABASES LIKE ?', $database)->fetchField();
         $exists ? null : self::out("DATABASE DOEST NOT EXIST: ".$database);
 
         return $exists ? true : false;
     }
 
+    /**
+     * Create a database (if not exists)
+     *
+     * @param  String $database Database Name
+     *
+     * @return null
+     */
     public function createDb($database = null)
     {
         $database = $database ? $database : $this->db;
@@ -385,23 +501,45 @@ class MysqlDb
         }
 
         $this->pquery("CREATE DATABASE IF NOT EXISTS $database");
-        self::out("CREATED DATABASE: ".$database);
+        self::out("Created Database: ".$database);
     }
 
+    /**
+     * Check if a table exists
+     *
+     * @param  String $tableName The table name
+     *
+     * @return boolean           Whether or not the table exists
+     */
     public function tableExists($tableName)
     {
         $exists = $this->pquery("SHOW TABLES LIKE ?", $tableName)->fetchField();
         return $exists ? true : false;
     }
 
+    /**
+     * Check if a column exists in a table
+     *
+     * @param  string $columnName The column name
+     * @param  string $tableName  The table name
+     *
+     * @return boolean            Whether or not the column exists
+     */
     public function columnExists($columnName, $tableName)
     {
         //sanitize, just in case
         $tableName = $this->con->real_escape_string($tableName);
-        $exists = $this->pquery("SHOW COLUMNS FROM `$tableName` LIKE ?", $columnName)->fetchField();
+        $exists    = $this->pquery("SHOW COLUMNS FROM `$tableName` LIKE ?", $columnName)->fetchField();
         return $exists ? true : false;
     }
 
+    /**
+     * The function to output errors to the log file
+     *
+     * @param  string $string The message to log/error
+     *
+     * @return null
+     */
     protected static function out($string)
     {
         trigger_error($string, E_USER_NOTICE);
