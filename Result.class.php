@@ -63,15 +63,8 @@ class Result
 
     }//end restOfTheBits()
 
-
-    public function message()
+    protected function patterned_message()
     {
-        // I don't like having custom error messages stored in /core
-        // Consider making a non-core file, perhaps result.messages.php in / dir,
-        // with custom error messages
-        // and perhaps call a global function from this file in the
-        // Result __construct (with some sort of "is_defined")
-        // to load all the custom error messages.
         $bits = explode('_', $this->type);
         if ($bits[0] == 'ADDED') {
             $this->setSuccess();
@@ -95,6 +88,22 @@ class Result
             $this->setNeutral();
             return 'The '.self::restOfTheBits($bits).' was logged.';
         }//end if
+
+        return false;
+    }
+
+    public function message()
+    {
+        // I don't like having custom error messages stored in /core
+        // Consider making a non-core file, perhaps result.messages.php in / dir,
+        // with custom error messages
+        // and perhaps call a global function from this file in the
+        // Result __construct (with some sort of "is_defined")
+        // to load all the custom error messages.
+        $patterned = $this->patterned_message();
+        if ($patterned !== false) {
+            return $patterned;
+        }
 
         switch ($this->type) {
             case 'NOT_LOGGED_IN':
