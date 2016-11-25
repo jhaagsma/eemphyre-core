@@ -81,7 +81,8 @@ class User extends \EmPHyre\CRUD
             $prepend = ($prepend ? $prepend.'-' : null);
             define('APC_USER_PREPEND', $prepend.'ul-');
         }
-    }
+    }//end definePrependAPC()
+
 
 
     public static function getUserIdFromName($user_name = null)

@@ -95,7 +95,8 @@ class Result
         }//end if
 
         return false;
-    }
+    }//end patternedMessage()
+
 
     public function message()
     {

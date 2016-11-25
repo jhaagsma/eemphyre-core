@@ -63,4 +63,5 @@
 <rule ref="Squiz.WhiteSpace.OperatorSpacing"/>
 <rule ref="Squiz.WhiteSpace.PropertyLabelSpacing"/>
 <rule ref="Zend.Debug.CodeAnalyzer"/>
+<rule ref="Squiz.Commenting.ClosingDeclarationComment" />
 </ruleset>

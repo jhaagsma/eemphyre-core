@@ -44,6 +44,7 @@ class MysqlDb
     public $queries    = [];
     public $querystore = 150;
 
+
     /**
      * The contruct
      * I need to do something *other than* seqtable;
@@ -72,7 +73,8 @@ class MysqlDb
         $this->seqtable = $seqtable;
         $this->querystore; //number of queries to log in memory
         $this->con = null;
-    }
+    }//end __construct()
+
 
     /**
      * Destructor
@@ -80,7 +82,8 @@ class MysqlDb
     public function __destruct()
     {
         $this->close();
-    }
+    }//end __destruct()
+
 
     /**
      * Test if we can connect to the database, and try to handle it
@@ -100,7 +103,8 @@ class MysqlDb
         }
 
         return true;
-    }
+    }//end canConnect()
+
 
     /**
      * Actually connect to the database
@@ -130,7 +134,8 @@ class MysqlDb
         }
 
         return true;
-    }
+    }//end connect()
+
 
     /**
      * Close the connection
@@ -143,7 +148,8 @@ class MysqlDb
             $this->con->close();
             $this->con = null;
         }
-    }
+    }//end close()
+
 
     /**
      * Deletes a column???
@@ -162,7 +168,8 @@ class MysqlDb
                 array_splice($v, $offset, 1);
             }
         );
-    }
+    }//end deleteCol()
+
 
     /**
      * trims files in a column
@@ -191,7 +198,8 @@ class MysqlDb
         }
 
         return $list;
-    }
+    }//end trimFiles()
+
 
     /**
      * Split out query error stuff to make it much more useful
@@ -239,7 +247,8 @@ class MysqlDb
 
         trigger_error($connErr." \"$query\"", E_USER_ERROR);
         exit;
-    }
+    }//end queryError()
+
 
     /**
      * Execute the query, return a result
@@ -287,7 +296,8 @@ class MysqlDb
         }
 
         return new MysqlDbResult($result, $this->con, $numrows, $affectedRows, $insertid, $qt);
-    }
+    }//end query()
+
 
     /**
      * Prepare the query & arguments
@@ -324,7 +334,8 @@ class MysqlDb
         }
 
         return $query;
-    }
+    }//end prepare()
+
 
     /**
      * Prepare a piece of an array
@@ -358,7 +369,8 @@ class MysqlDb
             default:
                 $this->queryError(gettype($part), "Bad type passed to the database!!");
         }
-    }
+    }//end preparePart()
+
 
     /**
      * Pquery; prepare the query
@@ -371,7 +383,8 @@ class MysqlDb
         $query = call_user_func_array(array($this, 'prepare'), $args);
 
         return $this->query($query);
-    }
+    }//end pquery()
+
 
     /**
      * Prepare an entire array; args[0] must be the query (with ?)
@@ -386,7 +399,8 @@ class MysqlDb
         $query = call_user_func_array(array($this, 'prepare'), $args);
 
         return $this->query($query);
-    }
+    }//end pqueryArray()
+
 
     /**
      * Get a new UUID; mysql is better at this than php...
@@ -396,7 +410,8 @@ class MysqlDb
     public function newUUID()
     {
         return $this->query("SELECT UNHEX(REPLACE(UUID(),'-',''))")->fetchField();
-    }
+    }//end newUUID()
+
 
     /**
      * Get a new sequence
@@ -450,7 +465,8 @@ class MysqlDb
         } else {
             return $this->getSeqID($id1, $id2, $area, $table, $start);
         }
-    }
+    }//end getSeqID()
+
 
     /**
      * Create a database if it doesn't exist; perhaps this shoudl be renamed
@@ -467,7 +483,8 @@ class MysqlDb
         }
 
         $this->setDb = false; //un-fake
-    }
+    }//end createIfNotExists()
+
 
     /**
      * Check if a database exists
@@ -483,7 +500,8 @@ class MysqlDb
         $exists ? null : self::out("DATABASE DOEST NOT EXIST: ".$database);
 
         return $exists ? true : false;
-    }
+    }//end checkDbExists()
+
 
     /**
      * Create a database (if not exists)
@@ -502,7 +520,8 @@ class MysqlDb
 
         $this->pquery("CREATE DATABASE IF NOT EXISTS $database");
         self::out("Created Database: ".$database);
-    }
+    }//end createDb()
+
 
     /**
      * Check if a table exists
@@ -515,7 +534,8 @@ class MysqlDb
     {
         $exists = $this->pquery("SHOW TABLES LIKE ?", $tableName)->fetchField();
         return $exists ? true : false;
-    }
+    }//end tableExists()
+
 
     /**
      * Check if a column exists in a table
@@ -531,7 +551,8 @@ class MysqlDb
         $tableName = $this->con->real_escape_string($tableName);
         $exists    = $this->pquery("SHOW COLUMNS FROM `$tableName` LIKE ?", $columnName)->fetchField();
         return $exists ? true : false;
-    }
+    }//end columnExists()
+
 
     /**
      * The function to output errors to the log file
@@ -543,5 +564,5 @@ class MysqlDb
     protected static function out($string)
     {
         trigger_error($string, E_USER_NOTICE);
-    }
-}
+    }//end out()
+}//end class

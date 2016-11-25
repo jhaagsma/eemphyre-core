@@ -40,14 +40,16 @@ abstract class CRUD
     protected static function primaryKey()
     {
         return isset(static::$primaryKey) ? static::$primaryKey : 'id';
-    }
+    }//end primaryKey()
+
 
     public function __construct($primary_key = 0)
     {
         //do nothing, for now
         $pk        = static::$primaryKey;
         $this->$pk = $primary_key;
-    }
+    }//end __construct()
+
 
     /**
      * Set the database...
@@ -62,7 +64,8 @@ abstract class CRUD
 
 
         static::$db = $db;
-    }
+    }//end setDb()
+
 
     //simple version for basic classes
     public static function db()
@@ -70,7 +73,8 @@ abstract class CRUD
         if (!static::$db) {
             static::$db = Container::getDb();
         }
-    }
+    }//end db()
+
 
     public function initialize()
     {
@@ -86,7 +90,8 @@ abstract class CRUD
         )->fetchRow();
 
         $this->setVars();
-    }
+    }//end initialize()
+
 
     protected function setVars()
     {
@@ -98,7 +103,8 @@ abstract class CRUD
         foreach ($this->_data as $key => $value) {
             $this->$key = $value;
         }
-    }
+    }//end setVars()
+
 
     protected function commit()
     {
@@ -150,7 +156,8 @@ abstract class CRUD
         } else {
             return false;
         }
-    }
+    }//end commit()
+
 
     protected static function addByArray($keyValue = [])
     {
@@ -173,7 +180,8 @@ abstract class CRUD
 
         //return insertid; not sure what to do for insert fail...
         return static::$db->pqueryArray($call_args)->insertid();
-    }
+    }//end addByArray()
+
 
     public static function primaryList($limit = null, $offset = 0, $asc = true)
     {
@@ -184,7 +192,8 @@ abstract class CRUD
         return static::$db->pquery(
             'SELECT `'.static::$primaryKey.'` FROM `'.static::$tableName.'` ORDER BY `'.static::$primaryKey.'` '.$dir
         )->fetchFieldSet();
-    }
+    }//end primaryList()
+
 
     public static function filterColumn($column, $value, $limit = null, $offset = 0, $asc = true)
     {
@@ -199,7 +208,8 @@ abstract class CRUD
             $value
         )->fetchFieldSet();
 
-    }
+    }//end filterColumn()
+
 
     public static function filterPKArray($keys, $column, $value, $limit = null, $offset = 0, $asc = true)
     {
@@ -219,12 +229,14 @@ abstract class CRUD
             $keys,
             $value
         )->fetchFieldSet();
-    }
+    }//end filterPKArray()
+
 
     public static function primaryListNotDisabled($limit = null, $offset = 0, $asc = true)
     {
         return static::filterColumn('disabled', 'false');
-    }
+    }//end primaryListNotDisabled()
+
 
     public static function verifyExists($primary_key)
     {
@@ -236,7 +248,8 @@ abstract class CRUD
             'SELECT `'.static::$primaryKey.'` FROM `'.static::$tableName.'` WHERE `'.static::$primaryKey.'`=?',
             $primary_key
         )->fetchField();
-    }
+    }//end verifyExists()
+
 
     protected static function newUUID($check = true, $uuidColumn = 'uuid')
     {
@@ -247,7 +260,8 @@ abstract class CRUD
         }
 
         return $uuid;
-    }
+    }//end newUUID()
+
 
     protected static function checkUUIDCollision($uuid = null, $uuidColumn = 'uuid')
     {
@@ -258,7 +272,8 @@ abstract class CRUD
         )->fetchField();
 
         return $check || $uuid === null ? true : false;
-    }
+    }//end checkUUIDCollision()
+
 
 
 
@@ -302,12 +317,13 @@ abstract class CRUD
     {
         //default return the primary key
         return $this->getId();
-    }
+    }//end display()
+
 
 
     public function getId()
     {
         $pk = static::$primaryKey;
         return $this->$pk;
-    }
-}
+    }//end getId()
+}//end class

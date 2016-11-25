@@ -33,31 +33,36 @@ class URL
     protected function __construct()
     {
         //protected construct so that URLHandler can't be instantiated
-    }
+    }//end __construct()
+
 
     public static function redirect($loc)
     {
         header("Location: $loc", true, 303);
         echo "Redirecting to: <a href='".htmlentities($loc)."'>$loc</a>";
         exit;
-    }
+    }//end redirect()
+
 
     public static function moved($loc)
     {
         header("Location: $loc", true, 301);
         echo "Redirecting to: <a href='".htmlentities($loc)."'>$loc</a>";
         exit;
-    }
+    }//end moved()
+
 
     public static function sendJsHeader()
     {
         header('Content-Type: application/javascript');
-    }
+    }//end sendJsHeader()
+
 
     public static function sendJsonHeader()
     {
         header('Content-Type: application/json');
-    }
+    }//end sendJsonHeader()
+
 
     public static function getUrlPart($token_num)
     {
@@ -67,19 +72,22 @@ class URL
         } else {
             return def($parts[$token_num], false);
         }
-    }
+    }//end getUrlPart()
+
 
     public static function getCOOKIEval($name, $type = 'string', $default = null)
     {
         $var = (isset($_COOKIE[$name]) ? $_COOKIE[$name] : $default);
         settype($var, $type);
         return $var;
-    }
+    }//end getCOOKIEval()
+
 
     public static function getDomainName()
     {
         return self::getUrlPart(-2).'.'.self::getUrlPart(-1);
-    }
+    }//end getDomainName()
+
 
     public static function oneLessSubdomain($domain_name = null)
     {
@@ -91,7 +99,8 @@ class URL
         unset($parts[0]);
 
         return implode('.', $parts);
-    }
+    }//end oneLessSubdomain()
+
 
     public static function parent($url, $levels = 1)
     {
@@ -108,12 +117,14 @@ class URL
 
         $url = '/'.implode('/', $url);
         return $url;
-    }
+    }//end parent()
+
 
     public static function gparent($url)
     {
         return self::parent($url, 2);
-    }
+    }//end gparent()
+
 
     public static function returnGetData($data)
     {
@@ -131,16 +142,18 @@ class URL
         }
 
         return $get;
-    }
+    }//end returnGetData()
+
 
     //http://php.net/manual/en/function.base64-encode.php#103849
     public static function encode64($data)
     {
         return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
-    }
+    }//end encode64()
+
     //http://php.net/manual/en/function.base64-encode.php#103849
     public static function decode64($data)
     {
         return base64_decode(str_pad(strtr($data, '-_', '+/'), strlen($data) % 4, '=', STR_PAD_RIGHT));
-    }
-}
+    }//end decode64()
+}//end class

@@ -47,25 +47,29 @@ class MysqlDbResult
         $this->affectedRows = $affectedRows;
         $this->insertid     = $insertid;
         $this->querytime    = $qt;
-    }
+    }//end __construct()
+
 
     public function __destruct()
     {
         $this->free();
-    }
+    }//end __destruct()
+
 
     //one row at a time
     public function fetchRow($type = DB_ASSOC)
     {
         return $this->result->fetch_array($type);
-    }
+    }//end fetchRow()
+
 
     //for queries with a single column in a single row
     public function fetchField()
     {
         $ret = $this->fetchRow(DB_NUM);
         return $ret[0];
-    }
+    }//end fetchField()
+
 
     //return the full set
     public function fetchFieldSet()
@@ -81,7 +85,8 @@ class MysqlDbResult
         }
 
         return $ret;
-    }
+    }//end fetchFieldSet()
+
 
     //return the full set
     public function fetchRowSet($col = null, $type = DB_ASSOC)
@@ -97,22 +102,26 @@ class MysqlDbResult
         }
 
         return $ret;
-    }
+    }//end fetchRowSet()
+
 
     public function affectedRows()
     {
         return $this->affectedRows;
-    }
+    }//end affectedRows()
+
 
     public function insertid()
     {
         return $this->insertid;
-    }
+    }//end insertid()
+
 
     public function rows()
     {
         return $this->numrows;
-    }
+    }//end rows()
+
 
     public function free()
     {
@@ -121,5 +130,5 @@ class MysqlDbResult
         }
 
         return $this->result->free();
-    }
-}
+    }//end free()
+}//end class

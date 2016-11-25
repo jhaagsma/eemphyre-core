@@ -71,7 +71,8 @@ abstract class Session
         )->insertid();
 
         setcookie(COOKIE_NAME, "$user_id:$key", 0, "/", '.'.URL::getDomainName(), false, true);
-    }
+    }//end newSession()
+
 
     public static function parseCookie()
     {
@@ -83,7 +84,8 @@ abstract class Session
         $cookiebits       = explode(":", $cookiebits);
         self::$cookieUser = $cookiebits[0];
         self::$cookieKey  = $cookiebits[1];
-    }
+    }//end parseCookie()
+
 
     public static function doUserCheck()
     {
@@ -101,7 +103,8 @@ abstract class Session
         self::updateActiveSession($expiretime);
 
         return Container::newUser(self::$cookieUser);  //Create a User class!
-    }
+    }//end doUserCheck()
+
 
     //delete a specific key, or ALL of that user's sessions
     //(that, of course, assumes that you can have mulitple logins)
@@ -125,7 +128,8 @@ abstract class Session
 
         //clear the cookie to nothing
         setcookie(COOKIE_NAME, '', 1);
-    }
+    }//end expireSession()
+
 
     public static function activeSession($force = false)
     {
@@ -149,7 +153,8 @@ abstract class Session
         self::$lastreal   = $activerow['lastreal'];
 
         return self::$expiretime > time() ? true : false;
-    }
+    }//end activeSession()
+
 
     public static function clearOldSessions($forced = false)
     {
@@ -167,7 +172,8 @@ abstract class Session
         }
 
         return false;
-    }
+    }//end clearOldSessions()
+
 
     private static function updateActiveSession($expiretime)
     {
@@ -197,10 +203,11 @@ abstract class Session
         \EmPHyre\Cache::store(APC_ACTIVE_SESSION_PREFIX.self::$cookieUser, $activerow, 120);
 
         return;
-    }
+    }//end updateActiveSession()
+
 
     public static function clearActiveSession()
     {
         \EmPHyre\Cache::delete(APC_ACTIVE_SESSION_PREFIX.self::$cookieUser);
-    }
-}
+    }//end clearActiveSession()
+}//end class
