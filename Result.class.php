@@ -157,7 +157,9 @@ class Result
 
     public function toURL()
     {
-        return '&result='.urlencode($this->type).($this->val ? '&result_val='.urlencode($this->val) : null).($this->success ? '&result_success=1' : null);
+        return '&result='.urlencode($this->type)
+            .($this->val ? '&result_val='.urlencode($this->val) : null)
+            .($this->success ? '&result_success=1' : null);
 
     }//end toURL()
 
