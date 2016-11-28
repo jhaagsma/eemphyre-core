@@ -522,7 +522,6 @@ class MysqlDb
         self::out("Created Database: ".$database);
     }//end createDb()
 
-
     /**
      * Check if a table exists
      *
