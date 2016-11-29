@@ -37,4 +37,44 @@ class Script
 
         self::$nl_required = ($newline ? false : true);
     }//end out()
+
+
+    /**
+     * Make a POST request
+     *
+     * @param  string $address The address to post to
+     * @param  mixed  $data    The data to post
+     *
+     * @return string          The server output
+     */
+    public static function post($address = 'http://localhost', $data = null)
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $address);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $serverOutput = curl_exec($ch);
+        curl_close($ch);
+
+        return $serverOutput;
+    }//end post()
+
+    /**
+     * Make a GET request
+     *
+     * @param  string $address The address to request to
+     * @param  mixed  $data    The data to send
+     *
+     * @return string          The server output
+     */
+    public static function get($address, $data)
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $address.'?'.http_build_query($data));
+        $serverOutput = curl_exec($ch);
+        curl_close($ch);
+
+        return $serverOutput;
+    }//end get()
 }//end class
