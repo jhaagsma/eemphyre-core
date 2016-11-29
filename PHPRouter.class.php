@@ -101,7 +101,8 @@ class PHPRouter
 
     public function areaPush($area)
     {
-        // this function is to allow me to avoid putting in /{server=>string}/ for like 200 entries in the registry
+        // this function is to allow me to avoid putting in /{server=>string}/
+        // for like 200 entries in the registry
         $this->area = array_merge($this->area, explode('/', trim($area, '/')));
 
     }//end areaPush()
