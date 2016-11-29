@@ -1,5 +1,4 @@
-<?php namespace EmPHyre;
-
+<?php
 /**
  * Auth is the authentication object for the EmPHyre project
  *
@@ -24,16 +23,25 @@
  * @author   Timo Ewalds <tewalds@gmail.com>
  * @author   Dave McVittie <dave.mcvittie@gmail.com>
  * @author   Joe Obbish <slagpit@earthempires.com>
- * @license  All files are licensed under the MIT License.
+ * @license  https://opensource.org/licenses/MIT The MIT License (MIT)
  * @link     https://github.com/jhaagsma/emPHyre
  * @since    Recombined from empiresPHPframework extensions on Nov 4 2016
  */
 
+namespace EmPHyre;
 
 class Auth
 {
 
-
+    /**
+     * Authenticate a username and password;
+     * THIS REDIRECTS AUTOMATICALLY ON FAIL
+     *
+     * @param  string $user_name The username
+     * @param  string $password  The password
+     *
+     * @return User              The User Object
+     */
     public static function authUsernamePassword($user_name, $password)
     {
         $user = Container::newUserFromName($user_name, true);
@@ -51,14 +59,32 @@ class Auth
 
     }//end authUsernamePassword()
 
-
+    /**
+     * Authenticate public
+     * This can return a null user, but for now does nothing
+     *
+     * @param  array $data The incoming GET/POST
+     * @param  Path  $path The Path object
+     * @param  User  $user Either a User object or null
+     *
+     * @return bool        For now returns nothing
+     */
     public static function authPublic($data, $path, $user)
     {
         return false;
 
     }//end authPublic()
 
-
+    /**
+     * Authenticate for login; just checks if there's a user object
+     * THIS REDIRECTS AUTOMATICALLY ON FAIL
+     *
+     * @param  array $data The GET/POST
+     * @param  Path  $path The Path object
+     * @param  User  $user The User object
+     *
+     * @return bool        Returns false or REDIRECTS
+     */
     public static function authLogin($data, $path, $user)
     {
         if (!$user) {
