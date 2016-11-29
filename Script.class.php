@@ -33,10 +33,28 @@ class Script
             echo "\n";
         }
 
+        $string = self::verifyType($string);
+
         echo "[", date('H:i:s'), "] ", $string, ($newline ? "\n" : null);
 
         self::$nl_required = ($newline ? false : true);
     }//end out()
+
+    /**
+     * Just json encode arrays
+     *
+     * @param  mixed $string The "string" to fix
+     *
+     * @return string        The fixed string
+     */
+    private static function verifyType($string = null)
+    {
+        if (!is_array($string)) {
+            return $string;
+        } else {
+            return json_encode($string);
+        }
+    }//end verifyType()
 
 
     /**
@@ -56,7 +74,9 @@ class Script
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
         $serverOutput = curl_exec($ch);
+
         curl_close($ch);
 
         return $serverOutput;
@@ -76,7 +96,10 @@ class Script
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $address.'?'.http_build_query($data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
         $serverOutput = curl_exec($ch);
+
         curl_close($ch);
 
         return $serverOutput;
