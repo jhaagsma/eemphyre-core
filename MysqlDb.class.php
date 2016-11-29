@@ -355,7 +355,9 @@ class MysqlDb
                 if (is_numeric($part)) {
                     return $part;
                 }
-                return "'".$this->con->real_escape_string($part)."'"; // mysql_real_escape_string($part, $this->con)
+                return "'".$this->con->real_escape_string($part)."'";
+                //What this used to be:
+                // mysql_real_escape_string($part, $this->con)
             case 'boolean':
                 return ($part ? 1 : 0);
             case 'NULL':
@@ -548,7 +550,11 @@ class MysqlDb
     {
         //sanitize, just in case
         $tableName = $this->con->real_escape_string($tableName);
-        $exists    = $this->pquery("SHOW COLUMNS FROM `$tableName` LIKE ?", $columnName)->fetchField();
+        $exists    = $this->pquery(
+            "SHOW COLUMNS FROM `$tableName` LIKE ?",
+            $columnName
+        )->fetchField();
+
         return $exists ? true : false;
     }//end columnExists()
 
