@@ -49,6 +49,8 @@ class Script
      */
     public static function post($address = 'http://localhost', $data = null)
     {
+        $address = self::urlfix($address);
+
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $address);
         curl_setopt($ch, CURLOPT_POST, 1);
@@ -70,6 +72,8 @@ class Script
      */
     public static function get($address, $data)
     {
+        $address = self::urlfix($address);
+
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $address.'?'.http_build_query($data));
         $serverOutput = curl_exec($ch);
@@ -77,4 +81,20 @@ class Script
 
         return $serverOutput;
     }//end get()
+
+    /**
+     * Fix the url to have http:// in front if it doesn't have it
+     *
+     * @param  string $url The url
+     *
+     * @return string      The fixed url
+     */
+    private static function urlfix($url)
+    {
+        if (strpos($url, "http://") !== false) {
+            $url = 'http://'.$url;
+        }
+
+        return $url;
+    }//end urlfix()
 }//end class
