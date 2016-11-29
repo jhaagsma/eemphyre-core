@@ -16,7 +16,7 @@ namespace EmPHyre;
 
 class Script
 {
-    private $nl_required = true;
+    private static $nl_required = false;
 
     /**
      * This echos a string, and formats things and stuff
@@ -29,12 +29,12 @@ class Script
      */
     public static function out($string, $newline = true, $opening_nl = false)
     {
-        if (static::$nl_required == true || $opening_nl == true) {
+        if (self::$nl_required == true || $opening_nl == true) {
             echo "\n";
         }
 
         echo "[", date('H:i:s'), "] ", $string, ($newline ? "\n" : null);
 
-        static::$nl_required = ($newline ? false : true);
+        self::$nl_required = ($newline ? false : true);
     }//end out()
 }//end class
