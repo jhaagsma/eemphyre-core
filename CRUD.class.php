@@ -237,6 +237,31 @@ abstract class CRUD
         return static::filterColumn('disabled', 'false');
     }//end primaryListNotDisabled()
 
+    /**
+     * Disable the object
+     * THIS KINDOF ASSUMES THERE'S A "DISABLED" COLUMN
+     *
+     * @return null
+     */
+    public function disable()
+    {
+        $this->disabled = true;
+        $this->commit();
+    }//end disable()
+
+
+    /**
+     * Enable the object; this probaly won't get used...?
+     * THIS KINDOF ASSUMES THERE'S A "DISABLED" COLUMN
+     *
+     * @return null
+     */
+    public function enable()
+    {
+        $this->disabled = false;
+        $this->commit();
+    }//end enable()
+
 
     public static function verifyExists($primary_key)
     {
