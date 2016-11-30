@@ -173,7 +173,8 @@ class Group extends \EmPHyre\CRUD
     }//end alterUserGroups()
 
     /**
-     * Disable the class
+     * Disable the group
+     * REMOVE USERS FROM THE GROUP
      *
      * @return Result What happened
      */
@@ -183,6 +184,11 @@ class Group extends \EmPHyre\CRUD
 
         if (!$worked) {
             return new Result("UNCHANGED_GROUP", $this->getId(), true, false);
+        }
+
+        $members = User::users($this->group_id);
+        foreach ($members as $user_id) {
+            $this->delUser($user_id);
         }
 
         return new Result("DISABLED_GROUP", $this->getId(), true);
