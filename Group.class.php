@@ -185,6 +185,6 @@ class Group extends \EmPHyre\CRUD
             return new Result("UNCHANGED_GROUP", $this->getId(), true, false);
         }
 
-        return new Result("EDITED_GROUP", $this->getId(), true);
+        return new Result("DISABLED_GROUP", $this->getId(), true);
     }//end disable()
 }//end class
