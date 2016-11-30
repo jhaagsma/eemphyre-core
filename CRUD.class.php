@@ -36,13 +36,26 @@ abstract class CRUD
     protected $data;
 
 
-    //this from FuelPHP
+
+    /**
+     * GET the primary key
+     * this from FuelPHP
+     *
+     * @return string The name of the primary key column
+     */
     protected static function primaryKey()
     {
         return isset(static::$primaryKey) ? static::$primaryKey : 'id';
     }//end primaryKey()
 
 
+    /**
+     * The construct!! takes a primary key
+     *
+     * @param integer $primary_key The primary key
+     *
+     * @return The object... obviously..?
+     */
     public function __construct($primary_key = 0)
     {
         //do nothing, for now
@@ -55,6 +68,8 @@ abstract class CRUD
      * Set the database...
      *
      * @param Object $db A MysqlDb object
+     *
+     * @return null
      */
     public function setDb($db = null)
     {
@@ -67,7 +82,12 @@ abstract class CRUD
     }//end setDb()
 
 
-    //simple version for basic classes
+    /**
+     * Set the database, simplified version
+     * (simple version for basic classes)
+     *
+     * @return [type] [description]
+     */
     public static function db()
     {
         if (!static::$db) {
@@ -195,7 +215,18 @@ abstract class CRUD
     }//end primaryList()
 
 
-    public static function filterColumn($column, $value, $limit = null, $offset = 0, $asc = true)
+    /**
+     * This returns primary keys FROM table WHERE $column = $value
+     *
+     * @param  string  $column The column you want to specify a value of
+     * @param  mixed   $value  The value you want to specify for column
+     * @param  integer $limit  The limit; this is not enabled??
+     * @param  integer $offset The offset; this is not implemented??
+     * @param  boolean $asc    The sort direction
+     *
+     * @return array           Primary Keys!!
+     */
+    public static function filterColumn($column, $value, $limit = 0, $offset = 0, $asc = true)
     {
         static::db();
 
@@ -338,6 +369,12 @@ abstract class CRUD
         }
     }
 */
+
+    /**
+     * A basic display type function
+     *
+     * @return integer The (primaryKey) value
+     */
     public function display()
     {
         //default return the primary key
@@ -345,7 +382,11 @@ abstract class CRUD
     }//end display()
 
 
-
+    /**
+     * A basic display type function
+     *
+     * @return integer The (primaryKey) value
+     */
     public function getId()
     {
         $pk = static::$primaryKey;
