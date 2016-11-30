@@ -126,6 +126,11 @@ abstract class CRUD
     }//end setVars()
 
 
+    /**
+     * Commit the things that have been changed
+     *
+     * @return boolean Returns if an update was successful
+     */
     protected function commit()
     {
         $update = [];
@@ -272,12 +277,12 @@ abstract class CRUD
      * Disable the object
      * THIS KINDOF ASSUMES THERE'S A "DISABLED" COLUMN
      *
-     * @return null
+     * @return boolean If it worked or not
      */
     public function disable()
     {
         $this->disabled = true;
-        $this->commit();
+        return $this->commit();
     }//end disable()
 
 
@@ -285,12 +290,12 @@ abstract class CRUD
      * Enable the object; this probaly won't get used...?
      * THIS KINDOF ASSUMES THERE'S A "DISABLED" COLUMN
      *
-     * @return null
+     * @return boolean If it worked or not
      */
     public function enable()
     {
         $this->disabled = false;
-        $this->commit();
+        return $this->commit();
     }//end enable()
 
 
