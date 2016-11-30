@@ -246,6 +246,27 @@ abstract class CRUD
 
     }//end filterColumn()
 
+    /**
+     * This returns the primary key FROM table WHERE (UNIQUE!!) $column = $value
+     * ASSUMES that the column is, in fact, unique
+     *
+     * @param  string $column The column you want to specify a value of
+     * @param  mixed  $value  The value you want to specify for column
+     *
+     * @return array           Primary Key!!
+     */
+    public static function getUniqueId($column, $value)
+    {
+        static::db();
+
+
+        return static::$db->pquery(
+            'SELECT `'.static::$primaryKey.'` FROM `'
+            .static::$tableName.'` WHERE `'.$column.'`=?',
+            $value
+        )->fetchField();
+
+    }//end getUniqueId()
 
     public static function filterPKArray($keys, $column, $value, $limit = null, $offset = 0, $asc = true)
     {
