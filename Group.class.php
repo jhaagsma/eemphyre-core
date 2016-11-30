@@ -161,11 +161,11 @@ class Group extends \EmPHyre\CRUD
         }
 
         foreach ($delete as $group_id) {
-            static::_delUser($user_id, $group_id);
+            static::delUserGroup($user_id, $group_id);
         }
 
         foreach ($add as $group_id) {
-            static::_addUser($user_id, $group_id);
+            static::addUserGroup($user_id, $group_id);
         }
 
         return new Result("EDITED_USER", $user_id, true);
