@@ -92,32 +92,46 @@ class Group extends \EmPHyre\CRUD
 
     public function addUser($user_id)
     {
-        return static::_addUser($user_id, $this->getId());
+        return static::addUserGroup($user_id, $this->getId());
 
     }//end addUser()
 
-
-    protected static function _addUser($user_id, $group_id)
+    /**
+     * Add a user to a group
+     *
+     * @param integer $user_id  The User Id
+     * @param integer $group_id The Group Id
+     *
+     * @return Number of affected rows?
+     */
+    protected static function addUserGroup($user_id, $group_id)
     {
         $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
         return $permissions->add($user_id, $group_id);
 
-    }//end _addUser()
+    }//end addUserGroup()
 
 
     public function delUser($user_id)
     {
-        return static::_delUser($user_id, $this->getId());
+        return static::delUserGroup($user_id, $this->getId());
 
     }//end delUser()
 
-
-    protected static function _delUser($user_id, $group_id)
+    /**
+     * Delete a user from a group
+     *
+     * @param integer $user_id  The User Id
+     * @param integer $group_id The Group Id
+     *
+     * @return Number of affected rows?
+     */
+    protected static function delUserGroup($user_id, $group_id)
     {
         $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
         return $permissions->delete($user_id, $group_id);
 
-    }//end _delUser()
+    }//end delUserGroup()
 
 
     public static function userGroups($user_id)
@@ -157,4 +171,20 @@ class Group extends \EmPHyre\CRUD
         return new Result("EDITED_USER", $user_id, true);
 
     }//end alterUserGroups()
+
+    /**
+     * Disable the class
+     *
+     * @return Result What happened
+     */
+    public function disable()
+    {
+        $worked = parent::disable();
+
+        if (!$worked) {
+            return new Result("UNCHANGED_GROUP", $this->getId(), true, false);
+        }
+
+        return new Result("EDITED_GROUP", $this->getId(), true);
+    }//end disable()
 }//end class
