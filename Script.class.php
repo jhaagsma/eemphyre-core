@@ -72,7 +72,7 @@ class Script
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $address);
         curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
         $serverOutput = curl_exec($ch);
