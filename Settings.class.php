@@ -79,7 +79,8 @@ abstract class Settings
 
 
     /**
-     * Overload the get so we can return even though it's static
+     * Overload the get so we can return on using ->
+     * THIS ONLY WORKS FOR PUBLIC VARIABLES, WHICH IS KINDOF THE POINT
      * $this->key
      * returns public->key
      *
