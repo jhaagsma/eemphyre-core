@@ -62,8 +62,8 @@ class User extends \EmPHyre\CRUD
         // honestly that shouldn't ever come up,
         // but it did (error in the log manager)
         // so better to handle it than not?
-        $this->user_name = null;
-        $this->uuid      = null;
+        // $this->user_name = null;
+        // $this->uuid      = null;
     }//end __construct()
 
 
