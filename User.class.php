@@ -53,6 +53,7 @@ class User extends \EmPHyre\CRUD
      */
     public function __construct($user_id)
     {
+        //create using construct from CRUD object!!
         parent::__construct($user_id);
 
         // ensure APC_USER_PREPEND is defined!
