@@ -157,6 +157,28 @@ class PHPRouter
         }
     }*/
 
+    /**
+     * Add a RESTful API url adder
+     *
+     * @param  string  $url       The URL being accessed by various methods
+     * @param  string  $file      The file name ofthe function to be called
+     * @param  array   $functions An array of get=>fn1, post=>fn2, put=>fn3
+     * @param  array   $inputs    The inputs expected
+     * @param  bool|fn $auth      False|The auth function to be called
+     * @param  bool|fn $skin      False|The skin function to be called
+     *
+     * @return null
+     */
+    public function rest($url, $file, $functions = [], $inputs = [], $auth = false, $skin = false)
+    {
+        $methods = ['GET', 'POST', 'PUT', 'DELETE'];
+        // add a shorthand version
+        foreach ($functions as $method => $function) {
+            $m = array_search(strtoupper($method), $methods);
+            $this->add($methods[$m], $url, $file, $function, $inputs, $auth, $skin);
+        }
+
+    }//end rest()
 
     public function get($url, $file, $function, $inputs = array(), $auth = false, $skin = false)
     {
