@@ -396,7 +396,11 @@ class User extends \EmPHyre\CRUD
         return $this->user_id;
     }//end getId()
 
-
+    /**
+     * Return the encode64 of the UUID
+     *
+     * @return string UUID, encoded for URL use, etc
+     */
     public function getUUID()
     {
         return URL::encode64($this->uuid);
