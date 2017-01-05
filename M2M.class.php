@@ -344,7 +344,7 @@ class M2M
         $call_args[0] = $query;
 
         static::db();
-        return static::$db->pquery_array($call_args)->affectedRows();
+        return static::$db->pqueryArray($call_args)->affectedRows();
 
     }//end add()
 
@@ -375,6 +375,6 @@ class M2M
         $call_args[0] = $query;
 
         static::db();
-        return static::$db->pquery_array($call_args)->affectedRows();
+        return static::$db->pqueryArray($call_args)->affectedRows();
     }//end delete()
 }//end class
