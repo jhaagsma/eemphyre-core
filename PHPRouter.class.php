@@ -594,7 +594,8 @@ class PHPRouter
                                 $temp = $ret[$k];
                                 unset($ret[$k]);
 
-                                // this is kindof hack-ish, but I only just ran into wanting to validate the keys as well
+                                // this is kindof hack-ish,
+                                // but I only just ran into wanting to validate the keys as well
                                 $k       = $this->validate(array(0 => $k), 0, $keytype);
                                 $ret[$k] = $temp;
                             }
