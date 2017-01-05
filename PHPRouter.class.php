@@ -1,23 +1,31 @@
 <?php
-/*
-    ---------------------------------------------------
-    These files are part of the empiresPHPframework;
-    The original framework core (specifically the mysql.php
-    the router.php and the errorlog) was started by Timo Ewalds,
-    and rewritten to use APC and extended by Julian Haagsma,
-    for use in Earth Empires (located at http://www.earthempires.com );
-    it was spun out for use on other projects.
-
-    The general.php contains content from Earth Empires
-    written by Dave McVittie and Joe Obbish.
-
-
-    The example website files were written by Julian Haagsma.
-
-    All files are licensed under the MIT License.
-
-    First release, September 3, 2012
----------------------------------------------------*/
+/**
+ *
+ * PHPRouter is the routing object for the EmPHyre project
+ *
+ * PHP version 7
+ *
+ * ------
+ * These files are part of the empiresPHPframework;
+ * The original framework core (specifically the mysql.php
+ * the router.php and the errorlog) was started by Timo Ewalds,
+ * and rewritten to use APC and extended by Julian Haagsma,
+ * for use in Earth Empires (located at http://www.earthempires.com );
+ * it was spun out for use on other projects.
+ *
+ * The general.php contains content from Earth Empires
+ * written by Dave McVittie and Joe Obbish.
+ *
+ * The example website files were written by Julian Haagsma.
+ *
+ * @category Core
+ * @package  EmPHyre
+ * @author   Julian Haagsma <jhaagsma@gmail.com>
+ * @author   Timo Ewalds <tewalds@gmail.com>
+ * @license  All files are licensed under the MIT License.
+ * @link     https://github.com/jhaagsma/emPHyre
+ * @since    October 2009
+ */
 
 namespace EmPHyre;
 
@@ -316,7 +324,11 @@ class PHPRouter
 
 
     /**
-     * @param array $s
+     * I'll document this when I have time to go through it later...
+     *
+     * @param array $s    Not sure
+     * @param ????? $r    Not sure
+     * @param Path  $path A Path Node
      */
     private function urlRoute($s, $r, $path)
     {
@@ -379,8 +391,15 @@ class PHPRouter
 
     }//end route()
 
-
-    private function validate($source, $key, $type)
+    /**
+     * This is a list of aliases of pre-defined types, for ease of defining in
+     * the registries
+     *
+     * @param  string $type The alias of the type we want
+     *
+     * @return mixed        The actual type definition
+     */
+    private function typeAlias($type)
     {
         // type aliases
         switch ($type) {
@@ -396,6 +415,7 @@ class PHPRouter
                 break;
             case 'a1Dss':
             case 'arr1D_str_str':
+            case 'array':
                 $type = array(
                      'array',
                      [],
@@ -413,7 +433,21 @@ class PHPRouter
                       [],
                       'bool',
                       'u_int',
-                     ),                     'u_int',
+                     ),
+                     'u_int',
+                    );
+                break;
+            case 'a2Dbs':
+                $type = array(
+                     'array',
+                     [],
+                     array(
+                      'array',
+                      [],
+                      'bool',
+                      'string',
+                     ),
+                     'string',
                     );
                 break;
             case 'a2Dss':
@@ -426,7 +460,8 @@ class PHPRouter
                       [],
                       'string',
                       'string',
-                     ),                     'string',
+                     ),
+                     'string',
                     );
                 break;
             case 'b':
@@ -476,6 +511,15 @@ class PHPRouter
                 //these can be extended to further dimensions as following (a four dimensional array in this case)
                 'testarray4'=>array('array',null,array('array',null,array('array',null,array('array',3,'int'))))
         */
+        return $type;
+    }//end typeAlias()
+
+
+    private function validate($source, $key, $type)
+    {
+
+        $type = $this->typeAlias($type);
+
         $default = $innertype = $keytype = null;
         if (is_array($type)) {
             $default = (isset($type[1]) ? $type[1] : null);
