@@ -113,7 +113,13 @@ class User extends \EmPHyre\CRUD
         )->fetchField();
     }//end getUserIdFromUUID()
 
-
+    /**
+     * Returns the user list; either ALL users, or users belonging to a group
+     *
+     * @param  null|int $group_id NULL, or the group_id
+     *
+     * @return array              1D array of users
+     */
     public static function users($group_id = null)
     {
         self::db();
@@ -124,7 +130,7 @@ class User extends \EmPHyre\CRUD
 
         // query A, then "join" with users to check disabled
         $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
-        $users       = $permissions->getM2M(['group_id'=>$group_id]);
+        $users       = $permissions->getM2M(['group_id' => $group_id]);
 
         return self::filterPKArray($users, 'disabled', false);
     }//end users()
