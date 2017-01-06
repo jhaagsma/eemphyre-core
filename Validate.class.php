@@ -1,5 +1,4 @@
-<?php namespace EmPHyre;
-
+<?php
 /**
  * Validate is the validation object for the EmPHyre project
  *
@@ -25,6 +24,8 @@
  * @link     https://github.com/jhaagsma/emPHyre
  * @since    Recombined from empiresPHPframework extensions on Nov 4 2016
  */
+
+namespace EmPHyre;
 
 class Validate
 {
