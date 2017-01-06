@@ -135,8 +135,32 @@ class User extends \EmPHyre\CRUD
         return self::filterPKArray($users, 'disabled', false);
     }//end users()
 
-
+    /**
+     * Alias of add
+     *
+     * @param string $user_name The user name
+     * @param string $pw1       The password
+     * @param string $pw2       The password repeat
+     *
+     * @return Result           Return a Result Object
+     */
     public static function addUser($user_name, $pw1, $pw2)
+    {
+        trigger_error("The addUser() function is deprecated, use add() instead");
+        return static::add($user_name, $pw1, $pw2);
+    }//end addUser()
+
+
+    /**
+     * Add a user
+     *
+     * @param string $user_name The user name
+     * @param string $pw1       The password
+     * @param string $pw2       The password repeat
+     *
+     * @return Result           Return a Result Object
+     */
+    public static function add($user_name, $pw1, $pw2)
     {
         $check = Validate::email($user_name);
         if ($check->isError()) {
@@ -173,7 +197,7 @@ class User extends \EmPHyre\CRUD
         }
 
         return new Result('ADDED_USER', $user_id, true);
-    }//end addUser()
+    }//end add()
 
 
     public function isDisabled()
