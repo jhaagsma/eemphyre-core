@@ -1,9 +1,8 @@
-<?php namespace EmPHyre;
-
+<?php
 /**
  * Result is the result object for the PhaseWeb project
  *
- * PHP version 5
+ * PHP version 7
  *
  * ------
  * These files are part of the PhaseWeb project;
@@ -20,12 +19,21 @@
  * @since    PhaseWeb was created 2014-09, modernized to current in 2016-03
  */
 
+namespace EmPHyre;
+
 class Result
 {
 
     public $type;
 
-
+    /**
+     * The construct
+     *
+     * @param string  $type    The result tag/string/type/whatever
+     * @param mixed   $val     Usually an int, like user_id, group_id
+     * @param boolean $success Whether or not it was a successful result
+     * @param boolean $error   Whether or not it was an UNSUCCESSFUL result
+     */
     public function __construct($type, $val = null, $success = false, $error = true)
     {
         $this->type    = $type;
