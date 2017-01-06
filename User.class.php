@@ -175,15 +175,18 @@ class User extends \EmPHyre\CRUD
         }
 
         // need to change Validate::password with whatever password rules we want
-        if ($error = Validate::password($pw1, $pw2)) {
-            return $error;
+        $result = Validate::password($pw1, $pw2);
+        if ($result->isError()) {
+            return $result;
         }
 
-        $user_id = parent::addByArray(
-            [
+        $addArray = [
              'uuid'      => self::newUUID(),
              'user_name' => $user_name,
-            ]
+            ];
+
+        $user_id = parent::addByArray(
+            $addArray
         );
 
         if (!$user_id) {
