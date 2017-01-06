@@ -30,20 +30,37 @@ namespace EmPHyre;
 class Validate
 {
 
-
+    /**
+     * Return whether or not an email address is valid.
+     *
+     * @param  email $email The email address
+     *
+     * @return Result       A result object
+     */
     public static function email($email)
     {
         $email = filter_var($email, FILTER_VALIDATE_EMAIL);
         // returns the email or false
         if ($email) {
-            return false;
+            return new Result('OK', null, true);
         }
 
         return new Result('EMAIL_NOT_VALID');
 
     }//end email()
 
-
+    /**
+     * Return whether or not a password is valid
+     *
+     * @param  string  $pwd      The first password typed
+     * @param  string  $pwd2     The second password typed
+     * @param  integer $length   The minimum length of the password
+     * @param  boolean $letters  Whether or not there must be letters
+     * @param  boolean $numbers  Whether or not there must be numbers
+     * @param  boolean $specials Whether or not there must be specials
+     *
+     * @return Result            A result object
+     */
     public static function password($pwd, $pwd2, $length = 8, $letters = true, $numbers = true, $specials = true)
     {
         if ($pwd != $pwd2) {
@@ -63,7 +80,14 @@ class Validate
 
     }//end password()
 
-
+    /**
+     * This sanitizes names to only alphanumeric with spaces, for things like DB
+     * table names and such
+     *
+     * @param  string $name The string to sanitize
+     *
+     * @return string       The sanitized string
+     */
     public static function sanitizeName($name)
     {
         return preg_replace("/[^A-Za-z0-9\s]/", null, $name);
