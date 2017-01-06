@@ -28,8 +28,10 @@
 
 abstract class Migrations
 {
-    protected static $db;
-    // the database
+    protected static $db; //the database
+    protected static $toV;
+    protected static $fromV;
+
     protected $version;
 
 
