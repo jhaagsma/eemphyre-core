@@ -124,7 +124,7 @@ class User extends \EmPHyre\CRUD
 
         // query A, then "join" with users to check disabled
         $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
-        $users       = $permissions->getM2M($group_id, true);
+        $users       = $permissions->getM2M(['group_id'=>$group_id]);
 
         return self::filterPKArray($users, 'disabled', false);
     }//end users()
