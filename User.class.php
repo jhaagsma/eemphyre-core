@@ -199,13 +199,23 @@ class User extends \EmPHyre\CRUD
         return new Result('ADDED_USER', $user_id, true);
     }//end add()
 
-
+    /**
+     * Check if a user is disabled
+     *
+     * @return boolean Return whether or not the user is disabled...
+     */
     public function isDisabled()
     {
         return $this->disabled ? true : false;
     }//end isDisabled()
 
-
+    /**
+     * Check if a username exists
+     *
+     * @param  string $user_name The username to check
+     *
+     * @return Result            A Result object
+     */
     public static function checkExists($user_name = null)
     {
         if ($user_name === null) {
