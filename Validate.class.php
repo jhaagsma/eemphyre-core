@@ -59,7 +59,7 @@ class Validate
             return new Result('PASSWORD_NO_SPECIAL');
         }
 
-        return false;
+        return new Result('OK', null, true);
 
     }//end password()
 
