@@ -172,7 +172,6 @@ class M2M
 
         static::db();
         return static::$db->pqueryArray($call_args)->fetchField();
-
     }//end checkArray()
 
     /**
