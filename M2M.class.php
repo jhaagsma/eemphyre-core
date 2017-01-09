@@ -126,7 +126,7 @@ class M2M
      */
     public function checkArray($pksFixedValues = 0, $pkSearchValues = [], $pkIndex = null)
     {
-        if (empty($pkBSearch)) {
+        if (empty($pkSearchValues)) {
             return false;
         }
 
@@ -135,6 +135,9 @@ class M2M
         }
 
         $pkElim = static::$primaryKeys;
+
+        //new dBug($pkElim);
+        //new dBug($pksFixedValues);
 
         $call_args    = [];
         $call_args[0] = null;
@@ -161,6 +164,8 @@ class M2M
 
         $call_args[]  = $pkSearchValues;
         $call_args[0] = $query;
+
+        //new dBug($call_args) && exit;
 
         static::db();
         return static::$db->pqueryArray($call_args)->fetchField();
