@@ -139,7 +139,7 @@ class M2M
         $call_args    = [];
         $call_args[0] = null;
         foreach ($pksFixedValues as $pk => $fixedValue) {
-            $searchConstraints .= self::getKey($pk)."`=? AND `";
+            $searchConstraints .= self::getKey($pk)."`IN(?) AND `";
             $call_args[]        = $fixedValue;
 
             if (!is_numeric($pk)) {
@@ -157,7 +157,7 @@ class M2M
         }
 
         $query = "SELECT 1 FROM `".static::$tableName."` WHERE `".
-            $searchConstraints.$pkSearch."` IN(?) LIMIT 1";
+            $searchConstraints.$pkSearch."` LIMIT 1";
 
         $call_args[]  = $pkSearchValues;
         $call_args[0] = $query;
