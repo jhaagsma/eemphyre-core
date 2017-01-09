@@ -142,7 +142,7 @@ class M2M
         $call_args    = [];
         $call_args[0] = null;
         foreach ($pksFixedValues as $pk => $fixedValue) {
-            $searchConstraints .= self::getKey($pk)."`=? AND `";
+            $searchConstraints .= self::getKey($pk)."` IN(?) AND `";
             $call_args[]        = $fixedValue;
 
             if (!is_numeric($pk)) {
@@ -154,6 +154,9 @@ class M2M
 
         if ($pkIndex != null) {
             $pkSearch = static::$primaryKeys[$pkIndex];
+        } elseif (!is_numeric(key($pkSearchValues))) {
+            $pkSearch       = key($pkSearchValues);
+            $pkSearchValues = current($pkSearchValues);
         } else {
             //BE WARNED, THIS WILL JUST TAKE THE FIRST UNCONSTRAINED PK
             $pkSearch = current($pkElim);
