@@ -139,8 +139,10 @@ class M2M
         //new dBug($pkElim);
         //new dBug($pksFixedValues);
 
-        $call_args    = [];
-        $call_args[0] = null;
+        $call_args         = [];
+        $call_args[0]      = null;
+        $searchConstraints = null;
+
         foreach ($pksFixedValues as $pk => $fixedValue) {
             $searchConstraints .= self::getKey($pk)."` IN(?) AND `";
             $call_args[]        = $fixedValue;
