@@ -527,15 +527,15 @@ class PHPRouter
                 if (is_array($type[2])) {
                     $passarray = $type[2];
                 } else {
-                    $innertype = $this->typeAlias($type[2]);
+                    $innertype = $type[2];
                 }
 
                 if (isset($type[3])) {
-                    $keytype = $this->typeAlias($type[3]);
+                    $keytype = $type[3];
                 }
             }
 
-            $type = $this->typeAlias($type[0]);
+            $type = $type[0];
         }
 
         switch ($type) {
