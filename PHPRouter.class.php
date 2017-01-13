@@ -514,7 +514,15 @@ class PHPRouter
         return $type;
     }//end typeAlias()
 
-
+    /**
+     * This function validates incoming data to the types laid out in the registry
+     *
+     * @param  Array  $source GET/POST/etc
+     * @param  string $key    The key of the incoming field
+     * @param  string $type   The type the incoming value is supposed to be
+     *
+     * @return mixed          A value set to the type "$type"
+     */
     private function validate($source, $key, $type)
     {
 
