@@ -415,7 +415,6 @@ class PHPRouter
                 break;
             case 'a1Dss':
             case 'arr1D_str_str':
-            case 'array':
                 $type = array(
                      'array',
                      [],
@@ -543,7 +542,7 @@ class PHPRouter
                 }
             }
 
-            $type = $type[0];
+            $type = $this->typeAlias($type[0]);
         }
 
         switch ($type) {
