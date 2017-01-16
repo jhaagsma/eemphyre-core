@@ -164,6 +164,10 @@ class M2M
             $pkSearch = current($pkElim);
         }
 
+        if (empty($pkSearchValues)) {
+            return false;
+        }
+
         $query = "SELECT 1 FROM `".static::$tableName."` WHERE `".
             $searchConstraints.$pkSearch."` IN(?) LIMIT 1";
 
