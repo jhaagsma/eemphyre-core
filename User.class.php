@@ -193,8 +193,9 @@ class User extends \EmPHyre\CRUD
             return new Result("FAIL_INSERT");
         }
 
-        $newuser    = Container::newUser($user_id);
-        $passResult = $newuser->changePassword($pw1, $pw2);
+        $newuser = Container::newUser($user_id);
+        //the third flag is that this is, in fact, a new user
+        $passResult = $newuser->changePassword($pw1, $pw2, true);
         if ($passResult->isError()) {
             return $passResult;
         }
@@ -392,9 +393,10 @@ class User extends \EmPHyre\CRUD
     }//end lastIP()
 
 
-    public function changePassword($pw1 = null, $pw2 = null)
+    public function changePassword($pw1 = null, $pw2 = null, $newUser = false)
     {
-        if ($error = Validate::password($pw1, $pw2)) {
+        $result = Validate::password($pw1, $pw2);
+        if (!$newUser && $result->isError()) {
             return $error;
         } else {
             $salt           = Password::generateSalt();
