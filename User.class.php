@@ -392,12 +392,20 @@ class User extends \EmPHyre\CRUD
         return long2ip((float)$long);
     }//end lastIP()
 
-
+    /**
+     * Change the password
+     *
+     * @param  Password $pw1     The first Password
+     * @param  Password $pw2     The repeat of the password
+     * @param  boolean  $newUser Whether or not this is *creating* a Password
+     *
+     * @return Result            A Result Object
+     */
     public function changePassword($pw1 = null, $pw2 = null, $newUser = false)
     {
         $result = Validate::password($pw1, $pw2);
         if (!$newUser && $result->isError()) {
-            return $error;
+            return $result;
         } else {
             $salt           = Password::generateSalt();
             $password       = Password::cryptSHA512($pw1, $salt);
