@@ -55,8 +55,12 @@ class Result
 
     }//end setSuccess()
 
-
-    private function setNeutral()
+    /**
+     * Set the object to neutral
+     *
+     * @return null
+     */
+    protected function setNeutral()
     {
         $this->error   = false;
         $this->success = false;
