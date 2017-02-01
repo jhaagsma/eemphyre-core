@@ -43,8 +43,12 @@ class Result
 
     }//end __construct()
 
-
-    private function setSuccess()
+    /**
+     * Set the success level to true
+     *
+     * @return null
+     */
+    protected function setSuccess()
     {
         $this->error   = false;
         $this->success = true;
