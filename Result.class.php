@@ -67,7 +67,13 @@ class Result
 
     }//end setNeutral()
 
-
+    /**
+     * Parse the error message
+     *
+     * @param  Array $bits Array of bits of the message
+     *
+     * @return string      Parsed string
+     */
     private function restOfTheBits($bits)
     {
         unset($bits[0]);
@@ -113,7 +119,11 @@ class Result
         return false;
     }//end patternedMessage()
 
-
+    /**
+     * Return a message for custom types of flags
+     *
+     * @return string The error message
+     */
     public function message()
     {
         // I don't like having custom error messages stored in /core
@@ -127,50 +137,80 @@ class Result
             return $patterned;
         }
 
-        switch ($this->type) {
-            case 'NOT_LOGGED_IN':
-                return 'You must be logged in to access this page.';
-            case 'NOT_ADMIN':
-                return 'You must be an administrator to access this page.';
-            case 'EMAIL_NOT_VALID':
-                return 'Email is not valid.';
-            case 'PASSWORD_NOMATCH':
-                return 'Passwords do not match.';
-            case 'PASSWORD_SHORT':
-                return 'Password is too short.'.($this->val ? " (Minimum {$this->val})" : null);
-            case 'PASSWORD_NO_LETTER':
-                return 'Password must contain a letter (as well as a number and special character).';
-            case 'PASSWORD_NO_NUMBER':
-                return 'Password must contain a number (as well as a special character).';
-            case 'PASSWORD_NO_SPECIAL':
-                return 'Password must contain a special character (as well as a number).';
-            case 'INVALID_INPUT':
-                return 'Invalid Input'.($this->val ? ': '.$this->val : null);
-            case 'INSERT_FAIL':
-                return 'Could not insert into Database.'.($this->val ? ': '.$this->val : null);
-            case 'UPDATE_FAIL':
-                return 'Could not update the Database.'.($this->val ? ': '.$this->val : null);
-            default:
-                return 'Error: '.$this->type.($this->val ? ': '.$this->val : null);
-        }//end switch
+        $messageList = self::messageList();
+
+        if (isset($messageList[$this->type])) {
+            return $messageList[$this->type];
+        } else {
+            return $messageList['DEFAULT'];
+        }
 
     }//end message()
 
+    /**
+     * Returns a list of messages
+     *
+     * @return array List of messages
+     */
+    private function messageList()
+    {
+        return [
+            'NOT_LOGGED_IN'
+                => 'You must be logged in to access this page.',
+            'NOT_ADMIN'
+                => 'You must be an administrator to access this page.',
+            'EMAIL_NOT_VALID'
+                => 'Email is not valid.',
+            'PASSWORD_NOMATCH'
+                => 'Passwords do not match.',
+            'PASSWORD_SHORT'
+                => 'Password is too short.'.($this->val ? " (Minimum {$this->val})" : null),
+            'PASSWORD_NO_LETTER'
+                => 'Password must contain a letter (as well as a number and special character).',
+            'PASSWORD_NO_NUMBER'
+                => 'Password must contain a number (as well as a special character).',
+            'PASSWORD_NO_SPECIAL'
+                => 'Password must contain a special character (as well as a number).',
+            'INVALID_INPUT'
+                => 'Invalid Input'.($this->val ? ': '.$this->val : null),
+            'INSERT_FAIL'
+                => 'Could not insert into Database.'.($this->val ? ': '.$this->val : null),
+            'UPDATE_FAIL'
+                => 'Could not update the Database.'.($this->val ? ': '.$this->val : null),
+            'DEFAULT'
+                => 'Error: '.$this->type.($this->val ? ': '.$this->val : null),
+        ];
+    }//end messageList()
 
+    /**
+     * Determine if the message was an error message
+     *
+     * @return boolean Returns true if error, false otherwise
+     */
     public function isError()
     {
         return $this->error ? true : false;
 
     }//end isError()
 
-
+    /**
+     * Turn the error object into something printable, by returning the type
+     *
+     * @return string String of the error type
+     */
     public function __toString()
     {
         return $this->type;
 
     }//end __toString()
 
-
+    /**
+     * Make the error object into something that can be put in a url
+     * Includes values as &result_val=($this->val)
+     * Includes success as &result_success=1
+     *
+     * @return String The error object in URL form
+     */
     public function toURL()
     {
         return '&result='.urlencode($this->type)
@@ -179,7 +219,11 @@ class Result
 
     }//end toURL()
 
-
+    /**
+     * Make the object able to cast to a bool
+     *
+     * @return bool True or false, based on "success"
+     */
     public function __toBool()
     {
         /*
