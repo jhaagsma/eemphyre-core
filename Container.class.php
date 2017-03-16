@@ -1,4 +1,4 @@
-<?php
+<?php namespace EmPHyre;
 
 /**
  * Container is the class creation object for the EmPHyre project
@@ -19,11 +19,17 @@
  * @since    March 2016
  */
 
-namespace EmPHyre;
-
 // prototype from http://code.tutsplus.com/tutorials/dependency-injection-huh--net-26903
 class Container
 {
+
+
+    protected function __construct()
+    {
+        // protected so it can't be instantiated
+    }//end __construct()
+
+
     /**
      * Array of database connections, mysqli
      **/
@@ -38,80 +44,41 @@ class Container
         self::_params = $params;
     }*/
 
-    /**
-     * Get the default database name, or return what's given
-     *
-     * @param  string $database A database name
-     *
-     * @return string           A database name
-     */
+
     private static function getDbName($database = null)
     {
         return ($database == null ? self::$params['db']['default']['db_name'] : $database);
 
     }//end getDbName()
 
-    /**
-     * Get the default database host, or return what's given
-     *
-     * @param  string $database A database host
-     *
-     * @return string           A database host
-     */
+
     private static function getDbHost($database = null)
     {
         $database = self::getDbName($database);
 
-        if (isset(self::$params['db'][$database]['db_host'])) {
-            return self::$params['db'][$database]['db_host'];
-        }
+        return ( isset(self::$params['db'][$database]['db_host']) ? self::$params['db'][$database]['db_host'] : self::$params['db']['default']['db_host'] );
 
-        return self::$params['db']['default']['db_host'];
     }//end getDbHost()
 
-    /**
-     * Get the default database user, or return what's given
-     *
-     * @param  string $database A database user
-     *
-     * @return string           A database user
-     */
+
     private static function getDbUser($database = null)
     {
         $database = self::getDbName($database);
 
-        if (isset(self::$params['db'][$database]['db_user'])) {
-            return self::$params['db'][$database]['db_user'];
-        }
+        return ( isset(self::$params['db'][$database]['db_user']) ? self::$params['db'][$database]['db_user'] : self::$params['db']['default']['db_user'] );
 
-        return self::$params['db']['default']['db_user'];
     }//end getDbUser()
 
-    /**
-     * Get the default database password, or return what's given
-     *
-     * @param  string $database A database password
-     *
-     * @return string           A database password
-     */
+
     private static function getDbPass($database = null)
     {
         $database = self::getDbName($database);
 
-        if (isset(self::$params['db'][$database]['db_pass'])) {
-            self::$params['db'][$database]['db_pass'];
-        }
+        return ( isset(self::$params['db'][$database]['db_pass']) ? self::$params['db'][$database]['db_pass'] : self::$params['db']['default']['db_pass'] );
 
-        return self::$params['db']['default']['db_pass'];
     }//end getDbPass()
 
-    /**
-     * Get a database instance, based on database name
-     *
-     * @param  string $database A database name
-     *
-     * @return object           MysqlDb Object
-     */
+
     public static function getDb($database = null)
     {
         $database = self::getDbName($database);
@@ -135,14 +102,7 @@ class Container
 
     }//end getDb()
 
-    /**
-     * Get a new user, using a UUID
-     *
-     * @param  string  $uuid       The UUID
-     * @param  boolean $clearcache Whether or not to clear cache; mostly for login
-     *
-     * @return object              A User Object
-     */
+
     public static function newUserFromUUID($uuid = null, $clearcache = false)
     {
         $userid = User::getUserIdFromUUID($uuid);
@@ -150,14 +110,7 @@ class Container
 
     }//end newUserFromUUID()
 
-    /**
-     * Get a new user, using a User Id
-     *
-     * @param  integer $userid     The User Id
-     * @param  boolean $clearcache Whether or not to clear cache; mostly for login
-     *
-     * @return object              A User Object
-     */
+
     public static function newUser($userid = 0, $clearcache = false)
     {
         if (static::$userNamespace) {
@@ -174,14 +127,7 @@ class Container
 
     }//end newUser()
 
-    /**
-     * Get a new user, using a user name
-     *
-     * @param  string  $username   The User nmae
-     * @param  boolean $clearcache Whether or not to clear cache; mostly for login
-     *
-     * @return object              A User Object
-     */
+
     public static function newUserFromName($username = null, $clearcache = false)
     {
         $userid = User::getUserIdFromName($username);
