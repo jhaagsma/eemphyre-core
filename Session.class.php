@@ -31,9 +31,9 @@
 
 //THIS IS HOW LONG WE WANT LOGIN SESSIONS TO LAST IN SECONDS (obivously)
 define('SESSION_TIME', 16 * 3600);
-// define('COOKIE_NAME', 'emphyre');
-// define('APC_LAST_CLEAR_SESSION', 'em:lcs');
-// define('APC_ACTIVE_SESSION_PREFIX', 'em:as-');
+defined('COOKIE_NAME') or define('COOKIE_NAME', 'emphyre');
+defined('APC_LAST_CLEAR_SESSION') or define('APC_LAST_CLEAR_SESSION', 'em:lcs');
+defined('APC_ACTIVE_SESSION_PREFIX') or define('APC_ACTIVE_SESSION_PREFIX', 'em:as-');
 
 
 abstract class Session

@@ -30,36 +30,29 @@
 
 namespace EmPHyre;
 
-class PathNode
+class PathNode //shortening names to speed up APC storage and retrieval //debug test
 {
-    // shortening names to speed up APC storage and retrieval //debug test
-    public $file;
-    // $file;
-    public $function;
-    // $function;
-    public $inputs;
-    // $inputs;
-    public $auth;
-    // $auth;
-    public $skin;
-    // $skin_name;
-    /*
-        function __construct($file, $function, $inputs = null, $auth = null, $skin = null){
+    public $file; //$file;
+    public $function; //$function;
+    public $inputs; //$inputs;
+    public $auth; //$auth;
+    public $skin; //$skin_name;
+
+    /*function __construct($file, $function, $inputs = null, $auth = null, $skin = null){
         $this->file = $file;
         $this->function = $function;
         $this->inputs = $inputs;
         $this->auth = $auth;
         $this->skin = $skin;
     }*/
-
-
     public function __construct($r)
     {
-        $this->file     = $r['0'];
-        $this->function = $r['1'];
-        $this->inputs   = def($r['2'], null);
-        $this->auth     = def($r['3'], null);
-        $this->skin     = def($r['4'], null);
-
+        $this->file             = (isset($r[0]) ? $r[0] . '/' . $r[1] : $r[1]);
+        $this->function         = $r[2];
+        $this->inputs           = def($r[3], null);
+        $this->auth             = def($r[4], null);
+        $this->skin             = def($r[5], null);
+        $this->path_extension   = def($r[6], false);
+        $this->extractable_json = def($r[7], false);
     }//end __construct()
 }//end class

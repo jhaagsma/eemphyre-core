@@ -46,54 +46,50 @@ class PHPRouter
                         "POST" => array(),
                        );
         $this->clearDefaults();
-
     }//end __construct()
 
 
     public function clearDefaults()
     {
-        $this->area        = array();
-        $this->dir         = null;
-        $this->auth        = null;
-        $this->skin        = null;
-        $this->get_inputs  = array();
-        $this->post_inputs = array();
-
+        $this->area             = array();
+        $this->dir              = null;
+        $this->auth             = null;
+        $this->skin             = null;
+        $this->get_inputs       = array();
+        $this->post_inputs      = array();
+        $this->common           = array();
+        $this->path_extension   = false;
+        $this->extractable_json = false;
     }//end clearDefaults()
 
 
     public function dirSet($dir = null)
     {
         $this->dir = rtrim($dir, '/');
-
     }//end dirSet()
 
 
     public function defaultAuth($auth = null)
     {
         $this->auth = $auth;
-
     }//end defaultAuth()
 
 
     public function defaultSkin($skin = null)
     {
         $this->skin = $skin;
-
     }//end defaultSkin()
 
 
     public function defaultGETInputs($inputs = array())
     {
         $this->get_inputs = $inputs;
-
     }//end defaultGETInputs()
 
 
     public function defaultPOSTInputs($inputs = array())
     {
         $this->post_inputs = $inputs;
-
     }//end defaultPOSTInputs()
 
 
@@ -103,7 +99,6 @@ class PHPRouter
         if ($area) {
             $this->areaPush($area);
         }
-
     }//end areaSet()
 
 
@@ -112,15 +107,28 @@ class PHPRouter
         // this function is to allow me to avoid putting in /{server=>string}/
         // for like 200 entries in the registry
         $this->area = array_merge($this->area, explode('/', trim($area, '/')));
-
     }//end areaPush()
 
 
     public function areaPop()
     {
         array_pop($this->area);
-
     }//end areaPop()
+
+    public function commonInputs($inputs = array())
+    {
+        $this->common = $inputs;
+    }
+
+    public function pathExtension($extension = false)
+    {
+        $this->path_extension = $extension;
+    }
+
+    public function extractableJson($extractable = false)
+    {
+        $this->extractable_json = $extractable;
+    }
 
 
     // Object version --- these are TOO SLOW!  //Leave in until git & svn tree merge...
@@ -185,35 +193,41 @@ class PHPRouter
             $m = array_search(strtoupper($method), $methods);
             $this->add($methods[$m], $url, $file, $function, $inputs, $auth, $skin);
         }
-
     }//end rest()
 
     public function get($url, $file, $function, $inputs = array(), $auth = false, $skin = false)
     {
         // add a shorthand version
         $this->add('GET', $url, $file, $function, $inputs, $auth, $skin);
-
     }//end get()
-
 
     public function post($url, $file, $function, $inputs = array(), $auth = false, $skin = false)
     {
         // add a shorthand version
         $this->add('POST', $url, $file, $function, $inputs, $auth, $skin);
-
     }//end post()
-
 
     public function add($type, $url, $file, $function, $inputs = array(), $auth = false, $skin = false)
     {
         // Testing out array version
         $uri_parts = array_merge($this->area, explode('/', ltrim($url, '/')));
         $url       = implode('/', $uri_parts);
-        $file      = ($this->dir && $file[0] != '.' ? $this->dir.'/'.ltrim($file, '/') : $file);
-        $node      = array(
-                      0 => $file,
-                      1 => $function,
-                     );
+        $dir = ($this->dir && $file[0] != '.' ? $this->dir : false);
+        $file = ($this->dir && $file[0] != '.' ? ltrim($file, '/') : $file);
+        //$node      = [0 => $file, 1 => $function,];
+
+        if ($this->common) {
+            $inputs = $inputs + $this->common;
+        }
+
+        $inputs = TypeValidator::compressInputs($inputs);
+
+        if ($dir) {
+            $node = [0=>$dir, 1=>$file, 2=>$function];
+        } else {
+            $node = [1=>$file, 2=>$function];
+        }
+
         // maybe array
         if ($skin === false) {
             // in other words, if they supplied no auth
@@ -232,23 +246,28 @@ class PHPRouter
             $inputs = $inputs == null ? $this->post_inputs : array_merge($this->post_inputs, $inputs);
         }
 
-        if ($skin) {
-            $node[2] = $inputs;
-            $node[3] = $auth;
-            $node[4] = $skin;
+        if ($this->path_extension !== false || $this->extractable_json !== false) {
+            $node[3] = $inputs;
+            $node[4] = $auth;
+            $node[5] = $skin;
+            $node[6] = $this->path_extension;
+            $node[7] = $this->extractable_json;
+        } elseif ($skin) {
+            $node[3] = $inputs;
+            $node[4] = $auth;
+            $node[5] = $skin;
         } elseif ($auth) {
-            $node[2] = $inputs;
-            $node[3] = $auth;
+            $node[3] = $inputs;
+            $node[4] = $auth;
         } elseif ($inputs) {
-            $node[2] = $inputs;
+            $node[3] = $inputs;
         }
 
         $this->buildBranch($uri_parts, $this->paths[$type], $node, $url);
-
     }//end add()
 
 
-    private function buildBranch($uri_parts, &$r, $node, $url)
+    private function buildBranch($uri_parts, &$r, $node, $url, $inherit = false)
     {
         // comments on 'r': mapping
             // node aka o => 0
@@ -257,9 +276,9 @@ class PHPRouter
             // name aka n => 3
             // type aka t => 4
         $current = array_shift($uri_parts);
-        if (!$current) {
-            // ie we've moved to the end of the url
+        if (!$current) { // ie we've moved to the end of the url
             if (!isset($r[0])) {
+                $node = $this->newNode($inherit, $node);
                 $r[0] = $node;
                 return false;
             } else {
@@ -268,12 +287,10 @@ class PHPRouter
             }
         }
 
+        $inherit = $this->newInherit($inherit, (isset($r[0]) ? $r[0] : false));
         if ($vinfo = $this->isVariable($current)) {
             if (!isset($r[1])) {
-                $r[1] = array(
-                         3 => $vinfo[1],
-                         4 => $vinfo[2],
-                        );
+                $r[1] = [3 => $vinfo[1], 4 => $vinfo[2]];
             } elseif ($r[1][3] != $vinfo[1]) {
                 // this must be 1 because isVariable returns 0 for matches 1 for name and 2 for type in {name=>type}
                 trigger_error("Ignoring Branch!: Different variable already set for this path: $url");
@@ -283,16 +300,15 @@ class PHPRouter
             return $this->buildBranch($uri_parts, $r[1], $node, $url);
         } else {
             if (!isset($r[2])) {
-                $r[2] = array();
+                $r[2] = [];
             }
 
             if (!isset($r[2][$current])) {
-                $r[2][$current] = array();
+                $r[2][$current] = [];
             }
 
             return $this->buildBranch($uri_parts, $r[2][$current], $node, $url);
         }//end if
-
     }//end buildBranch()
 
 
@@ -301,7 +317,6 @@ class PHPRouter
         preg_match("/{([A-z0-9]*)=>([A-z0-9]*)}/", $string, $matches);
         return $matches;
         // this returns empty array if nothing was matched
-
     }//end isVariable()
 
 
@@ -322,6 +337,54 @@ class PHPRouter
         return false;
     }*/
 
+    private function newInherit($inherit, $node)
+    {
+        $can_inherit = array(0,1,4,5);
+
+        foreach ($can_inherit as $a) {
+            if ($node && array_key_exists($a, $node)) {
+                $inherit[$a] = $node[$a];
+            }
+        }
+
+        return $inherit;
+    }
+
+    private function newNode($inherit, $node)
+    {
+        if (!$inherit) {
+            return $node;
+        }
+
+        $can_inherit = array(0,1,4,5);
+        foreach ($can_inherit as $a) {
+            if (array_key_exists($a, $inherit) && array_key_exists($a, $node) && $inherit[$a] == $node[$a]) {
+                unset($node[$a]);
+            }
+        }
+
+        if (!array_key_exists(4, $node) && !array_key_exists(5, $node) && !$node[3]) {
+            unset($node[3]);
+        }
+
+        return $node;
+    }
+
+    private function inheritNode($inherit, $node)
+    {
+        $can_inherit = array(0,1,4,5);
+        foreach ($can_inherit as $a) {
+            if (!array_key_exists($a, $node) && array_key_exists($a, $inherit)) {
+                $node[$a] = $inherit[$a];
+            }
+        }
+        $file = $node[1];
+        if ($file[0] == '.') {
+            unset($node[0]);
+        }
+
+        return $node;
+    }
 
     /**
      * I'll document this when I have time to go through it later...
@@ -329,8 +392,9 @@ class PHPRouter
      * @param array $s    Not sure
      * @param ????? $r    Not sure
      * @param Path  $path A Path Node
+     * @param array $inherit
      */
-    private function urlRoute($s, $r, $path)
+    private function urlRoute($s, $r, $path, $inherit = false)
     {
         // comments on 'r': mapping
             // node aka o => 0
@@ -338,310 +402,111 @@ class PHPRouter
             // static aka s =>2
             // name aka n => 3
             // type aka t => 4
+        $inherit = $this->newInherit($inherit, (isset($r[0]) ? $r[0] : false));
         $current = array_shift($s);
         if (($current === null || $current === "") && !isset($r[0])) {
             // can't do !$current if you want to pass in 0 as a path variable
             return false;
         } elseif (($current === null || $current === "")) {
-            return new PathNode($r[0]);
-            // maybe array;
+            return new PathNode($this->inheritNode($inherit, $r[0]));
         } elseif (isset($r[2][$current])) {
-            return $this->urlRoute($s, $r[2][$current], $path);
+            return $this->urlRoute($s, $r[2][$current], $path, $inherit);
         } elseif (isset($r[1])) {
             $path->variables[$r[1][3]] = $this->validate(array($current), 0, $r[1][4]);
-            return $this->urlRoute($s, $r[1], $path);
+            return $this->urlRoute($s, $r[1], $path, $inherit);
         }
 
         return false;
-
     }//end urlRoute()
 
-
-    public function route()
+    private function getType()
     {
         $type = $_SERVER['REQUEST_METHOD'];
+        if ($type != 'GET' && $type != 'POST') { //for now until we do HEAD and PUT versions of things
+            $type = 'GET';
+        }
+
+        return $type;
+    }
+
+    private function extractJson($node)
+    {
+        $type = $this->getType();
+        if ($type == 'GET') {
+            if (!isset($_GET[$node->extractable_json])) {
+                return;
+            }
+
+            $json = json_decode($_GET[$node->extractable_json]);
+            if (!$json) {
+                return;
+            }
+
+            foreach ($json as $key => $value) {
+                $_GET[$key] = $value;
+            }
+        } elseif ($type == 'POST') {
+            if (!isset($_POST[$node->extractable_json])) {
+                return;
+            }
+
+            $json = json_decode($_POST[$node->extractable_json]);
+            if (!$json) {
+                return;
+            }
+
+            foreach ($json as $key => $value) {
+                $_POST[$key] = $value;
+            }
+        }
+    }
+
+    public function route($url = null)
+    {
+        $type = $this->getType();
         $uri  = $_SERVER['REQUEST_URI'];
 
-        $url = explode('?', $uri, 2);
+        $url = ($url ? array($url) : explode('?', $uri, 2));
 
         $path = new Path($url = rtrim($url[0], '/'));
-
-        // trigger_error("A: " . var_export($path, true));
         $s = explode('/', ltrim($path->url, '/'));
 
         $data = array();
+
+        if (!isset($this->paths)) {
+            trigger_error($_SERVER['REQUEST_METHOD'] . ': ' . $_SERVER['SERVER_NAME'] . ' ' . $_SERVER['REQUEST_URI']);
+        }
+
         $node = $this->urlRoute($s, $this->paths[$type], $path);
 
-        // trigger_error("B: " . var_export($path, true));
         if (!$node) {
             return new Route(false, 'fourohfour', $data, $path, false);
         }
 
-        // trigger_error("C: " . var_export($path, true));
+        //basically this lets people set everything up as a single json variable,
+        //like api_payload, and we extract it as though it were in the POST or GET
+        if ($node->extractable_json) {
+            $this->extractJson($node);
+        }
+
+
         if (is_array($node->inputs)) {
             $source = ($type == "GET" ? $_GET : $_POST);
 
             foreach ($node->inputs as $k => $v) {
-                $data[$k] = $this->validate($source, $k, $v);
+                $data[$k] = TypeValidator::validate($source, $k, $v);
             }
+        }
+
+        //basically this lets us set a variable, like api_function, at say /ai/
+        //and then automagically put us to /ai/cash or /ai/explore, based on input
+        if ($node->path_extension && isset($source[$node->path_extension])) {
+            return $this->route($url . '/' . $source[$node->path_extension]);
         }
 
         $path->skin = $node->skin;
         return new Route($node->file, $node->function, $data, $path, $node->auth);
-
     }//end route()
-
-    /**
-     * This is a list of aliases of pre-defined types, for ease of defining in
-     * the registries
-     *
-     * @param  string $type The alias of the type we want
-     *
-     * @return mixed        The actual type definition
-     */
-    private function typeAlias($type)
-    {
-        // type aliases
-        switch ($type) {
-            case 'a1Dbu':
-            case 'arr1D_bool_uint':
-                // var ......TYPE...DEFAULT..VALUES..INDEX
-                $type = array(
-                     'array',
-                     [],
-                     'bool',
-                     'u_int',
-                    );
-                break;
-            case 'a1Dss':
-            case 'arr1D_str_str':
-                $type = array(
-                     'array',
-                     [],
-                     'string',
-                     'string',
-                    );
-                break;
-            case 'a2Dbu':
-            case 'arr2D_bool_uint':
-                $type = array(
-                     'array',
-                     [],
-                     array(
-                      'array',
-                      [],
-                      'bool',
-                      'u_int',
-                     ),
-                     'u_int',
-                    );
-                break;
-            case 'a2Dbs':
-                $type = array(
-                     'array',
-                     [],
-                     array(
-                      'array',
-                      [],
-                      'bool',
-                      'string',
-                     ),
-                     'string',
-                    );
-                break;
-            case 'a2Dss':
-            case 'arr2D_str_str':
-                $type = array(
-                     'array',
-                     [],
-                     array(
-                      'array',
-                      [],
-                      'string',
-                      'string',
-                     ),
-                     'string',
-                    );
-                break;
-            case 'b':
-                $type = 'bool';
-                break;
-            case 's':
-            case 'str':
-                $type = 'string';
-                break;
-            case 'u':
-                $type = 'u_int';
-                break;
-            default:
-                // do nothing;
-        }//end switch
-
-        /*
-            Added true multi-dim functionality
-            Types Must be specified in the following manner (variable_name => type)
-                //variable name with type
-                'testuint'=>'u_int'
-
-                //variable name with type and default
-                'testuint'=>array('u_int',1337)
-
-                //one dimensional array with default for base layer and type
-                'testarray2'=>array('array',null,'int'),
-                'testarray2a'=>array('array',13,'int'),
-
-                //one dimensional array with default for base layer and type and type for array keys
-                'testarray2'=>array('array',null,'int','u_int'),
-                'testarray2a'=>array('array',13,'int','int'),
-
-                //one dimensional array with default for base layer and type with default for array elements
-                'testarray2b'=>array('array',null,array('int',136)),
-
-                //two dimensoinal array with default bool for top layer, and key validation for both layers
-                'countries'=>array('array', false, array('array', false, 'bool', 'u_int'), 'u_int')
-
-                //two dimensional array with default for base layer
-                 //and second layer and type for array elements WITHOUT default for array elements
-                'testarray3'=>array('array',null,array('array',3,'int')),
-                //two dimensional array with default for base layer
-                 //and second layer and type for array elements with default for array elements
-                'testarray3b'=>array('array',null,array('array',3,array('int',136))),
-
-                //these can be extended to further dimensions as following (a four dimensional array in this case)
-                'testarray4'=>array('array',null,array('array',null,array('array',null,array('array',3,'int'))))
-        */
-        return $type;
-    }//end typeAlias()
-
-    /**
-     * This function validates incoming data to the types laid out in the registry
-     *
-     * @param  Array  $source GET/POST/etc
-     * @param  string $key    The key of the incoming field
-     * @param  string $type   The type the incoming value is supposed to be
-     *
-     * @return mixed          A value set to the type "$type"
-     */
-    private function validate($source, $key, $type)
-    {
-
-        $type = $this->typeAlias($type);
-
-        $default = $innertype = $keytype = null;
-        if (is_array($type)) {
-            $default = (isset($type[1]) ? $type[1] : null);
-            if ($type[0] == 'array' && isset($type[2])) {
-                if (is_array($type[2])) {
-                    $passarray = $type[2];
-                } else {
-                    $innertype = $type[2];
-                }
-
-                if (isset($type[3])) {
-                    $keytype = $type[3];
-                }
-            }
-
-            $type = $this->typeAlias($type[0]);
-        }
-
-        switch ($type) {
-            case "u_int":
-                if (isset($source[$key]) && $source[$key] !== "") {
-                    $ret = $source[$key];
-
-                    if (!is_numeric($ret)) {
-                        $ret = $this->doSiPrefixes($ret);
-                        // make k's into 000's and m's into 000000
-                    }
-
-                    if (settype($ret, 'int')) {
-                        if ($ret < 0) {
-                            return 0;
-                        }
-
-                        return $ret;
-                    }
-                }
-
-                settype($default, "int");
-                return $default;
-
-            case "int":
-            case "integer":
-            case "bool":
-            case "boolean":
-            case "float":
-            case "double":
-            case "string":
-                if (isset($source[$key]) && $source[$key] !== "") {
-                    $ret = $source[$key];
-
-                    if (settype($ret, $type)) {
-                        return $ret;
-                    }
-                }
-
-                settype($default, $type);
-                return $default;
-
-            case "array":
-                if (isset($source[$key])) {
-                    $ret = $source[$key];
-
-                    if (settype($ret, 'array')) {
-                        // iff type is set as an array
-                        // eg 'countries'=>array('array', 0, 'int') )
-                        // with type array (which is how we got here) default,
-                        // and internal type
-                        foreach ($ret as $k => $v) {
-                            if ($keytype) {
-                                // validate the keys as well --
-                                // have to store the data in $temp while we rewrite the key
-                                $temp = $ret[$k];
-                                unset($ret[$k]);
-
-                                // this is kindof hack-ish,
-                                // but I only just ran into wanting to validate the keys as well
-                                $k       = $this->validate(array(0 => $k), 0, $keytype);
-                                $ret[$k] = $temp;
-                            }
-
-                            $ret[$k] = $this->validate($ret, $k, (isset($passarray) ? $passarray : $innertype));
-                            if ($ret[$k] === null) {
-                                unset($ret[$k]);
-                            }
-                        }
-
-                        return $ret;
-                    }//end if
-                }//end if
-                return def($default, []);
-
-            case "file":
-                return def($_FILES[$key], null);
-
-            default:
-                $noTypeErr = "\n<br />Are you passing an array without specifying an inner default?";
-                die("Unknown validation type: $type\n".($type ? null : $noTypeErr));
-        }//end switch
-
-    }//end validate()
-
-
-    private function doSiPrefixes($ret)
-    {
-        // make k's into 000's and m's into 000000
-        $ret = str_replace(",", "", $ret);
-        $k   = (substr_count($ret, "k") + substr_count($ret, "K"));
-        $m   = (substr_count($ret, "m") + substr_count($ret, "M"));
-        $ret = str_ireplace("k", "", $ret);
-        $ret = str_ireplace("m", "", $ret);
-        $ret = ((float)$ret * (pow(1000, $k)));
-        $ret = ((float)$ret * (pow(1000000, $m)));
-        return (int)$ret;
-
-    }//end doSiPrefixes()
 }//end class
 
 /*
@@ -672,13 +537,6 @@ class PHPRouter
 */
 
 
-function def(&$var, $def)
-{
-    return (isset($var) ? $var : $def);
-
-}//end def()
-
-
 /*
     class VUriPart extends UriPart{ //switch to arrays as they are massively faster apparently
     public $n; //$name; //this is the NAME of a variable, if it is a variable
@@ -706,5 +564,7 @@ function def(&$var, $def)
 }*/
 
 
-
-// --These functions are for use within the router--//
+function def(&$var, $def)
+{
+    return (isset($var) ? $var : $def);
+}//end def()
