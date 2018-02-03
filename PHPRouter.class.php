@@ -412,7 +412,7 @@ class PHPRouter
         } elseif (isset($r[2][$current])) {
             return $this->urlRoute($s, $r[2][$current], $path, $inherit);
         } elseif (isset($r[1])) {
-            $path->variables[$r[1][3]] = $this->validate(array($current), 0, $r[1][4]);
+            $path->variables[$r[1][3]] = TypeValidator::validate(array($current), 0, $r[1][4]);
             return $this->urlRoute($s, $r[1], $path, $inherit);
         }
 

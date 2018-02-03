@@ -209,7 +209,7 @@ class TypeValidator
                 }
             }
 
-            $type = $this->typeAlias($type[0]);
+            $type = self::typeAlias($type[0]);
         }
 
         switch ($type) {
@@ -218,7 +218,7 @@ class TypeValidator
                     $ret = $source[$key];
 
                     if ($si == true && !is_numeric($ret)) {
-                        $ret = $this->doSiPrefixes($ret);
+                        $ret = self::doSiPrefixes($ret);
                         // make k's into 000's and m's into 000000
                     }
 
@@ -270,11 +270,11 @@ class TypeValidator
 
                                 // this is kindof hack-ish,
                                 // but I only just ran into wanting to validate the keys as well
-                                $k       = $this->validate(array(0 => $k), 0, $keytype);
+                                $k       = self::validate(array(0 => $k), 0, $keytype);
                                 $ret[$k] = $temp;
                             }
 
-                            $ret[$k] = $this->validate($ret, $k, (isset($passarray) ? $passarray : $innertype));
+                            $ret[$k] = self::validate($ret, $k, (isset($passarray) ? $passarray : $innertype));
                             if ($ret[$k] === null) {
                                 unset($ret[$k]);
                             }
@@ -295,7 +295,7 @@ class TypeValidator
     }//end validate()
 
 
-    private function doSiPrefixes($ret)
+    private static function doSiPrefixes($ret)
     {
         // make k's into 000's and m's into 000000
         $ret = str_replace(",", "", $ret);
