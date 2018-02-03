@@ -43,13 +43,11 @@ class Cache
     {
         // $this->queries = array();
         // $this->count = 0;
-
     }//end __construct()
 
 
     public function __destruct()
     {
-
     }//end __destruct()
 
 
@@ -60,7 +58,6 @@ class Cache
         if (count(self::$queries) > 1000) {
             array_shift(self::$queries);
         }
-
     }//end addquery()
 
 
@@ -70,7 +67,6 @@ class Cache
         $success = apcu_add($key, $val, $ttl);
         self::addquery(array('add', $success, microtime(true) - $start, $key, $ttl));
         return $success;
-
     }//end add()
 
 
@@ -80,7 +76,6 @@ class Cache
         $success = apcu_store($key, $val, $ttl);
         self::addquery(array('store', $success, microtime(true) - $start, $key, $ttl));
         return $success;
-
     }//end store()
 
 
@@ -90,9 +85,29 @@ class Cache
         $val   = apcu_fetch($key, $success);
         self::addquery(array('fetch', $success, microtime(true) - $start, $key, null));
         return ($success ? $val : $default);
-
     }//end fetch()
 
+    //to use to store objects
+    public static function serialStore($key, $val, $ttl = 0)
+    {
+        self::store($key, serialize($val), $ttl);
+    }
+
+    //to use to store arrays
+    public static function jsonStore($key, $val, $ttl = 0)
+    {
+        self::store($key, json_encode($val, JSON_FORCE_OBJECT), $ttl);
+    }
+
+    public static function jsonFetch($key, $default = null)
+    {
+        return json_decode(self::fetch($key, $default), JSON_FORCE_OBJECT);
+    }
+
+    public static function serialFetch($key, $default = null)
+    {
+        return unserialize(self::fetch($key, $default));
+    }
 
     public static function multiFetch($keys)
     {
@@ -107,7 +122,6 @@ class Cache
         }
 
         return $return;
-
     }//end multiFetch()
 
 
@@ -119,7 +133,6 @@ class Cache
         }
 
         return self::multiFetch($fetch);
-
     }//end fetchPrefixKeys()
 
 
@@ -129,7 +142,6 @@ class Cache
         $success = apcu_delete($key);
         self::addquery(array('delete', $success, microtime(true) - $start, $key, null));
         return $success;
-
     }//end delete()
 
 
@@ -139,7 +151,6 @@ class Cache
         $success = apcu_clear_cache('user');
         self::addquery(array('clear user cache', $success, microtime(true) - $start, null, null));
         return $success;
-
     }//end clearUserCache()
 
 
@@ -149,6 +160,5 @@ class Cache
         $success = apcu_clear_cache();
         self::addquery(array('clear cache', $success, microtime(true) - $start, null, null));
         return $success;
-
     }//end clearCache()
 }//end class
