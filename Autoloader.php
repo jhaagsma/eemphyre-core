@@ -36,9 +36,9 @@ define('EMPHYRE_DIR', dirname(__FILE__) . '/');
 function eemphyre_autoloader($class)
 {
     $emPHyre = 'EmPHyre\\';
-    $len = strlen($emPHyre);
+    $len     = strlen($emPHyre);
+
     if (strncmp($emPHyre, $class, $len) === 0) {
-        //trigger_error($class);
         $relative_class = substr($class, $len);
         include_once EMPHYRE_DIR.$relative_class.'.class.php';
         return;

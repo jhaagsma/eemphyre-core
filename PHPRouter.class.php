@@ -41,10 +41,7 @@ class PHPRouter
         $this->time = ($filetime ? $filetime : time());
         // so we know if it's fresh
         // $this->paths = array("GET" => new UriPart(), "POST" =>  new UriPart());
-        $this->paths = array(
-                        "GET"  => array(),
-                        "POST" => array(),
-                       );
+        $this->paths = ["GET"  => [], "POST" => [], "PUT" => [], "DELETE" => []];
         $this->clearDefaults();
     }//end __construct()
 
@@ -507,62 +504,67 @@ class PHPRouter
         $path->skin = $node->skin;
         return new Route($node->file, $node->function, $data, $path, $node->auth);
     }//end route()
-}//end class
 
-/*
-    function fourohfour(&$data, &$path, &$user)
+    public static function optimize()
     {
-    //trigger_error("404: " . $path->url);
-    //Only set this if you are sending errors somewhere other than the page being displayed
-    header($_SERVER["SERVER_PROTOCOL"] . " 404 Not Found");
-    //trigger_error("HERE: " . var_export($path,true));
-    $path->url = htmlentities($path->url);
-    echo <<<END
-    <html>
-    <head>
-        <title>404</title>
-    </head>
-    <body>
-    <div>
-        <br /><br /><br />404 - not found
-    </div>
-    <div>
-        <br /><br />The URL you attempted to access was: {$path->url}
-        <br /><br /><a href='/'>Back to homepage!</a>
-    </div>
-    </body>
-    </html>
-    END;
-    }
-*/
+ //this is now much faster! serialize was key
+        $this->optimize = 1;
+        global $cache;
+        foreach ($this->paths as $type => $tree) {
+            $cache->json_store(ROUTER_PREFIX . $type, $this->paths[$type], 86400*3);
+        }
 
+        unset($this->paths);
 
-/*
-    class VUriPart extends UriPart{ //switch to arrays as they are massively faster apparently
-    public $n; //$name; //this is the NAME of a variable, if it is a variable
-    public $t; //$type; //this is the TYPE of a variable, if it is a variable
-    function __construct($n = null, $t = null){
-        $this->n = $n;
-        $this->t = $t;
-        parent::__construct();
-    }
+        //$cache->store('r:' . $_SERVER['HTTP_HOST'] . ':sk',serialize($this->skins),86400*2);
+
+        //unset($this->skins);
+        unset($this->area);
+        unset($this->dir);
+        unset($this->skin);
+        unset($this->auth);
     }
 
+    public static function partial_reconstruct($type)
+    {
+        global $cache;
+        $branch = $cache->json_fetch(ROUTER_PREFIX . $type);
 
-    class UriPart { //shortening names to speed up APC storage and retrieval
-    public $o; //$node; //this stores the PathNode of the path in question
-    public $s; //$static; //this is an array of UriParts of static uri's
+        if (!$branch) {
+            $cache->delete(ROUTER_PREFIX . $this->optimize);
+            trigger_error(ROUTER_PREFIX .': Branch for ' . $type . ' not set; deleting cached router for ' . $_SERVER['SERVER_NAME']); //error handling now :)
+            $this->bad = true;
+            return;
+        }
 
-    //this holds the UriPart of a variable -
-    //we can only have 1 variable at a given /static/ point otherwise we don't know which it is
-    public $v; //$variable;
-    function __construct(){
-        $this->o = null;
-        $this->s = array();
-        $this->v = null;
+        $this->paths = array($type=>$branch);
+        //$this->skins = unserialize($cache->fetch('r:' . $_SERVER['HTTP_HOST'] . ':sk'));
     }
-}*/
 
+    function optimize2()
+    {
+        $this->optimize = 2;
+        $this->s_paths = serialize($this->paths);
+        unset($this->paths);
+    }
+
+    function reconstruct2()
+    {
+        $this->paths = unserialize($this->s_paths);
+        unset($this->s_paths);
+    }
+
+    function requires_reconstruction()
+    {
+        if ($this->optimize == 1) { //ie, if optimize is run
+            $this->partial_reconstruct($this->get_type());
+        } elseif ($this->optimize == 2) { //ie, if optimize is run
+            $this->reconstruct2();
+        }
+
+        return $this->bad;
+    }
+}//end class
 
 function def(&$var, $def)
 {

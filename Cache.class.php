@@ -36,7 +36,7 @@ namespace EmPHyre;
 class Cache
 {
     public static $count   = 0;
-    public static $queries = array();
+    public static $queries = [];
 
 
     public function __construct()
