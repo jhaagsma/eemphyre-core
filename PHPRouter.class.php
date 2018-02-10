@@ -257,7 +257,7 @@ class PHPRouter
 
         ksort($inputs);
 
-        if ($inputs !== array() && !$inputs === null) {
+        if ($inputs) {
             $node[3] = $inputs;
         }
 
@@ -331,6 +331,7 @@ class PHPRouter
                 return;
             }
             ksort($r);
+            //ksort($r[1]);
             //build a branch, in the variable type
             return $this->buildBranch($uri_parts, $r[1], $node, $url, $inherit);
         } else {
@@ -344,6 +345,7 @@ class PHPRouter
             }
 
             ksort($r);
+            //ksort($r[2]);
             //build a branch, in the static type
             return $this->buildBranch($uri_parts, $r[2][$current], $node, $url, $inherit);
         }//end if
@@ -391,7 +393,7 @@ class PHPRouter
         return $inherit;
     }
 
-    public function newNode($inherit, $node)
+    private function newNode($inherit, $node)
     {
         if (!$inherit) {
             return $node;
@@ -415,7 +417,7 @@ class PHPRouter
         return $node;
     }
 
-    public function inheritNode($inherit, $node)
+    private function inheritNode($inherit, $node)
     {
         foreach (self::$can_inherit as $a) {
             if (!array_key_exists($a, $node) && array_key_exists($a, $inherit)) {
