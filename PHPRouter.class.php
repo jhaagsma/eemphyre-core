@@ -33,6 +33,14 @@ class PHPRouter
 {
     public $paths;
     //inherit everything other than the function
+    // 0 => dir (string)
+    // 1 => file (string)
+    // 2 => function (string)
+    // 3 => variables (array)
+    // 4 => auth (string)
+    // 5 => skin (string)
+    // 6 => path extension (for json? string)
+    // 7 => extractable json (for json; string)
     private static $can_inherit = [0,1,4,5,6,7];
 
     public function __construct($filetime = false)
@@ -247,8 +255,9 @@ class PHPRouter
             $inputs = $inputs == null ? $this->post_inputs : array_merge($this->post_inputs, $inputs);
         }
 
-        if ($inputs !== array()) {
-            ksort($inputs);
+        ksort($inputs);
+
+        if ($inputs !== array() && !$inputs === null) {
             $node[3] = $inputs;
         }
 
@@ -290,11 +299,16 @@ class PHPRouter
             // static aka s =>2
             // name aka n => 3
             // type aka t => 4
+
+        //Iterate through the parts of the uri
         $current = array_shift($uri_parts);
         if (!$current) { // ie we've moved to the end of the url
             if (!isset($r[0])) {
                 $node = $this->newNode($inherit, $node);
                 $r[0] = $node;
+
+                ksort($r);
+
                 return false;
             } else {
                 trigger_error("Ignoring Branch!: Different node already set for this path: $url");
@@ -302,19 +316,26 @@ class PHPRouter
             }
         }
 
+        //grab all the things that we could potentially inherit
         $inherit = $this->newInherit($inherit, (isset($r[0]) ? $r[0] : false));
+
+        //check if the current URI bit is a {variable=>type}
         if ($vinfo = $this->isVariable($current)) {
             if (!isset($r[1])) {
-                $r[1] = [3 => $vinfo[1], 4 => $vinfo[2]];
+                //split up into variable and type, and compress the input
+                $r[1] = [3 => $vinfo[1], 4 => TypeValidator::compressInput($vinfo[2])];
             } elseif ($r[1][3] != $vinfo[1]) {
-                // this must be 1 because isVariable returns 0 for matches 1 for name and 2 for type in {name=>type}
+                //check if a {variable=>type} has already been set for this path
+                //must be vinfo[1] because isVariable returns 0 for matches 1 for name and 2 for type in {name=>type}
                 trigger_error("Ignoring Branch!: Different variable already set for this path: $url");
                 return;
             }
-
+            ksort($r);
+            //build a branch, in the variable type
             return $this->buildBranch($uri_parts, $r[1], $node, $url, $inherit);
         } else {
             if (!isset($r[2])) {
+                //if the static node isn't set, set it
                 $r[2] = [];
             }
 
@@ -322,6 +343,8 @@ class PHPRouter
                 $r[2][$current] = [];
             }
 
+            ksort($r);
+            //build a branch, in the static type
             return $this->buildBranch($uri_parts, $r[2][$current], $node, $url, $inherit);
         }//end if
     }//end buildBranch()
@@ -355,9 +378,12 @@ class PHPRouter
     public function newInherit($inherit, $node)
     {
         // $can_inherit = array(0,1,4,5);
+        if (!$node) {
+            return $inherit;
+        }
 
         foreach (self::$can_inherit as $a) {
-            if ($node && array_key_exists($a, $node)) {
+            if (array_key_exists($a, $node)) {
                 $inherit[$a] = $node[$a];
             }
         }
@@ -372,14 +398,18 @@ class PHPRouter
         }
 
         foreach (self::$can_inherit as $a) {
-            if (array_key_exists($a, $inherit) && array_key_exists($a, $node) && $inherit[$a] == $node[$a]) {
+            if (array_key_exists($a, $inherit) && array_key_exists($a, $node) && $inherit[$a] === $node[$a]) {
                 unset($node[$a]);
             }
         }
 
-        if (!array_key_exists(4, $node) && !array_key_exists(5, $node) && !$node[3]) {
-            unset($node[3]);
-        }
+        //i'm sure this was supposed to do something, but it was breaking things...
+        //I believe it unset the variables if there was no auth or skin,
+        //but i've changed how the variables are set,
+        //so no variable key is set if there are no variables
+        // if (!array_key_exists(4, $node) && !array_key_exists(5, $node) && !$node[3]) {
+        //     unset($node[3]);
+        // }
 
         ksort($node);
         return $node;
@@ -392,6 +422,8 @@ class PHPRouter
                 $node[$a] = $inherit[$a];
             }
         }
+
+        //something about the . at the beginning of ./this/directory
         $file = $node[1];
         if ($file[0] == '.') {
             unset($node[0]);
