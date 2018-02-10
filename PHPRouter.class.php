@@ -32,7 +32,8 @@ namespace EmPHyre;
 class PHPRouter
 {
     public $paths;
-
+    //inherit everything other than the function
+    private static $can_inherit = [0,1,4,5,6,7];
 
     public function __construct($filetime = false)
     {
@@ -209,8 +210,8 @@ class PHPRouter
         // Testing out array version
         $uri_parts = array_merge($this->area, explode('/', ltrim($url, '/')));
         $url       = implode('/', $uri_parts);
-        $dir = ($this->dir && $file[0] != '.' ? $this->dir : false);
-        $file = ($this->dir && $file[0] != '.' ? ltrim($file, '/') : $file);
+        $dir       = ($this->dir && $file[0] != '.' ? $this->dir : false);
+        $file      = ($this->dir && $file[0] != '.' ? ltrim($file, '/') : $file);
         //$node      = [0 => $file, 1 => $function,];
 
         if ($this->common) {
@@ -219,11 +220,14 @@ class PHPRouter
 
         $inputs = TypeValidator::compressInputs($inputs);
 
+        $node = [];
+
         if ($dir) {
-            $node = [0=>$dir, 1=>$file, 2=>$function];
-        } else {
-            $node = [1=>$file, 2=>$function];
+            $node[0] = $dir;
         }
+
+        $node[1] = $file;
+        $node[2] = $function;
 
         // maybe array
         if ($skin === false) {
@@ -243,21 +247,35 @@ class PHPRouter
             $inputs = $inputs == null ? $this->post_inputs : array_merge($this->post_inputs, $inputs);
         }
 
-        if ($this->path_extension !== false || $this->extractable_json !== false) {
+        if ($inputs !== array()) {
+            ksort($inputs);
             $node[3] = $inputs;
+        }
+
+        if ($auth !== false) {
             $node[4] = $auth;
+        }
+
+        if ($skin !== false) {
+            //for some reason this optimization just made it slower...
+            //perhaps it would be more effective with a larger website
+            /*if($skin === null)
+                $key = 0;
+            elseif(!$key = array_search($skin, $this->skins)){
+                $this->skins[] = $skin;
+                $key = array_search($skin,$this->skins);
+            }
+            $node[5] = $key;*/
+
             $node[5] = $skin;
+        }
+
+        if ($this->path_extension !== false) {
             $node[6] = $this->path_extension;
+        }
+
+        if ($this->extractable_json !== false) {
             $node[7] = $this->extractable_json;
-        } elseif ($skin) {
-            $node[3] = $inputs;
-            $node[4] = $auth;
-            $node[5] = $skin;
-        } elseif ($auth) {
-            $node[3] = $inputs;
-            $node[4] = $auth;
-        } elseif ($inputs) {
-            $node[3] = $inputs;
         }
 
         $this->buildBranch($uri_parts, $this->paths[$type], $node, $url);
@@ -294,7 +312,7 @@ class PHPRouter
                 return;
             }
 
-            return $this->buildBranch($uri_parts, $r[1], $node, $url);
+            return $this->buildBranch($uri_parts, $r[1], $node, $url, $inherit);
         } else {
             if (!isset($r[2])) {
                 $r[2] = [];
@@ -304,7 +322,7 @@ class PHPRouter
                 $r[2][$current] = [];
             }
 
-            return $this->buildBranch($uri_parts, $r[2][$current], $node, $url);
+            return $this->buildBranch($uri_parts, $r[2][$current], $node, $url, $inherit);
         }//end if
     }//end buildBranch()
 
@@ -334,11 +352,11 @@ class PHPRouter
         return false;
     }*/
 
-    private function newInherit($inherit, $node)
+    public function newInherit($inherit, $node)
     {
-        $can_inherit = array(0,1,4,5);
+        // $can_inherit = array(0,1,4,5);
 
-        foreach ($can_inherit as $a) {
+        foreach (self::$can_inherit as $a) {
             if ($node && array_key_exists($a, $node)) {
                 $inherit[$a] = $node[$a];
             }
@@ -347,14 +365,13 @@ class PHPRouter
         return $inherit;
     }
 
-    private function newNode($inherit, $node)
+    public function newNode($inherit, $node)
     {
         if (!$inherit) {
             return $node;
         }
 
-        $can_inherit = array(0,1,4,5);
-        foreach ($can_inherit as $a) {
+        foreach (self::$can_inherit as $a) {
             if (array_key_exists($a, $inherit) && array_key_exists($a, $node) && $inherit[$a] == $node[$a]) {
                 unset($node[$a]);
             }
@@ -364,13 +381,13 @@ class PHPRouter
             unset($node[3]);
         }
 
+        ksort($node);
         return $node;
     }
 
-    private function inheritNode($inherit, $node)
+    public function inheritNode($inherit, $node)
     {
-        $can_inherit = array(0,1,4,5);
-        foreach ($can_inherit as $a) {
+        foreach (self::$can_inherit as $a) {
             if (!array_key_exists($a, $node) && array_key_exists($a, $inherit)) {
                 $node[$a] = $inherit[$a];
             }
@@ -401,8 +418,7 @@ class PHPRouter
             // type aka t => 4
         $inherit = $this->newInherit($inherit, (isset($r[0]) ? $r[0] : false));
         $current = array_shift($s);
-        if (($current === null || $current === "") && !isset($r[0])) {
-            // can't do !$current if you want to pass in 0 as a path variable
+        if (!$current && !isset($r[0])) {
             return false;
         } elseif (($current === null || $current === "")) {
             return new PathNode($this->inheritNode($inherit, $r[0]));
@@ -525,7 +541,7 @@ class PHPRouter
         unset($this->auth);
     }
 
-    public static function partial_reconstruct($type)
+    public static function partialReconstruct($type)
     {
         global $cache;
         $branch = $cache->json_fetch(ROUTER_PREFIX . $type);
@@ -541,23 +557,23 @@ class PHPRouter
         //$this->skins = unserialize($cache->fetch('r:' . $_SERVER['HTTP_HOST'] . ':sk'));
     }
 
-    function optimize2()
+    public function optimize2()
     {
         $this->optimize = 2;
         $this->s_paths = serialize($this->paths);
         unset($this->paths);
     }
 
-    function reconstruct2()
+    public function reconstruct2()
     {
         $this->paths = unserialize($this->s_paths);
         unset($this->s_paths);
     }
 
-    function requires_reconstruction()
+    public function requiresReconstruction()
     {
         if ($this->optimize == 1) { //ie, if optimize is run
-            $this->partial_reconstruct($this->get_type());
+            $this->partialReconstruct($this->get_type());
         } elseif ($this->optimize == 2) { //ie, if optimize is run
             $this->reconstruct2();
         }
