@@ -50,7 +50,7 @@ class PHPRouter
         $this->time = ($filetime ? $filetime : time());
         // so we know if it's fresh
         // $this->paths = array("GET" => new UriPart(), "POST" =>  new UriPart());
-        $this->paths = ["GET"  => [], "POST" => [], "PUT" => [], "DELETE" => []];
+        $this->paths = ['GET'  => [], 'POST' => [], 'PUT' => [], 'HEAD' => [], 'DELETE' => [], 'OPTIONS' => []];
         $this->clearDefaults();
     }//end __construct()
 
@@ -226,28 +226,6 @@ class PHPRouter
             $inputs = $inputs + $this->common;
         }
 
-        $inputs = TypeValidator::compressInputs($inputs);
-
-        $node = [];
-
-        if ($dir) {
-            $node[0] = $dir;
-        }
-
-        $node[1] = $file;
-        $node[2] = $function;
-
-        // maybe array
-        if ($skin === false) {
-            // in other words, if they supplied no auth
-            // if they supplied null, it should still set it as null, even if the default is not
-            $skin = $this->skin;
-        }
-
-        if ($auth === false) {
-            $auth = $this->auth;
-        }
-
         // this will overwrite defaults with $inputs
         if ($type == 'GET') {
             $inputs = $inputs == null ? $this->get_inputs : array_merge($this->get_inputs, $inputs);
@@ -255,37 +233,20 @@ class PHPRouter
             $inputs = $inputs == null ? $this->post_inputs : array_merge($this->post_inputs, $inputs);
         }
 
-        ksort($inputs);
+        $inputs = TypeValidator::compressInputs($inputs);
 
-        if ($inputs) {
-            $node[3] = $inputs;
-        }
-
-        if ($auth !== false) {
-            $node[4] = $auth;
-        }
-
-        if ($skin !== false) {
-            //for some reason this optimization just made it slower...
-            //perhaps it would be more effective with a larger website
-            /*if($skin === null)
-                $key = 0;
-            elseif(!$key = array_search($skin, $this->skins)){
-                $this->skins[] = $skin;
-                $key = array_search($skin,$this->skins);
-            }
-            $node[5] = $key;*/
-
-            $node[5] = $skin;
-        }
-
-        if ($this->path_extension !== false) {
-            $node[6] = $this->path_extension;
-        }
-
-        if ($this->extractable_json !== false) {
-            $node[7] = $this->extractable_json;
-        }
+        // in other words, if they supplied no auth
+         // if they supplied null, it should still set it as null, even if the default is not
+        $node = TreeBuilder::makeNode(
+            $dir,
+            $file,
+            $function,
+            $inputs,
+            $auth === false ? $this->auth : $auth,
+            $skin === false ? $this->skin : $skin,
+            $this->path_extension,
+            $this->extractable_json
+        );
 
         $this->buildBranch($uri_parts, $this->paths[$type], $node, $url);
     }//end add()
@@ -468,12 +429,23 @@ class PHPRouter
 
     private function getType()
     {
-        $type = $_SERVER['REQUEST_METHOD'];
-        if ($type != 'GET' && $type != 'POST') { //for now until we do HEAD and PUT versions of things
-            $type = 'GET';
-        }
 
-        return $type;
+        switch (getenv('REQUEST_METHOD')) {
+            case 'GET':
+                return 'GET';
+            case 'POST':
+                return 'POST';
+            case 'PUT':
+                return 'PUT';
+            case 'DELETE':
+                return 'DELETE';
+            case 'HEAD':
+                return 'HEAD';
+            case 'OPTIONS':
+                return 'OPTIONS';
+            default:
+                return 'GET';
+        }
     }
 
     private function extractJson($node)
@@ -511,21 +483,20 @@ class PHPRouter
     public function route($url = null)
     {
         $type = $this->getType();
-        $uri  = $_SERVER['REQUEST_URI'];
+        $uri  = getenv('REQUEST_URI');
+
+        if (!isset($this->paths)) {
+            trigger_error($type . ': ' . getenv('SERVER_NAME') . ' ' . $uri);
+        }
 
         $url = ($url ? array($url) : explode('?', $uri, 2));
 
         $path = new Path($url = rtrim($url[0], '/'));
         $s = explode('/', ltrim($path->url, '/'));
 
-        $data = array();
-
-        if (!isset($this->paths)) {
-            trigger_error($_SERVER['REQUEST_METHOD'] . ': ' . $_SERVER['SERVER_NAME'] . ' ' . $_SERVER['REQUEST_URI']);
-        }
-
         $node = $this->urlRoute($s, $this->paths[$type], $path);
 
+        $data = [];
         if (!$node) {
             return new Route(false, 'fourohfour', $data, $path, false);
         }

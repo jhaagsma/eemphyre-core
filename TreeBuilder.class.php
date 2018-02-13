@@ -31,5 +31,50 @@ namespace EmPHyre;
 
 class TreeBuilder
 {
-    
+    public static function makeNode($dir, $file, $function, $inputs, $auth, $skin, $ext, $json)
+    {
+        $node = [];
+
+        if ($dir) {
+            $node[0] = $dir;
+        }
+
+        $node[1] = $file;
+        $node[2] = $function;
+
+
+        ksort($inputs);
+
+        if ($inputs) {
+            $node[3] = $inputs;
+        }
+
+        if ($auth !== false) {
+            $node[4] = $auth;
+        }
+
+        if ($skin !== false) {
+            //for some reason this optimization just made it slower...
+            //perhaps it would be more effective with a larger website
+            /*if($skin === null)
+                $key = 0;
+            elseif(!$key = array_search($skin, $this->skins)){
+                $this->skins[] = $skin;
+                $key = array_search($skin,$this->skins);
+            }
+            $node[5] = $key;*/
+
+            $node[5] = $skin;
+        }
+
+        if ($ext !== false) {
+            $node[6] = $ext;
+        }
+
+        if ($json !== false) {
+            $node[7] = $json;
+        }
+
+        return $node;
+    }
 }//end class
