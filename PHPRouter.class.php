@@ -498,7 +498,7 @@ class PHPRouter
 
         $data = [];
         if (!$node) {
-            return new Route(false, 'fourohfour', $data, $path, false);
+            return FourOhFour::notFound($data, $path);
         }
 
         //basically this lets people set everything up as a single json variable,
