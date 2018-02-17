@@ -31,7 +31,7 @@ namespace EmPHyre;
 
 class FourOhFour
 {
-    public static function notFound($data, $path, $user)
+    public static function notFound($data = null, $path = null, $user = null)
     {
         //just include /404.php for now
         include_once(getenv('DOCUMENT_ROOT')."/404.php");
