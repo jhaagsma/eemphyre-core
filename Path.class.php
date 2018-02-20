@@ -50,4 +50,13 @@ class Path
         $this->variables  = array();
 
     }//end __construct()
+    
+    function response($string)
+    {
+        $this->variables['response'] = $string;
+        
+        return $this;
+        
+    }//end response()
+
 }//end class
