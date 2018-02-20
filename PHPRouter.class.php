@@ -32,6 +32,7 @@ namespace EmPHyre;
 class PHPRouter
 {
     public $paths;
+    public $optimize = 0;
     //inherit everything other than the function
     // 0 => dir (string)
     // 1 => file (string)
@@ -427,7 +428,7 @@ class PHPRouter
         return false;
     }//end urlRoute()
 
-    private function getType()
+    public function getType()
     {
 
         switch (getenv('REQUEST_METHOD')) {
@@ -451,6 +452,7 @@ class PHPRouter
     private function extractJson($node)
     {
         $type = $this->getType();
+
         if ($type == 'GET') {
             if (!isset($_GET[$node->extractable_json])) {
                 return;
@@ -525,66 +527,6 @@ class PHPRouter
         $path->skin = $node->skin;
         return new Route($node->file, $node->function, $data, $path, $node->auth);
     }//end route()
-
-    public static function optimize()
-    {
- //this is now much faster! serialize was key
-        $this->optimize = 1;
-        global $cache;
-        foreach ($this->paths as $type => $tree) {
-            $cache->json_store(ROUTER_PREFIX . $type, $this->paths[$type], 86400*3);
-        }
-
-        unset($this->paths);
-
-        //$cache->store('r:' . $_SERVER['HTTP_HOST'] . ':sk',serialize($this->skins),86400*2);
-
-        //unset($this->skins);
-        unset($this->area);
-        unset($this->dir);
-        unset($this->skin);
-        unset($this->auth);
-    }
-
-    public static function partialReconstruct($type)
-    {
-        global $cache;
-        $branch = $cache->json_fetch(ROUTER_PREFIX . $type);
-
-        if (!$branch) {
-            $cache->delete(ROUTER_PREFIX . $this->optimize);
-            trigger_error(ROUTER_PREFIX .': Branch for ' . $type . ' not set; deleting cached router for ' . $_SERVER['SERVER_NAME']); //error handling now :)
-            $this->bad = true;
-            return;
-        }
-
-        $this->paths = array($type=>$branch);
-        //$this->skins = unserialize($cache->fetch('r:' . $_SERVER['HTTP_HOST'] . ':sk'));
-    }
-
-    public function optimize2()
-    {
-        $this->optimize = 2;
-        $this->s_paths = serialize($this->paths);
-        unset($this->paths);
-    }
-
-    public function reconstruct2()
-    {
-        $this->paths = unserialize($this->s_paths);
-        unset($this->s_paths);
-    }
-
-    public function requiresReconstruction()
-    {
-        if ($this->optimize == 1) { //ie, if optimize is run
-            $this->partialReconstruct($this->get_type());
-        } elseif ($this->optimize == 2) { //ie, if optimize is run
-            $this->reconstruct2();
-        }
-
-        return $this->bad;
-    }
 }//end class
 
 function def(&$var, $def)
