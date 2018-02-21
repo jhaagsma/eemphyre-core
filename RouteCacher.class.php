@@ -37,11 +37,11 @@ class RouteCacher
     private static $registries = [];
     public static function getRouter($add_registries = array(), $optimization = 0)
     {
-        //0 for no optimization,
-        //1 for json cut into two APC bits,
-        //2 for serialize, not cut up;
+        //0 for no optimization, //this is almost exactly the same speed as 2
+        //1 for json cut into two APC bits, //this TAKES TWICE AS LONG as 0 or 2
+        //2 for serialize, not cut up; //this is almost exactly the same speed as 0
 
-        $optimization = (time() % 2) * 2;
+        //$optimization = (time() % 2) * 2;
 
         //so far 1 is SLOWEST BY FAR
         self::$registries = array_merge(self::$registries, $add_registries);
@@ -56,7 +56,7 @@ class RouteCacher
         //$profiler['done_r'] = codetime($time_start, true);
 
         $router = Cache::serialFetch(ROUTER_NAME.$optimization);
-        if (!$router || $router->time < $filetime || $recon = self::requiresReconstruction($router)) {
+        if (!$router || $router->time < $filetime || $optimization && self::requiresReconstruction($router)) {
             //registries file time
             //requires_reconstruction actually pieces it back together!!
 
@@ -84,7 +84,6 @@ class RouteCacher
             unset($router->get_inputs);
             unset($router->post_inputs);
             unset($router->common);
-
 
             if ($optimization == 1) {
                 self::optimize1($router);
