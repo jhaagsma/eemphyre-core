@@ -104,22 +104,25 @@ class TypeValidator
             case 'a1Dbu':
             case 'arr1D_bool_uint':
                 // var ......TYPE...DEFAULT..VALUES..INDEX
-                $type = ['a', [], 'b', 'u',];
+                $type = ['a', false, 'b', 'u',];
                 break;
             case 'a1Dss':
             case 'arr1D_str_str':
-                $type = ['a', [], 's', 's',];
+                $type = ['a', null, 's', 's',];
+                break;
+            case 'a1Dsu':
+                $type = ['a', false, 's', 'u'];
                 break;
             case 'a2Dbu':
             case 'arr2D_bool_uint':
-                $type = ['a', [], ['a',[],'b','u',], 'u',];
+                $type = ['a', [], ['a', false, 'b', 'u',], 'u',];
                 break;
             case 'a2Dbs':
-                $type = ['a', [], ['a',[],'b','s',], 's',];
+                $type = ['a', [], ['a', false, 'b', 's',], 's',];
                 break;
             case 'a2Dss':
             case 'arr2D_str_str':
-                $type = ['a', [], ['a',[],'s','s',], 's',];
+                $type = ['a', [], ['a', null, 's', 's',], 's',];
                 break;
             case 'b':
                 $type = 'bool';
@@ -197,7 +200,7 @@ class TypeValidator
         $default = $innertype = $keytype = null;
         if (is_array($type)) {
             $default = (isset($type[1]) ? $type[1] : null);
-            if ($type[0] == 'array' && isset($type[2])) {
+            if (($type[0] == 'a' || $type[0] == 'array') && isset($type[2])) {
                 if (is_array($type[2])) {
                     $passarray = $type[2];
                 } else {
