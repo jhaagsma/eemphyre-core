@@ -41,13 +41,10 @@ class RouteCacher
         //1 for json cut into two APC bits,
         //2 for serialize, not cut up;
 
-        if (getenv('HTTP_HOST') == 'qz.earthempires.com') {
-            $optimization = time() % 3;
-        }
+        $optimization = (time() % 2) * 2;
 
         //so far 1 is SLOWEST BY FAR
         self::$registries = array_merge(self::$registries, $add_registries);
-
         $filetime = filemtime(dirname(__FILE__) . '/PHPRouter.class.php'); //the actual router object file
         $thistime = filemtime(dirname(__FILE__) . '/RouteCacher.class.php'); //the actual router object file
         $filetime = max($filetime, $thistime);
@@ -55,6 +52,8 @@ class RouteCacher
             //see if any registries have been updated
             $filetime = max($filetime, filemtime($r));
         }
+        //global $profiler, $time_start;
+        //$profiler['done_r'] = codetime($time_start, true);
 
         $router = Cache::serialFetch(ROUTER_NAME.$optimization);
         if (!$router || $router->time < $filetime || $recon = self::requiresReconstruction($router)) {
