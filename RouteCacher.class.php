@@ -18,11 +18,16 @@
  * The example website files were written by Julian Haagsma.
  *
  * @category Core
+ *
  * @package  EmPHyre
+ *
  * @author   Julian Haagsma <jhaagsma@gmail.com>
  * @author   Timo Ewalds <tewalds@gmail.com>
+ *
  * @license  All files are licensed under the MIT License.
+ *
  * @link     https://github.com/jhaagsma/emPHyre
+ *
  * @since    February 3, 2018
  */
 
@@ -145,7 +150,6 @@ class RouteCacher
      */
     public static function partialReconstruct(&$router)
     {
-        global $cache;
         $type = $router->getType();
         $branch = Cache::jsonFetch(ROUTER_NAME . $type);
 
@@ -166,7 +170,7 @@ class RouteCacher
         //new dBug($router);
 
         return true;
-    }
+    }//end partialReconstruct()
 
     /**
      * Optimize of type 2
@@ -183,7 +187,7 @@ class RouteCacher
         $router->s_paths = serialize($router->paths);
         //trigger_error("Serialize Paths");
         unset($router->paths);
-    }
+    }//end optimize2()
 
     /**
      * This reconstructs the serialized type
@@ -197,7 +201,7 @@ class RouteCacher
         $router->paths = unserialize($router->s_paths);
         //trigger_error("Unserialize Paths");
         unset($router->s_paths);
-    }
+    }//end reconstruct2()
 
     /**
      * This determines if reconstruction is required
@@ -216,7 +220,7 @@ class RouteCacher
         }
 
         return false;
-    }
+    }//end requiresReconstruction()
 
     /**
      * Add a registry to the list
@@ -228,5 +232,5 @@ class RouteCacher
     public static function addRegistry($registry)
     {
         self::$_registries[] = $registry;
-    }
+    }//end addRegistry()
 }//end class
