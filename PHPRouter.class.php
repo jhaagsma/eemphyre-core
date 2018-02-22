@@ -125,17 +125,20 @@ class PHPRouter
     public function commonInputs($inputs = array())
     {
         $this->common = $inputs;
-    }
+    }//end commonInputs()
+
 
     public function pathExtension($extension = false)
     {
         $this->path_extension = $extension;
-    }
+    }//end pathExtension()
+
 
     public function extractableJson($extractable = false)
     {
         $this->extractable_json = $extractable;
-    }
+    }//end extractableJson()
+
 
 
     // Object version --- these are TOO SLOW!  //Leave in until git & svn tree merge...
@@ -339,6 +342,14 @@ class PHPRouter
         return false;
     }*/
 
+    /**
+     * Inherit something if possible
+     *
+     * @param  array $inherit Current possible inheritances
+     * @param  array $node    Current node values
+     *
+     * @return array          Possible inheritances
+     */
     public function newInherit($inherit, $node)
     {
         // $can_inherit = array(0,1,4,5);
@@ -353,7 +364,8 @@ class PHPRouter
         }
 
         return $inherit;
-    }
+    }//end newInherit()
+
 
     private function newNode($inherit, $node)
     {
@@ -377,7 +389,8 @@ class PHPRouter
 
         ksort($node);
         return $node;
-    }
+    }//end newNode()
+
 
     private function inheritNode($inherit, $node)
     {
@@ -394,15 +407,18 @@ class PHPRouter
         }
 
         return $node;
-    }
+    }//end inheritNode()
+
 
     /**
      * I'll document this when I have time to go through it later...
      *
-     * @param array $s    Not sure
-     * @param ????? $r    Not sure
-     * @param Path  $path A Path Node
-     * @param array $inherit
+     * @param array $s       Not sure
+     * @param ????? $r       Not sure
+     * @param Path  $path    A Path Node
+     * @param array $inherit Any things that it could inherit
+     *
+     * @return a PathNode, or a route, or false
      */
     private function urlRoute($s, $r, $path, $inherit = false)
     {
@@ -447,7 +463,8 @@ class PHPRouter
             default:
                 return 'GET';
         }
-    }
+    }//end getType()
+
 
     private function extractJson($node)
     {
@@ -480,7 +497,8 @@ class PHPRouter
                 $_POST[$key] = $value;
             }
         }
-    }
+    }//end extractJson()
+
 
     public function route($url = null)
     {
@@ -494,7 +512,7 @@ class PHPRouter
         $url = ($url ? array($url) : explode('?', $uri, 2));
 
         $path = new Path($url = rtrim($url[0], '/'));
-        $s = explode('/', ltrim($path->url, '/'));
+        $s    = explode('/', ltrim($path->url, '/'));
 
         $node = $this->urlRoute($s, $this->paths[$type], $path);
 
