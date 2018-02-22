@@ -391,7 +391,14 @@ class PHPRouter
         return $node;
     }//end newNode()
 
-
+    /**
+     * Fill out things that can be inherited
+     *
+     * @param  array $inherit Things that can be inherited
+     * @param  array $node    What is set for this node
+     *
+     * @return array          Merged values
+     */
     private function inheritNode($inherit, $node)
     {
         foreach (self::$can_inherit as $a) {
