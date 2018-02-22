@@ -1,6 +1,5 @@
 <?php
 /**
- *
  * This is the Autoloader for the EmPHyre project
  *
  * PHP version 7
@@ -32,9 +31,27 @@ namespace EmPHyre;
 defined('ROUTER_PREFIX') or define("ROUTER_PREFIX", 'R:');
 defined('ROUTER_NAME') or define("ROUTER_NAME", ROUTER_PREFIX . getenv('HTTP_HOST') . ':');
 
+/**
+ * This cache builds, stores, and fetches the PHPRouter object
+ *
+ * @category Router
+ * @package  Emphyre
+ * @author   Julian Haagsma <jhaagsma@gmail.com>
+ * @license  All files are licensed under the MIT License.
+ * @link     https://github.com/jhaagsma/emPHyre
+ */
 class RouteCacher
 {
-    private static $registries = [];
+    private static $_registries = [];
+
+    /**
+     * Grab the router from the registry, or build it
+     *
+     * @param array   $add_registries The list of registries to append
+     * @param integer $optimization   Which optimization to use
+     *
+     * @return PHPRouter               The routing object
+     */
     public static function getRouter($add_registries = array(), $optimization = 0)
     {
         //0 for no optimization, //this is almost exactly the same speed as 2
@@ -44,11 +61,11 @@ class RouteCacher
         //$optimization = (time() % 2) * 2;
 
         //so far 1 is SLOWEST BY FAR
-        self::$registries = array_merge(self::$registries, $add_registries);
+        self::$_registries = array_merge(self::$_registries, $add_registries);
         $filetime = filemtime(dirname(__FILE__) . '/PHPRouter.class.php'); //the actual router object file
         $thistime = filemtime(dirname(__FILE__) . '/RouteCacher.class.php'); //the actual router object file
         $filetime = max($filetime, $thistime);
-        foreach (self::$registries as $r) {
+        foreach (self::$_registries as $r) {
             //see if any registries have been updated
             $filetime = max($filetime, filemtime($r));
         }
@@ -70,8 +87,8 @@ class RouteCacher
 
             $router = new PHPRouter($filetime);
 
-            foreach (self::$registries as $r) {
-                include_once($r);
+            foreach (self::$_registries as $r) {
+                include_once $r;
             }
 
             unset($router->area);
@@ -91,7 +108,7 @@ class RouteCacher
                 self::optimize2($router);
             }
 
-            Cache::serialStore(ROUTER_NAME.$optimization, $router, 86400*2);
+            Cache::serialStore(ROUTER_NAME.$optimization, $router, 86400 * 2);
             self::requiresReconstruction($router); //MUST BE AFTER STORE SO WE DON'T DUPLICATE DATA IN THE CACHE!!!
             $router->reconstructed = true;
         }
@@ -99,27 +116,33 @@ class RouteCacher
         return $router;
     }//end getRouter()
 
-
+    /**
+     * The first optimization type
+     * This caches each branch as a json
+     * then unsets the branches
+     *
+     * @param PHPRouter $router The PHP Routing object
+     *
+     * @return PHPRouter         The PHP Routing object
+     */
     public static function optimize1(&$router)
     {
- //this is now much faster! serialize was key
         $router->optimize = 1;
         foreach ($router->paths as $type => $tree) {
-            Cache::jsonStore(ROUTER_NAME . $type, $router->paths[$type], 86400*3);
+            Cache::jsonStore(ROUTER_NAME . $type, $router->paths[$type], 86400 * 3);
             //trigger_error("STORE: " . ROUTER_NAME . $type);
         }
 
-        // echo "dBug1";
-        // new dBug($router);
+        unset($router->paths);
+    }//end optimize1()
 
-        // unset($router->paths);
-
-        // echo "dBug2";
-        // new dBug($router);
-
-        //unset($this->skins);
-    }
-
+    /**
+     * Reconstruct the router of optimization type 1
+     *
+     * @param PHPRouter $router The routing object
+     *
+     * @return boolean           If it wasc changed
+     */
     public static function partialReconstruct(&$router)
     {
         global $cache;
@@ -137,7 +160,7 @@ class RouteCacher
         //echo "dBug3";
         //new dBug($router);
 
-        $router->paths = array($type=>$branch);
+        $router->paths = array($type => $branch);
 
         //echo "dBug4";
         //new dBug($router);
@@ -145,14 +168,30 @@ class RouteCacher
         return true;
     }
 
+    /**
+     * Optimize of type 2
+     * This serializes the branches before caching
+     *
+     * @param PHPRouter $router The routing object
+     *
+     * @return null
+     */
     public static function optimize2(&$router)
     {
+        //this is now much faster! serialize was key
         $router->optimize = 2;
         $router->s_paths = serialize($router->paths);
         //trigger_error("Serialize Paths");
         unset($router->paths);
     }
 
+    /**
+     * This reconstructs the serialized type
+     *
+     * @param PHPRouter $router The router
+     *
+     * @return null
+     */
     public static function reconstruct2(&$router)
     {
         $router->paths = unserialize($router->s_paths);
@@ -160,6 +199,14 @@ class RouteCacher
         unset($router->s_paths);
     }
 
+    /**
+     * This determines if reconstruction is required
+     * and rebuilds if it does
+     *
+     * @param PHPRouter $router The routing object
+     *
+     * @return bool Whether or not it needs to be rebuilt
+     */
     public static function requiresReconstruction(&$router)
     {
         if ($router->optimize == 1) { //ie, if optimize is run
@@ -173,10 +220,13 @@ class RouteCacher
 
     /**
      * Add a registry to the list
+     *
      * @param filepath $registry The path to the registry
+     *
+     * @return null
      */
     public static function addRegistry($registry)
     {
-        self::$registries[] = $registry;
+        self::$_registries[] = $registry;
     }
 }//end class
