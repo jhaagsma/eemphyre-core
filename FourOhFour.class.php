@@ -34,6 +34,6 @@ class FourOhFour
     public static function notFound($data = null, $path = null, $user = null)
     {
         //just include /404.php for now
-        include_once(getenv('DOCUMENT_ROOT')."/404.php");
-    }
+        include_once getenv('DOCUMENT_ROOT')."/404.php";
+    }//end notFound()
 }//end class

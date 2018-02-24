@@ -39,14 +39,12 @@ abstract class Migrations
     {
         $this->db();
         $this->version = $name;
-
     }//end __construct()
 
 
     public static function db($db = null)
     {
         static::$db = Container::getDb();
-
     }//end db()
 
 
@@ -59,20 +57,17 @@ abstract class Migrations
     public function out($string)
     {
         trigger_error($string, E_USER_NOTICE);
-
     }//end out()
 
 
     protected function outUpgraded()
     {
         $this->out("Upgraded to version ".$this->version);
-
     }//end outUpgraded()
 
 
     protected function outDowngraded()
     {
         $this->out("Downgraded to version ".$this->version);
-
     }//end outDowngraded()
 }//end class

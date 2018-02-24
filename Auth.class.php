@@ -56,7 +56,6 @@ class Auth
 
         $user->loggedIn();
         return $user;
-
     }//end authUsernamePassword()
 
     /**
@@ -72,7 +71,6 @@ class Auth
     public static function authPublic($data, $path, $user)
     {
         return false;
-
     }//end authPublic()
 
     /**
@@ -92,6 +90,5 @@ class Auth
         }
 
         return false;
-
     }//end authLogin()
 }//end class

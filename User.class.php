@@ -241,17 +241,17 @@ class User extends \EmPHyre\CRUD
     {
         $changed = false;
         if ($user_name != $this->user_name) {
-            if ($error = Validate::email($user_name)) {
+            if ($error = Validate::email($user_name) == true) {
                 return $error;
             }
 
-            if ($error = self::checkExists($user_name)) {
+            if ($error = self::checkExists($user_name) == true) {
                 return $error;
             }
         }
 
         if ($pw1) {
-            if ($error = $this->changePassword($pw1, $pw2)) {
+            if ($error = $this->changePassword($pw1, $pw2) == true) {
                 return $error;
             }
 

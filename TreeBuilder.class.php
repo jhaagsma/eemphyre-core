@@ -76,5 +76,5 @@ class TreeBuilder
         }
 
         return $node;
-    }
+    }//end makeNode()
 }//end class

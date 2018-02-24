@@ -45,7 +45,6 @@ abstract class MigrationManager
         } else {
             self::$db = $db;
         }
-
     }//end setDb()
 
 
@@ -58,7 +57,6 @@ abstract class MigrationManager
         if (self::$maxregistered != self::dotName()) {
             self::doUpgrades();
         }
-
     }//end goToLatest()
 
 
@@ -81,7 +79,6 @@ abstract class MigrationManager
         } else {
             return "$maj.$min";
         }
-
     }//end dotName()
 
 
@@ -96,7 +93,6 @@ abstract class MigrationManager
                 'release' => isset($partB[2]) ? $partB[2] : 0,
                 'build'   => $build,
                ];
-
     }//end explodeDotName()
 
 
@@ -133,7 +129,6 @@ abstract class MigrationManager
             static::$release = $version['rel'];
             static::$build   = $version['build'];
         }//end if
-
     }//end checkVersion()
 
 
@@ -144,7 +139,6 @@ abstract class MigrationManager
                                    'name'  => $dotName,
                                    'class' => $class,
                                   ];
-
     }//end register()
 
 
@@ -209,13 +203,11 @@ abstract class MigrationManager
 
             self::out("UPGRADED TO $name");
         }//end foreach
-
     }//end doUpgrades()
 
 
     public static function out($string)
     {
         trigger_error($string, E_USER_NOTICE);
-
     }//end out()
 }//end class

@@ -40,7 +40,6 @@ class Result
         $this->val     = $val;
         $this->error   = $success ? false : $error;
         $this->success = $success;
-
     }//end __construct()
 
     /**
@@ -52,7 +51,6 @@ class Result
     {
         $this->error   = false;
         $this->success = true;
-
     }//end setSuccess()
 
     /**
@@ -64,7 +62,6 @@ class Result
     {
         $this->error   = false;
         $this->success = false;
-
     }//end setNeutral()
 
     /**
@@ -82,7 +79,6 @@ class Result
         }
 
         return implode(' ', $bits);
-
     }//end restOfTheBits()
 
     /**
@@ -144,7 +140,6 @@ class Result
         } else {
             return $messageList['DEFAULT'];
         }
-
     }//end message()
 
     /**
@@ -190,7 +185,6 @@ class Result
     public function isError()
     {
         return $this->error ? true : false;
-
     }//end isError()
 
     /**
@@ -201,7 +195,6 @@ class Result
     public function __toString()
     {
         return $this->type;
-
     }//end __toString()
 
     /**
@@ -216,7 +209,6 @@ class Result
         return '&result='.urlencode($this->type)
             .($this->val ? '&result_val='.urlencode($this->val) : null)
             .($this->success ? '&result_success=1' : null);
-
     }//end toURL()
 
     /**
@@ -233,6 +225,5 @@ class Result
             }
         */
         return $this->success ? false : true;
-
     }//end __toBool()
 }//end class

@@ -46,6 +46,5 @@ class Route
         $this->data     = $data;
         $this->path     = $path;
         $this->auth     = $auth;
-
     }//end __construct()
 }//end class

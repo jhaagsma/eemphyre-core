@@ -67,9 +67,9 @@ class RouteCacher
 
         //so far 1 is SLOWEST BY FAR
         self::$_registries = array_merge(self::$_registries, $add_registries);
-        $filetime = filemtime(dirname(__FILE__) . '/PHPRouter.class.php'); //the actual router object file
-        $thistime = filemtime(dirname(__FILE__) . '/RouteCacher.class.php'); //the actual router object file
-        $filetime = max($filetime, $thistime);
+        $filetime          = filemtime(dirname(__FILE__) . '/PHPRouter.class.php'); //the actual router object file
+        $thistime          = filemtime(dirname(__FILE__) . '/RouteCacher.class.php'); //the actual router object file
+        $filetime          = max($filetime, $thistime);
         foreach (self::$_registries as $r) {
             //see if any registries have been updated
             $filetime = max($filetime, filemtime($r));
@@ -150,7 +150,7 @@ class RouteCacher
      */
     public static function partialReconstruct(&$router)
     {
-        $type = $router->getType();
+        $type   = $router->getType();
         $branch = Cache::jsonFetch(ROUTER_NAME . $type);
 
         //trigger_error("FETCH: ". ROUTER_NAME . $type);
@@ -184,7 +184,7 @@ class RouteCacher
     {
         //this is now much faster! serialize was key
         $router->optimize = 2;
-        $router->s_paths = serialize($router->paths);
+        $router->s_paths  = serialize($router->paths);
         //trigger_error("Serialize Paths");
         unset($router->paths);
     }//end optimize2()

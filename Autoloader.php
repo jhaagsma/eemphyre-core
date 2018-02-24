@@ -36,7 +36,7 @@ define('EMPHYRE_DIR', dirname(__FILE__) . '/');
 //We're borrowing ideas/code heavily from the PSR-4 docs
 class Autoloader
 {
-    protected static $prefixes = [];
+    protected static $prefixes   = [];
     protected static $extensions = [];
 
     // public function __construct()
@@ -48,17 +48,18 @@ class Autoloader
     public static function register()
     {
         spl_autoload_register('self::loadClass');
-    }
+    }//end register()
+
 
     /**
      * Adds a base directory for a namespace prefix.
      *
-     * @param string $prefix The namespace prefix.
+     * @param string $prefix   The namespace prefix.
      * @param string $base_dir A base directory for class files in the
-     * namespace.
-     * @param bool $prepend If true, prepend the base directory to the stack
-     * instead of appending it; this causes it to be searched first rather
-     * than last.
+     *                         namespace.
+     * @param bool   $prepend  If true, prepend the base directory to the stack
+     *                         instead of appending it; this causes it to be
+     *                         searched first rather than last.
      * @return void
      */
     public static function addNamespace($prefix, $base_dir, $prepend = false, $ext = '.php')
@@ -73,7 +74,7 @@ class Autoloader
 
         // initialize the namespace prefix array
         if (isset(self::$prefixes[$prefix]) === false) {
-            self::$prefixes[$prefix] = [];
+            self::$prefixes[$prefix]   = [];
             self::$extensions[$prefix] = [];
         }
 
@@ -88,7 +89,8 @@ class Autoloader
 
         //trigger_error("Prefixes ".str_replace("\n", null, var_export(self::$prefixes, true)));
         //trigger_error("Extensions ".str_replace("\n", null, var_export(self::$extensions, true)));
-    }
+    }//end addNamespace()
+
 
     /**
      * Loads the class file for a given class name.
@@ -131,12 +133,13 @@ class Autoloader
 
         // never found a mapped file
         return false;
-    }
+    }//end loadClass()
+
 
     /**
      * Load the mapped file for a namespace prefix and relative class.
      *
-     * @param string $prefix The namespace prefix.
+     * @param string $prefix         The namespace prefix.
      * @param string $relative_class The relative class name.
      * @return mixed Boolean false if no mapped file can be loaded, or the
      * name of the mapped file that was loaded.
@@ -158,7 +161,7 @@ class Autoloader
             // replace namespace separators with directory separators
             // in the relative class name, append with .php
 
-            $ext = self::$extensions[$prefix][$index];
+            $ext  = self::$extensions[$prefix][$index];
             $file = $base_dir
                   . str_replace('\\', '/', $relative_class)
                   . $ext;
@@ -174,7 +177,8 @@ class Autoloader
 
         // never found it
         return false;
-    }
+    }//end loadMappedFile()
+
 
     /**
      * If a file exists, require it from the file system.
@@ -185,9 +189,9 @@ class Autoloader
     protected static function requireFile($file)
     {
         if (file_exists($file)) {
-            require $file;
+            include $file;
             return true;
         }
         return false;
-    }
-}
+    }//end requireFile()
+}//end class

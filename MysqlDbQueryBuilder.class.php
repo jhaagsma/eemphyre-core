@@ -36,7 +36,6 @@ class MysqlDbQueryBuilder
     public function __construct($db = null)
     {
         $this->setDb($db);
-
     }//end __construct()
 
 
@@ -45,7 +44,6 @@ class MysqlDbQueryBuilder
         if ($this->query) {
             self::$db->query($this->query);
         }
-
     }//end run()
 
 
@@ -56,6 +54,5 @@ class MysqlDbQueryBuilder
         }
 
         static::$db = $db;
-
     }//end setDb()
 }//end class

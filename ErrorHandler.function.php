@@ -150,5 +150,4 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars)
             die("A fatal error has occured. Script execution has been aborted");
         }
     }
-
 }//end userErrorHandler()

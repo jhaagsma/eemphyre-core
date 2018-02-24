@@ -46,7 +46,6 @@ class Validate
         }
 
         return new Result('EMAIL_NOT_VALID');
-
     }//end email()
 
     /**
@@ -77,7 +76,6 @@ class Validate
         }
 
         return new Result('OK', null, true);
-
     }//end password()
 
     /**
@@ -91,6 +89,5 @@ class Validate
     public static function sanitizeName($name)
     {
         return preg_replace("/[^A-Za-z0-9\s]/", null, $name);
-
     }//end sanitizeName()
 }//end class

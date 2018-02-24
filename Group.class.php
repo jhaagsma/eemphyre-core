@@ -52,7 +52,6 @@ class Group extends \EmPHyre\CRUD
     {
         $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
         return $permissions->countM2M($this->group_id, true);
-
     }//end members()
 
 
@@ -65,7 +64,6 @@ class Group extends \EmPHyre\CRUD
         }
 
         return new Result('ADDED_GROUP', $group_id, true);
-
     }//end add()
 
 
@@ -79,21 +77,18 @@ class Group extends \EmPHyre\CRUD
         }
 
         return new Result('EDITED_GROUP', $this->getId(), true);
-
     }//end edit()
 
 
     public function display()
     {
         return $this->group_name;
-
     }//end display()
 
 
     public function addUser($user_id)
     {
         return static::addUserGroup($user_id, $this->getId());
-
     }//end addUser()
 
     /**
@@ -108,14 +103,12 @@ class Group extends \EmPHyre\CRUD
     {
         $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
         return $permissions->add($user_id, $group_id);
-
     }//end addUserGroup()
 
 
     public function delUser($user_id)
     {
         return static::delUserGroup($user_id, $this->getId());
-
     }//end delUser()
 
     /**
@@ -130,7 +123,6 @@ class Group extends \EmPHyre\CRUD
     {
         $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
         return $permissions->delete($user_id, $group_id);
-
     }//end delUserGroup()
 
 
@@ -138,7 +130,6 @@ class Group extends \EmPHyre\CRUD
     {
         $permissions = new M2M('user_permission_groups', 'user_id', 'group_id');
         return $permissions->getM2M($user_id);
-
     }//end userGroups()
 
 
@@ -169,7 +160,6 @@ class Group extends \EmPHyre\CRUD
         }
 
         return new Result("EDITED_USER", $user_id, true);
-
     }//end alterUserGroups()
 
     /**

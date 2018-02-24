@@ -42,7 +42,6 @@ class Password
         }
 
         return $password;
-
     }//end cryptSHA512()
 
 
@@ -51,6 +50,5 @@ class Password
         $rounds = mt_rand(1000, 9999);
         $salt   = uniqid('', true);
         return $rounds.'$'.$salt;
-
     }//end generateSalt()
 }//end class

@@ -243,7 +243,6 @@ abstract class CRUD
             .' ORDER BY `'.static::$primaryKey.'` '.$dir,
             $value
         )->fetchFieldSet();
-
     }//end filterColumn()
 
     /**
@@ -265,7 +264,6 @@ abstract class CRUD
             .static::$tableName.'` WHERE `'.$column.'`=?',
             $value
         )->fetchField();
-
     }//end getUniqueId()
 
     public static function filterPKArray($keys, $column, $value, $limit = null, $offset = 0, $asc = true)

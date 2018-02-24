@@ -65,7 +65,6 @@ class M2M
         static::$primaryKeys = array_merge($part1, $part2);
         static::$pkCount     = count(static::$primaryKeys);
         $this->initialize();
-
     }//end __construct()
 
     /**
@@ -95,7 +94,6 @@ class M2M
         if (!static::$db) {
             static::$db = Container::getDb();
         }
-
     }//end db()
 
     /**
@@ -358,7 +356,6 @@ class M2M
 
         static::db();
         return static::$db->pqueryArray($call_args)->affectedRows();
-
     }//end add()
 
     /**

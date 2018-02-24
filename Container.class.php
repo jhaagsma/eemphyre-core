@@ -48,7 +48,6 @@ class Container
     private static function getDbName($database = null)
     {
         return ($database == null ? self::$params['db']['default']['db_name'] : $database);
-
     }//end getDbName()
 
 
@@ -57,7 +56,6 @@ class Container
         $database = self::getDbName($database);
 
         return ( isset(self::$params['db'][$database]['db_host']) ? self::$params['db'][$database]['db_host'] : self::$params['db']['default']['db_host'] );
-
     }//end getDbHost()
 
 
@@ -66,7 +64,6 @@ class Container
         $database = self::getDbName($database);
 
         return ( isset(self::$params['db'][$database]['db_user']) ? self::$params['db'][$database]['db_user'] : self::$params['db']['default']['db_user'] );
-
     }//end getDbUser()
 
 
@@ -75,7 +72,6 @@ class Container
         $database = self::getDbName($database);
 
         return ( isset(self::$params['db'][$database]['db_pass']) ? self::$params['db'][$database]['db_pass'] : self::$params['db']['default']['db_pass'] );
-
     }//end getDbPass()
 
 
@@ -99,7 +95,6 @@ class Container
         self::$instances[$database]->createIfNotExists();
 
         return self::$instances[$database];
-
     }//end getDb()
 
 
@@ -107,7 +102,6 @@ class Container
     {
         $userid = User::getUserIdFromUUID($uuid);
         return self::newUser($userid, $clearcache);
-
     }//end newUserFromUUID()
 
 
@@ -124,7 +118,6 @@ class Container
         // use the default database
         $user->initialize($clearcache);
         return $user;
-
     }//end newUser()
 
 
@@ -132,6 +125,5 @@ class Container
     {
         $userid = User::getUserIdFromName($username);
         return self::newUser($userid, $clearcache);
-
     }//end newUserFromName()
 }//end class

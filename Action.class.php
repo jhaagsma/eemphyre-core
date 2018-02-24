@@ -30,7 +30,6 @@ class Action extends \EmPHyre\CRUD
     {
         parent::initialize();
         $this->action_flag = self::getActionFlag($this->action_type);
-
     }//end initialize()
 
 
@@ -47,14 +46,12 @@ class Action extends \EmPHyre\CRUD
         return self::$db->pquery(
             "SELECT action_id FROM user_actions ORDER BY `time` DESC"
         )->fetchFieldSet();
-
     }//end actions()
 
 
     public function getUserID()
     {
         return $this->user_id;
-
     }//end getUserID()
 
 
@@ -62,7 +59,6 @@ class Action extends \EmPHyre\CRUD
     {
         $user = Container::newUser($this->user_id);
         return $user->display();
-
     }//end userDisplay()
 
 
@@ -74,7 +70,6 @@ class Action extends \EmPHyre\CRUD
         }
 
         return $display.'&nbsp;('.datetime($this->time).')';
-
     }//end timeDisplay()
 
 
@@ -84,21 +79,18 @@ class Action extends \EmPHyre\CRUD
             default:
                 return $this->action_flag.': '.$this->foreign_key;
         }
-
     }//end display()
 
 
     public function getActionTime()
     {
         return $this->time;
-
     }//end getActionTime()
 
 
     public function getActionUserTime($extra = false)
     {
         return $this->userDisplay().' at '.$this->timeDisplay($extra);
-
     }//end getActionUserTime()
 
 
@@ -139,7 +131,6 @@ class Action extends \EmPHyre\CRUD
         )->insertId();
 
         return new Result("ADDED_ACTION", $action_id, true);
-
     }//end addAction()
 
 
@@ -158,7 +149,6 @@ class Action extends \EmPHyre\CRUD
         }
 
         return $action_type;
-
     }//end getActionType()
 
 
@@ -170,6 +160,5 @@ class Action extends \EmPHyre\CRUD
         )->fetchField();
 
         return $action_flag;
-
     }//end getActionFlag()
 }//end class

@@ -91,23 +91,27 @@ class Cache
     public static function serialStore($key, $val, $ttl = 0)
     {
         self::store($key, serialize($val), $ttl);
-    }
+    }//end serialStore()
+
 
     //to use to store arrays
     public static function jsonStore($key, $val, $ttl = 0)
     {
         self::store($key, json_encode($val, JSON_FORCE_OBJECT), $ttl);
-    }
+    }//end jsonStore()
+
 
     public static function jsonFetch($key, $default = null)
     {
         return json_decode(self::fetch($key, $default), JSON_FORCE_OBJECT);
-    }
+    }//end jsonFetch()
+
 
     public static function serialFetch($key, $default = null)
     {
         return unserialize(self::fetch($key, $default));
-    }
+    }//end serialFetch()
+
 
     public static function multiFetch($keys)
     {
