@@ -67,4 +67,8 @@
 <rule ref="Zend.Debug.CodeAnalyzer"/>
 <rule ref="Squiz.Commenting.ClosingDeclarationComment" />
 <rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis" />
+<rule ref="NeutronStandard.Arrays.DisallowLongformArray" />
+<rule ref="NeutronStandard.Conditions.DisallowConditionAssignWithoutConditionalSniff" />
+<rule ref="NeutronStandard.Functions.TypeHint" />
+<rule ref="NeutronStandard.Globals.DisallowGlobalFunctions" />
 </ruleset>
