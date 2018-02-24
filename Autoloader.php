@@ -45,11 +45,19 @@ class Autoloader
     //     spl_autoload_register(array($this, 'loadClass'));
     // }
 
+    /**
+     * Register the register function
+     * And then autoload our own stuff first
+     *
+     * @return null
+     */
     public static function register()
     {
         spl_autoload_register('self::loadClass');
+        self::addNamespace('EmPHyre', EMPHYRE_DIR, false, '.class.php');
+        self::addNamespace('EmPHyre', EMPHYRE_DIR.'/Routing', false, '.class.php');
+        self::addNamespace('EmPHyre', EMPHYRE_DIR.'/Cache', false, '.class.php');
     }//end register()
-
 
     /**
      * Adds a base directory for a namespace prefix.
@@ -60,6 +68,8 @@ class Autoloader
      * @param bool   $prepend  If true, prepend the base directory to the stack
      *                         instead of appending it; this causes it to be
      *                         searched first rather than last.
+     * @param string $ext      The extension; for example, .php, or .class.php
+     *
      * @return void
      */
     public static function addNamespace($prefix, $base_dir, $prepend = false, $ext = '.php')
