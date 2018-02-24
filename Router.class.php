@@ -1,7 +1,7 @@
 <?php
 /**
  *
- * PHPRouter is the routing object for the EmPHyre project
+ * Router is the routing object for the EmPHyre project
  *
  * PHP version 7
  *
@@ -29,7 +29,7 @@
 
 namespace EmPHyre;
 
-class PHPRouter
+class Router
 {
     public $paths;
     public $optimize = 0;
@@ -45,7 +45,7 @@ class PHPRouter
     private static $can_inherit = [0,1,4,5,6,7];
 
     /**
-     * Create the PHPRouter object
+     * Create the Router object
      *
      * @param bool|int $filetime The time the router object was first created;
      *                           This allows us to rebuild it, but still know
@@ -273,7 +273,7 @@ class PHPRouter
         $inputs = TypeValidator::compressInputs($inputs);
 
         // in other words, if they supplied no auth
-         // if they supplied null, it should still set it as null, even if the default is not
+        // if they supplied null, it should still set it as null, even if the default is not
         $node = TreeBuilder::makeNode(
             $dir,
             $file,
@@ -292,11 +292,11 @@ class PHPRouter
     private function buildBranch($uri_parts, &$r, $node, $url, $inherit = false)
     {
         // comments on 'r': mapping
-            // node aka o => 0
-            // variable aka v =>1
-            // static aka s =>2
-            // name aka n => 3
-            // type aka t => 4
+        // node aka o => 0
+        // variable aka v =>1
+        // static aka s =>2
+        // name aka n => 3
+        // type aka t => 4
 
         //Iterate through the parts of the uri
         $current = array_shift($uri_parts);
@@ -463,11 +463,11 @@ class PHPRouter
     private function urlRoute($s, $r, $path, $inherit = false)
     {
         // comments on 'r': mapping
-            // node aka o => 0
-            // variable aka v =>1
-            // static aka s =>2
-            // name aka n => 3
-            // type aka t => 4
+        // node aka o => 0
+        // variable aka v =>1
+        // static aka s =>2
+        // name aka n => 3
+        // type aka t => 4
         $inherit = $this->newInherit($inherit, (isset($r[0]) ? $r[0] : false));
         $current = array_shift($s);
         if (!$current && !isset($r[0])) {
@@ -486,7 +486,6 @@ class PHPRouter
 
     public function getType()
     {
-
         switch (getenv('REQUEST_METHOD')) {
             case 'GET':
                 return 'GET';
