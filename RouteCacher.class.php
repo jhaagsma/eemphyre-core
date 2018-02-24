@@ -47,7 +47,7 @@ defined('ROUTER_NAME') or define("ROUTER_NAME", ROUTER_PREFIX . getenv('HTTP_HOS
  */
 class RouteCacher
 {
-    private static $_registries = [];
+    private static $registries = [];
 
     /**
      * Grab the router from the registry, or build it
@@ -66,11 +66,11 @@ class RouteCacher
         //$optimization = (time() % 2) * 2;
 
         //so far 1 is SLOWEST BY FAR
-        self::$_registries = array_merge(self::$_registries, $add_registries);
-        $filetime          = filemtime(dirname(__FILE__) . '/Router.class.php'); //the actual router object file
-        $thistime          = filemtime(dirname(__FILE__) .  '/RouteCacher.class.php'); //the actual router object file
-        $filetime          = max($filetime, $thistime);
-        foreach (self::$_registries as $r) {
+        self::$registries = array_merge(self::$registries, $add_registries);
+        $filetime         = filemtime(dirname(__FILE__) . '/Router.class.php'); //the actual router object file
+        $thistime         = filemtime(dirname(__FILE__) .  '/RouteCacher.class.php'); //the actual router object file
+        $filetime         = max($filetime, $thistime);
+        foreach (self::$registries as $r) {
             //see if any registries have been updated
             $filetime = max($filetime, filemtime($r));
         }
@@ -92,7 +92,7 @@ class RouteCacher
 
             $router = new Router($filetime);
 
-            foreach (self::$_registries as $r) {
+            foreach (self::$registries as $r) {
                 include_once $r;
             }
 
@@ -133,7 +133,7 @@ class RouteCacher
     public static function optimize1(&$router)
     {
         $router->optimize = 1;
-        foreach ($router->paths as $type => $tree) {
+        foreach (array_keys($router->paths) as $type) {
             Cache::jsonStore(ROUTER_NAME . $type, $router->paths[$type], 86400 * 3);
             //trigger_error("STORE: " . ROUTER_NAME . $type);
         }
@@ -157,7 +157,10 @@ class RouteCacher
 
         if (!$branch) {
             Cache::delete(ROUTER_NAME . $router->optimize);
-            //trigger_error(ROUTER_NAME .': Branch for ' . $type . ' not set; deleting cached router for ' . $_SERVER['SERVER_NAME']); //error handling now :)
+            //error handling now :)
+            //trigger_error(ROUTER_NAME .': Branch for ' . $type . ' not set;
+            //deleting cached router for ' . $_SERVER['SERVER_NAME']);
+
             return false;
         }
 
@@ -229,8 +232,8 @@ class RouteCacher
      *
      * @return null
      */
-    public static function addRegistry($registry)
+    public static function addRegistry(string $registry)
     {
-        self::$_registries[] = $registry;
+        self::$registries[] = $registry;
     }//end addRegistry()
 }//end class
