@@ -37,8 +37,8 @@ namespace EmPHyre;
  */
 class Profiler
 {
-    private $time_start = 0;
-    private $timers     = [];
+    private static $time_start = 0;
+    private static $timers     = [];
 
     /**
      * Set the start time
@@ -71,7 +71,7 @@ class Profiler
      *
      * @return folat           A time
      */
-    private function codetime($detail = false)
+    private static function codetime($detail = false)
     {
         if ($detail) {
             return (microtime(true) - self::$time_start) * 1000;
