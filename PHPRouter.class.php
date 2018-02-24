@@ -77,18 +77,41 @@ class PHPRouter
     }//end clearDefaults()
 
 
+    /**
+     * This allows setting of a default directory when adding paths
+     *
+     * @param  string $dir A directory path
+     *                     For example: "./public"
+     *
+     * @return null
+     */
     public function dirSet($dir = null)
     {
         $this->dir = rtrim($dir, '/');
     }//end dirSet()
 
-
+    /**
+     * This allows setting of a default authentication type when adding paths
+     *
+     * @param  string $auth An authentication type
+     *                      For example: "auth_user"
+     *
+     * @return null
+     */
     public function defaultAuth($auth = null)
     {
         $this->auth = $auth;
     }//end defaultAuth()
 
 
+    /**
+     * This allows setting of a default skin type when adding paths
+     *
+     * @param  string $skin A a skin type
+     *                      For example: "web_public"
+     *
+     * @return null
+     */
     public function defaultSkin($skin = null)
     {
         $this->skin = $skin;
@@ -148,7 +171,10 @@ class PHPRouter
 
 
 
-    // Object version --- these are TOO SLOW!  //Leave in until git & svn tree merge...
+    // Object version --- these are TOO SLOW!
+    // //Leave in until git & svn tree merge...
+    // //Or apparently much later;
+    // I still kindof like the idea, but we'd have to re-try it in php 7.2
     /*
         function add($type, $url, $f, $u, $i = null, $a = null, $s=null){
         if(!$this->prepends)
