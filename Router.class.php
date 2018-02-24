@@ -318,7 +318,7 @@ class Router
         $inherit = $this->newInherit($inherit, (isset($r[0]) ? $r[0] : false));
 
         //check if the current URI bit is a {variable=>type}
-        if ($vinfo = $this->isVariable($current)) {
+        if ($vinfo = $this->isVariable($current) == true) {
             if (!isset($r[1])) {
                 //split up into variable and type, and compress the input
                 $r[1] = [3 => $vinfo[1], 4 => TypeValidator::compressInput($vinfo[2])];
@@ -554,10 +554,8 @@ class Router
                 $_GET[$key] = $value;
             }
 
-            if (isset($_GET[$node->path_extension])) {
-                $extension = $_GET[$node->path_extension];
-                unset($_GET[$node->path_extension]);
-            }
+            $extension = $_GET[$node->path_extension] ?? null;
+            unset($_GET[$node->path_extension]);
         } elseif ($type == 'POST') {
             if (!isset($_POST[$node->extractable_json])) {
                 return;
@@ -572,10 +570,8 @@ class Router
                 $_POST[$key] = $value;
             }
 
-            if (isset($_POST[$node->path_extension])) {
-                $extension = $_POST[$node->path_extension];
-                unset($_POST[$node->path_extension]);
-            }
+            $extension = $_POST[$node->path_extension] ?? null;
+            unset($_POST[$node->path_extension]);
         }
 
         unset($node->extractable_json);
@@ -629,8 +625,3 @@ class Router
         return new Route($node->file, $node->function, $data, $path, $node->auth);
     }//end route()
 }//end class
-
-function def(&$var, $def)
-{
-    return (isset($var) ? $var : $def);
-}//end def()
