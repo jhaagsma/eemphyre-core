@@ -39,7 +39,6 @@ class Path
     public $language;
     public $variables;
 
-
     public function __construct($url, $skin = null)
     {
         $this->url        = $url;
@@ -47,8 +46,7 @@ class Path
         $this->page_title = null;
         $this->meta_desc  = null;
         $this->language   = null;
-        $this->variables  = array();
-
+        $this->variables  = [];
     }//end __construct()
     
     function response($string)
@@ -56,7 +54,5 @@ class Path
         $this->variables['response'] = $string;
         
         return $this;
-        
     }//end response()
-
 }//end class

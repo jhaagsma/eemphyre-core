@@ -65,13 +65,13 @@ class PHPRouter
 
     public function clearDefaults()
     {
-        $this->area             = array();
+        $this->area             = [];
         $this->dir              = null;
         $this->auth             = null;
         $this->skin             = null;
-        $this->get_inputs       = array();
-        $this->post_inputs      = array();
-        $this->common           = array();
+        $this->get_inputs       = [];
+        $this->post_inputs      = [];
+        $this->common           = [];
         $this->path_extension   = false;
         $this->extractable_json = false;
     }//end clearDefaults()
@@ -118,13 +118,13 @@ class PHPRouter
     }//end defaultSkin()
 
 
-    public function defaultGETInputs($inputs = array())
+    public function defaultGETInputs($inputs = [])
     {
         $this->get_inputs = $inputs;
     }//end defaultGETInputs()
 
 
-    public function defaultPOSTInputs($inputs = array())
+    public function defaultPOSTInputs($inputs = [])
     {
         $this->post_inputs = $inputs;
     }//end defaultPOSTInputs()
@@ -132,7 +132,7 @@ class PHPRouter
 
     public function areaSet($area = null)
     {
-        $this->area = array();
+        $this->area = [];
         if ($area) {
             $this->areaPush($area);
         }
@@ -152,7 +152,7 @@ class PHPRouter
         array_pop($this->area);
     }//end areaPop()
 
-    public function commonInputs($inputs = array())
+    public function commonInputs($inputs = [])
     {
         $this->common = $inputs;
     }//end commonInputs()
@@ -238,19 +238,19 @@ class PHPRouter
         }
     }//end rest()
 
-    public function get($url, $file, $function, $inputs = array(), $auth = false, $skin = false)
+    public function get($url, $file, $function, $inputs = [], $auth = false, $skin = false)
     {
         // add a shorthand version
         $this->add('GET', $url, $file, $function, $inputs, $auth, $skin);
     }//end get()
 
-    public function post($url, $file, $function, $inputs = array(), $auth = false, $skin = false)
+    public function post($url, $file, $function, $inputs = [], $auth = false, $skin = false)
     {
         // add a shorthand version
         $this->add('POST', $url, $file, $function, $inputs, $auth, $skin);
     }//end post()
 
-    public function add($type, $url, $file, $function, $inputs = array(), $auth = false, $skin = false)
+    public function add($type, $url, $file, $function, $inputs = [], $auth = false, $skin = false)
     {
         // Testing out array version
         $uri_parts = array_merge($this->area, explode('/', ltrim($url, '/')));
@@ -477,7 +477,7 @@ class PHPRouter
         } elseif (isset($r[2][$current])) {
             return $this->urlRoute($s, $r[2][$current], $path, $inherit);
         } elseif (isset($r[1])) {
-            $path->variables[$r[1][3]] = TypeValidator::validate(array($current), 0, $r[1][4]);
+            $path->variables[$r[1][3]] = TypeValidator::validate([$current], 0, $r[1][4]);
             return $this->urlRoute($s, $r[1], $path, $inherit);
         }
 
@@ -593,7 +593,7 @@ class PHPRouter
             trigger_error($type . ': ' . getenv('SERVER_NAME') . ' ' . $uri);
         }
 
-        $url = ($url ? array($url) : explode('?', $uri, 2));
+        $url = ($url ? [$url] : explode('?', $uri, 2));
 
         $path = new Path($url = rtrim($url[0], '/'));
         $s    = explode('/', ltrim($path->url, '/'));

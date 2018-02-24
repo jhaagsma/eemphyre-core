@@ -57,7 +57,7 @@ class RouteCacher
      *
      * @return PHPRouter               The routing object
      */
-    public static function getRouter($add_registries = array(), $optimization = 0)
+    public static function getRouter($add_registries = [], $optimization = 0)
     {
         //0 for no optimization, //this is almost exactly the same speed as 2
         //1 for json cut into two APC bits, //this TAKES TWICE AS LONG as 0 or 2
@@ -164,7 +164,7 @@ class RouteCacher
         //echo "dBug3";
         //new dBug($router);
 
-        $router->paths = array($type => $branch);
+        $router->paths = [$type => $branch];
 
         //echo "dBug4";
         //new dBug($router);

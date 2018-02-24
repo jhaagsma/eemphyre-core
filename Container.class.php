@@ -34,8 +34,8 @@ class Container
      * Array of database connections, mysqli
      **/
 
-    private static $instances    = array();
-    public static $params        = array();
+    private static $instances    = [];
+    public static $params        = [];
     public static $userNamespace = null;
 
     /*

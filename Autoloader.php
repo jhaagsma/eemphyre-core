@@ -36,8 +36,8 @@ define('EMPHYRE_DIR', dirname(__FILE__) . '/');
 //We're borrowing ideas/code heavily from the PSR-4 docs
 class Autoloader
 {
-    protected static $prefixes = array();
-    protected static $extensions = array();
+    protected static $prefixes = [];
+    protected static $extensions = [];
 
     // public function __construct()
     // {
@@ -73,8 +73,8 @@ class Autoloader
 
         // initialize the namespace prefix array
         if (isset(self::$prefixes[$prefix]) === false) {
-            self::$prefixes[$prefix] = array();
-            self::$extensions[$prefix] = array();
+            self::$prefixes[$prefix] = [];
+            self::$extensions[$prefix] = [];
         }
 
         // retain the base directory for the namespace prefix

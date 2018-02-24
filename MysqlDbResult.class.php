@@ -74,7 +74,7 @@ class MysqlDbResult
     //return the full set
     public function fetchFieldSet()
     {
-        $ret = array();
+        $ret = [];
 
         while ($line = $this->fetchRow(DB_NUM)) {
             if (count($line) == 1) {
@@ -91,7 +91,7 @@ class MysqlDbResult
     //return the full set
     public function fetchRowSet($col = null, $type = DB_ASSOC)
     {
-        $ret = array();
+        $ret = [];
 
         while ($line = $this->fetchRow($type)) {
             if ($col) {

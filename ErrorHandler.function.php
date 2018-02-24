@@ -53,7 +53,7 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars)
     $time = gmdate("M d Y H:i:s");
 
     // Get the error type from the error number
-    static $errortype = array(
+    static $errortype = [
                          1    => "Error",
                          2    => "Warning",
                          4    => "Parsing Error",
@@ -66,7 +66,7 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars)
                          512  => "User Warning",
                          1024 => "User Notice",
                          2048 => "PHP Strict",
-                        );
+                        ];
     $errlevel         = $errortype[$errno];
 
     // Write error to log file (CSV format)
@@ -139,7 +139,7 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars)
         }
 
         $comm = new CommClient();
-        $comm->send('forward', array('type' => 'website_error', 'data' => $str2));
+        $comm->send('forward', ['type' => 'website_error', 'data' => $str2]);
     }
 
     // Terminate script if fatal error

@@ -177,12 +177,12 @@ abstract class Session
 
     private static function updateActiveSession($expiretime)
     {
-        $activerow = array(
+        $activerow = [
             'lastreal' => self::$lastreal,
             'login_id' => self::$login_id,
             'cookieval' => self::$cookieKey,
             'expiretime' => $expiretime
-        );
+        ];
 
         self::$db = Container::getDb();
         if (self::$lastreal + 120 < time()) {

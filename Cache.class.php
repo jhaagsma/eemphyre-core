@@ -65,7 +65,7 @@ class Cache
     {
         $start   = microtime(true);
         $success = apcu_add($key, $val, $ttl);
-        self::addquery(array('add', $success, microtime(true) - $start, $key, $ttl));
+        self::addquery(['add', $success, microtime(true) - $start, $key, $ttl]);
         return $success;
     }//end add()
 
@@ -74,7 +74,7 @@ class Cache
     {
         $start   = microtime(true);
         $success = apcu_store($key, $val, $ttl);
-        self::addquery(array('store', $success, microtime(true) - $start, $key, $ttl));
+        self::addquery(['store', $success, microtime(true) - $start, $key, $ttl]);
         return $success;
     }//end store()
 
@@ -83,7 +83,7 @@ class Cache
     {
         $start = microtime(true);
         $val   = apcu_fetch($key, $success);
-        self::addquery(array('fetch', $success, microtime(true) - $start, $key, null));
+        self::addquery(['fetch', $success, microtime(true) - $start, $key, null]);
         return ($success ? $val : $default);
     }//end fetch()
 
@@ -111,11 +111,11 @@ class Cache
 
     public static function multiFetch($keys)
     {
-        $return = array();
+        $return = [];
         foreach ($keys as $key) {
             $start = microtime(true);
             $val   = apcu_fetch($key, $success);
-            self::addquery(array('fetch', $success, microtime(true) - $start, $key, null));
+            self::addquery(['fetch', $success, microtime(true) - $start, $key, null]);
             if ($success) {
                 $return[$key] = $val;
             }
@@ -127,7 +127,7 @@ class Cache
 
     public static function fetchPrefixKeys($prefix, $keys)
     {
-        $fetch = array();
+        $fetch = [];
         foreach ($keys as $k) {
             $fetch[] = $prefix.$k;
         }
@@ -140,7 +140,7 @@ class Cache
     {
         $start   = microtime(true);
         $success = apcu_delete($key);
-        self::addquery(array('delete', $success, microtime(true) - $start, $key, null));
+        self::addquery(['delete', $success, microtime(true) - $start, $key, null]);
         return $success;
     }//end delete()
 
@@ -149,7 +149,7 @@ class Cache
     {
         $start   = microtime(true);
         $success = apcu_clear_cache('user');
-        self::addquery(array('clear user cache', $success, microtime(true) - $start, null, null));
+        self::addquery(['clear user cache', $success, microtime(true) - $start, null, null]);
         return $success;
     }//end clearUserCache()
 
@@ -158,7 +158,7 @@ class Cache
     {
         $start   = microtime(true);
         $success = apcu_clear_cache();
-        self::addquery(array('clear cache', $success, microtime(true) - $start, null, null));
+        self::addquery(['clear cache', $success, microtime(true) - $start, null, null]);
         return $success;
     }//end clearCache()
 }//end class

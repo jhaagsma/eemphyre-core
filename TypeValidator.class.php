@@ -273,7 +273,7 @@ class TypeValidator
 
                                 // this is kindof hack-ish,
                                 // but I only just ran into wanting to validate the keys as well
-                                $k       = self::validate(array(0 => $k), 0, $keytype);
+                                $k       = self::validate([0 => $k], 0, $keytype);
                                 $ret[$k] = $temp;
                             }
 

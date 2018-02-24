@@ -288,7 +288,7 @@ class MysqlDb
         $qt = ($end - $start);
 
         if ($logthis) {
-            $this->queries[] = array($query, $qt);
+            $this->queries[] = [$query, $qt];
         }
 
         if (count($this->queries) > $this->querystore) {
@@ -363,7 +363,7 @@ class MysqlDb
             case 'NULL':
                 return 'NULL';
             case 'array':
-                $ret = array();
+                $ret = [];
                 foreach ($part as $v) {
                     $ret[] = $this->preparePart($v);
                 }
@@ -382,7 +382,7 @@ class MysqlDb
     public function pquery()
     {
         $args  = func_get_args();
-        $query = call_user_func_array(array($this, 'prepare'), $args);
+        $query = call_user_func_array([$this, 'prepare'], $args);
 
         return $this->query($query);
     }//end pquery()
@@ -398,7 +398,7 @@ class MysqlDb
      */
     public function pqueryArray($args)
     {
-        $query = call_user_func_array(array($this, 'prepare'), $args);
+        $query = call_user_func_array([$this, 'prepare'], $args);
 
         return $this->query($query);
     }//end pqueryArray()
