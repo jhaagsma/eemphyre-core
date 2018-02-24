@@ -44,6 +44,13 @@ class PHPRouter
     // 7 => extractable json (for json; string)
     private static $can_inherit = [0,1,4,5,6,7];
 
+    /**
+     * Create the PHPRouter object
+     *
+     * @param bool|int $filetime The time the router object was first created;
+     *                           This allows us to rebuild it, but still know
+     *                           when it was rebuilt.
+     */
     public function __construct($filetime = false)
     {
         // trigger_error("{NODETAIL_IRC}Rebuilding Router Object for " . $_SERVER['SERVER_NAME']);
@@ -473,9 +480,38 @@ class PHPRouter
     }//end getType()
 
 
+    private function getData() {
+        switch ($this->getType()) {
+            case 'GET':
+                return $_GET;
+            case 'POST':
+                return $_POST;
+            case 'PUT':
+                return $this->getPUT();
+            case 'DELETE':
+                return [];
+            case 'HEAD':
+                return [];
+            case 'OPTIONS':
+                return [];
+            default:
+                return [];
+        }
+    }//end getData()
+
+
+    private function getPUT() {
+        parse_str(file_get_contents("php://input"), $PUT);
+        return $PUT;
+    }//end getPUT()
+
+
     private function extractJson($node)
     {
         $type = $this->getType();
+        //$data = $this->getData();
+
+        $extension = null;
 
         if ($type == 'GET') {
             if (!isset($_GET[$node->extractable_json])) {
@@ -490,6 +526,12 @@ class PHPRouter
             foreach ($json as $key => $value) {
                 $_GET[$key] = $value;
             }
+
+            if (isset($_GET[$node->path_extension])) {
+                $extension = $_GET[$node->path_extension];
+                unset($_GET[$node->path_extension]);
+            }
+
         } elseif ($type == 'POST') {
             if (!isset($_POST[$node->extractable_json])) {
                 return;
@@ -503,7 +545,16 @@ class PHPRouter
             foreach ($json as $key => $value) {
                 $_POST[$key] = $value;
             }
+
+            if (isset($_POST[$node->path_extension])) {
+                $extension = $_POST[$node->path_extension];
+                unset($_POST[$node->path_extension]);
+            }
         }
+
+        unset($node->extractable_json);
+
+        return $extension;
     }//end extractJson()
 
 
@@ -530,13 +581,10 @@ class PHPRouter
 
         //basically this lets people set everything up as a single json variable,
         //like api_payload, and we extract it as though it were in the POST or GET
-        if ($node->extractable_json) {
-            $this->extractJson($node);
-        }
-
+        $extension = $node->extractable_json ? $this->extractJson($node) : null;
 
         if (is_array($node->inputs)) {
-            $source = ($type == "GET" ? $_GET : $_POST);
+            $source = $this->getData();
 
             foreach ($node->inputs as $k => $v) {
                 $data[$k] = TypeValidator::validate($source, $k, $v);
@@ -545,8 +593,10 @@ class PHPRouter
 
         //basically this lets us set a variable, like api_function, at say /ai/
         //and then automagically put us to /ai/cash or /ai/explore, based on input
-        if ($node->path_extension && isset($source[$node->path_extension])) {
-            return $this->route($url . '/' . $source[$node->path_extension]);
+        if ($extension) {
+            unset($node->path_extension);
+            unset($node->extractable_json);
+            return $this->route($url . '/' . $extension);
         }
 
         $path->skin = $node->skin;
