@@ -506,7 +506,8 @@ class PHPRouter
     }//end getType()
 
 
-    private function getData() {
+    private function getData()
+    {
         switch ($this->getType()) {
             case 'GET':
                 return $_GET;
@@ -526,7 +527,8 @@ class PHPRouter
     }//end getData()
 
 
-    private function getPUT() {
+    private function getPUT()
+    {
         parse_str(file_get_contents("php://input"), $PUT);
         return $PUT;
     }//end getPUT()
@@ -557,7 +559,6 @@ class PHPRouter
                 $extension = $_GET[$node->path_extension];
                 unset($_GET[$node->path_extension]);
             }
-
         } elseif ($type == 'POST') {
             if (!isset($_POST[$node->extractable_json])) {
                 return;
