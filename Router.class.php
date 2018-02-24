@@ -3,7 +3,7 @@
  *
  * Router is the routing object for the EmPHyre project
  *
- * PHP version 7
+ * PHP version 7.2
  *
  * ------
  * These files are part of the empiresPHPframework;
@@ -55,14 +55,21 @@ class Router
     {
         // trigger_error("{NODETAIL_IRC}Rebuilding Router Object for " . $_SERVER['SERVER_NAME']);
         // only for if you want Notices printed when the router is rebuilt
-        $this->time = ($filetime ? $filetime : time());
         // so we know if it's fresh
-        // $this->paths = array("GET" => new UriPart(), "POST" =>  new UriPart());
-        $this->paths = ['GET'  => [], 'POST' => [], 'PUT' => [], 'HEAD' => [], 'DELETE' => [], 'OPTIONS' => []];
+        $this->time = ($filetime ? $filetime : time());
+
+        // remove HEAD, OPTIONS because we probably don't need to suppor those
+        $this->paths = ['GET'  => [], 'POST' => [], 'PUT' => [], 'DELETE' => []]; //'HEAD' => [], 'OPTIONS' => []
+        //clear/set defaults
         $this->clearDefaults();
     }//end __construct()
 
 
+    /**
+     * Clear the default values
+     *
+     * @return null
+     */
     public function clearDefaults()
     {
         $this->area             = [];
@@ -495,10 +502,10 @@ class Router
                 return 'PUT';
             case 'DELETE':
                 return 'DELETE';
-            case 'HEAD':
-                return 'HEAD';
-            case 'OPTIONS':
-                return 'OPTIONS';
+            // case 'HEAD':
+            //     return 'HEAD';
+            // case 'OPTIONS':
+            //     return 'OPTIONS';
             default:
                 return 'GET';
         }
@@ -516,10 +523,10 @@ class Router
                 return $this->getPUT();
             case 'DELETE':
                 return [];
-            case 'HEAD':
-                return [];
-            case 'OPTIONS':
-                return [];
+            // case 'HEAD':
+            //     return [];
+            // case 'OPTIONS':
+            //     return [];
             default:
                 return [];
         }
@@ -580,6 +587,13 @@ class Router
     }//end extractJson()
 
 
+    /**
+     * Do the actual routing!
+     *
+     * @param  string $url The url we are at
+     *
+     * @return object      Rediret or return a Route object
+     */
     public function route($url = null)
     {
         $type = $this->getType();
