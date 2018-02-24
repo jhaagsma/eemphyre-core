@@ -70,5 +70,4 @@
 <rule ref="NeutronStandard.Arrays.DisallowLongformArray" />
 <rule ref="NeutronStandard.Conditions.DisallowConditionAssignWithoutConditional" />
 <rule ref="NeutronStandard.Functions.TypeHint" />
-<rule ref="NeutronStandard.Globals.DisallowGlobalFunctions" />
 </ruleset>
