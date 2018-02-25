@@ -89,4 +89,14 @@ class Profiler
     {
         return self::$timers;
     }//end getProfile()
+
+    /**
+     * Get the elapsed time without detail
+     *
+     * @return int Number of ms
+     */
+    public static function getElapsed()
+    {
+        return self::codetime();
+    }//end getElapsed()
 }//end class
