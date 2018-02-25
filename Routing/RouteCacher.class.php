@@ -68,8 +68,8 @@ class RouteCacher
 
         //include the files, and check their file modiried times
         self::$registries = array_merge(self::$registries, $add_registries);
-        $filetime         = filemtime(dirname(__FILE__) . '/Routing/Router.class.php');
-        $thistime         = filemtime(dirname(__FILE__) . 'Routing/RouteCacher.class.php');
+        $filetime         = filemtime(EMPHYRE_DIR . '/Routing/Router.class.php');
+        $thistime         = filemtime(EMPHYRE_DIR . '/Routing/RouteCacher.class.php');
         $filetime         = max($filetime, $thistime);
         foreach (self::$registries as $r) {
             //see if any registries have been updated
