@@ -202,6 +202,7 @@ class TypeValidator
      */
     public static function validate($source, $key, $type, $si = true)
     {
+        //trigger_error("Source: ".str_replace("\n", "", var_export($source, true)).", Key: $key, Type: $type");
 
         $type = self::typeAlias($type);
 
@@ -301,7 +302,8 @@ class TypeValidator
 
             default:
                 $noTypeErr = "\n<br />Are you passing an array without specifying an inner default?";
-                die("Unknown validation type: $type\n".($type ? null : $noTypeErr));
+                trigger_error("Unknown validation type: '$type'\n".($type ? null : $noTypeErr));
+                return 'string';
         }//end switch
     }//end validate()
 
