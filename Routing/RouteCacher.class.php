@@ -22,7 +22,6 @@
  * @package  EmPHyre
  *
  * @author   Julian Haagsma <jhaagsma@gmail.com>
- * @author   Timo Ewalds <tewalds@gmail.com>
  *
  * @license  All files are licensed under the MIT License.
  *
