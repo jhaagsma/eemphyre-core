@@ -325,7 +325,7 @@ class Router
         $inherit = $this->newInherit($inherit, (isset($r[0]) ? $r[0] : false));
 
         //check if the current URI bit is a {variable=>type}
-        if ($vinfo = $this->isVariable($current) == true) {
+        if (($vinfo = $this->isVariable($current)) == true) { //have to encapsulate in brackets
             if (!isset($r[1])) {
                 //split up into variable and type, and compress the input
                 $r[1] = [3 => $vinfo[1], 4 => TypeValidator::compressInput($vinfo[2])];
@@ -477,6 +477,7 @@ class Router
         // type aka t => 4
         $inherit = $this->newInherit($inherit, (isset($r[0]) ? $r[0] : false));
         $current = array_shift($s);
+
         if (!$current && !isset($r[0])) {
             return false;
         } elseif (($current === null || $current === "")) {
@@ -484,7 +485,7 @@ class Router
         } elseif (isset($r[2][$current])) {
             return $this->urlRoute($s, $r[2][$current], $path, $inherit);
         } elseif (isset($r[1])) {
-            $path->variables[$r[1][3]] = TypeValidator::validate([$current], 0, $r[1][4]);
+            $path->variables[$r[1][3]] = TypeValidator::validate([$current], 0, $r[1][4], false);
             return $this->urlRoute($s, $r[1], $path, $inherit);
         }
 
