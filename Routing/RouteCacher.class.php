@@ -32,7 +32,7 @@
 
 namespace EmPHyre;
 
-defined('ROUTER_PREFIX') or define("ROUTER_PREFIX", 'R:');
+defined('ROUTER_PREFIX') or define("ROUTER_PREFIX", 'R-');
 defined('ROUTER_NAME') or define("ROUTER_NAME", ROUTER_PREFIX . getenv('HTTP_HOST') . ':');
 
 /**
