@@ -40,19 +40,23 @@ class URL
     }//end __construct()
 
 
-    public static function redirect($loc)
+    public static function redirect($loc, $options = [], $code = 303)
     {
-        header("Location: $loc", true, 303);
+        $ext = null;
+        if ($options) {
+            $ext = '?'  . http_build_query($options);
+        }
+        $loc .= $ext;
+
+        header("Location: $loc", true, $code);
         echo "Redirecting to: <a href='".htmlentities($loc)."'>$loc</a>";
         exit;
     }//end redirect()
 
 
-    public static function moved($loc)
+    public static function moved($loc, $options = [])
     {
-        header("Location: $loc", true, 301);
-        echo "Redirecting to: <a href='".htmlentities($loc)."'>$loc</a>";
-        exit;
+        self::redirect($loc, $options, 301);
     }//end moved()
 
 
