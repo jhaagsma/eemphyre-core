@@ -64,11 +64,12 @@ class RouteCacher
         //2 for serialize, not cut up; //this is almost exactly the same speed as 0
 
         //$optimization = (time() % 2) * 2;
-
         //so far 1 is SLOWEST BY FAR
+
+        //include the files, and check their file modiried times
         self::$registries = array_merge(self::$registries, $add_registries);
-        $filetime         = filemtime(dirname(__FILE__) . '/Router.class.php'); //the actual router object file
-        $thistime         = filemtime(dirname(__FILE__) .  '/RouteCacher.class.php'); //the actual router object file
+        $filetime         = filemtime(dirname(__FILE__) . '/Routing/Router.class.php');
+        $thistime         = filemtime(dirname(__FILE__) . 'Routing/RouteCacher.class.php');
         $filetime         = max($filetime, $thistime);
         foreach (self::$registries as $r) {
             //see if any registries have been updated
