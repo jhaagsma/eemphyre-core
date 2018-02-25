@@ -55,6 +55,13 @@ class TypeValidator
         return $inputs;
     }//end compressInputs()
 
+    /**
+     * shorten the name in order to compress better
+     *
+     * @param  string $type The type
+     *
+     * @return string       Single-letter representation of the type
+     */
     public static function compressInput($type)
     {
 
@@ -265,7 +272,7 @@ class TypeValidator
                         // eg 'countries'=>array('array', 0, 'int') )
                         // with type array (which is how we got here) default,
                         // and internal type
-                        foreach ($ret as $k => $v) {
+                        foreach (array_keys($ret) as $k) {
                             if ($keytype) {
                                 // validate the keys as well --
                                 // have to store the data in $temp while we rewrite the key
@@ -287,10 +294,10 @@ class TypeValidator
                         return $ret;
                     }//end if
                 }//end if
-                return def($default, []);
+                return $default ?? [];
 
             case "file":
-                return def($_FILES[$key], null);
+                return $_FILES[$key] ?? null;
 
             default:
                 $noTypeErr = "\n<br />Are you passing an array without specifying an inner default?";
@@ -298,7 +305,13 @@ class TypeValidator
         }//end switch
     }//end validate()
 
-
+    /**
+     * Change mixed numString values like 10k to values like 10000
+     *
+     * @param  string $ret String to interpret
+     *
+     * @return float       The interpreted string
+     */
     private static function doSiPrefixes($ret)
     {
         // make k's into 000's and m's into 000000
@@ -309,6 +322,6 @@ class TypeValidator
         $ret = str_ireplace("m", "", $ret);
         $ret = ((float)$ret * (pow(1000, $k)));
         $ret = ((float)$ret * (pow(1000000, $m)));
-        return (int)$ret;
+        return (float)$ret;
     }//end doSiPrefixes()
 }//end class
