@@ -79,4 +79,14 @@ class Profiler
             return ceil((microtime(true) - self::$time_start) * 1000);
         }
     }//end codetime()
+
+    /**
+     * Get the profile!
+     *
+     * @return array The profile
+     */
+    public static function getProfile()
+    {
+        return self::$timers;
+    }//end getProfile()
 }//end class
