@@ -2,7 +2,7 @@
 /**
  * PathNode is the node for the routing object
  *
- * PHP version 5
+ * PHP version 7
  *
  * ------
  * These files are part of the empiresPHPframework;
@@ -45,14 +45,22 @@ class PathNode //shortening names to speed up APC storage and retrieval //debug 
         $this->auth = $auth;
         $this->skin = $skin;
     }*/
+
+    /**
+     * Make a new PathNode
+     *
+     * @param array $r The node information
+     *
+     * @return null
+     */
     public function __construct($r)
     {
         $this->file             = (isset($r[0]) ? $r[0] . '/' . $r[1] : $r[1]);
         $this->function         = $r[2];
-        $this->inputs           = def($r[3], null);
-        $this->auth             = def($r[4], null);
-        $this->skin             = def($r[5], null);
-        $this->path_extension   = def($r[6], false);
-        $this->extractable_json = def($r[7], false);
+        $this->inputs           = $r[3] ?? null;
+        $this->auth             = $r[4] ?? null;
+        $this->skin             = $r[5] ?? null;
+        $this->path_extension   = $r[6] ?? false;
+        $this->extractable_json = $r[7] ?? false;
     }//end __construct()
 }//end class
