@@ -30,9 +30,13 @@
 
 class URL
 {
+    /**
+     * Protected construct so that URLHandler can't be instantiated
+     *
+     * @return null
+     */
     protected function __construct()
     {
-        //protected construct so that URLHandler can't be instantiated
     }//end __construct()
 
 
@@ -68,16 +72,16 @@ class URL
     {
         $parts = explode('.', $_SERVER['SERVER_NAME']);
         if ($token_num < 0) {
-            return def($parts[count($parts) + $token_num], false);
+            return $parts[count($parts) + $token_num] ?? false;
         } else {
-            return def($parts[$token_num], false);
+            return $parts[$token_num] ?? false;
         }
     }//end getUrlPart()
 
 
     public static function getCOOKIEval($name, $type = 'string', $default = null)
     {
-        $var = (isset($_COOKIE[$name]) ? $_COOKIE[$name] : $default);
+        $var = $_COOKIE[$name] ?? $default;
         settype($var, $type);
         return $var;
     }//end getCOOKIEval()
