@@ -71,6 +71,15 @@ class URL
         header('Content-Type: application/json');
     }//end sendJsonHeader()
 
+    public static function getUriPart($token_num)
+    {
+        $parts = getenv('REQUEST_URI');
+        if ($token_num < 0) {
+            return $parts[count($parts) + $token_num] ?? false;
+        } else {
+            return $parts[$token_num] ?? false;
+        }
+    }//end getUriPart()
 
     public static function getUrlPart($token_num)
     {
