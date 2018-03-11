@@ -55,20 +55,6 @@ class Path
     }//end __construct()
 
     /**
-     * Add a response string... this is gross and should be removed
-     *
-     * @param string $string The response string
-     *
-     * @return self           This is also terrible
-     */
-    public function response($string)
-    {
-        $this->variables['response'] = $string;
-
-        return $this;
-    }//end response()
-
-    /**
      * Get a variable from the path
      *
      * @param string $variable The variable to get
