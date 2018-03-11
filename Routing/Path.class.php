@@ -39,7 +39,12 @@ class Path
     public $language;
     public $variables;
 
-    public function __construct($url, $skin = null)
+    /**
+     * The construct
+     *
+     * @param string $url The url we're at
+     */
+    public function __construct($url)
     {
         $this->url        = $url;
         $this->skin       = null;
@@ -48,11 +53,30 @@ class Path
         $this->language   = null;
         $this->variables  = [];
     }//end __construct()
-    
-    function response($string)
+
+    /**
+     * Add a response string... this is gross and should be removed
+     *
+     * @param string $string The response string
+     *
+     * @return self           This is also terrible
+     */
+    public function response($string)
     {
         $this->variables['response'] = $string;
-        
+
         return $this;
     }//end response()
+
+    /**
+     * Get a variable from the path
+     *
+     * @param string $variable The variable to get
+     *
+     * @return variable
+     */
+    public function getVar($variable)
+    {
+        return $this->variables[$variable];
+    }//end getVar()
 }//end class
