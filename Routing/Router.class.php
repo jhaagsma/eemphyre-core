@@ -257,6 +257,18 @@ class Router
         $this->add('POST', $url, $file, $function, $inputs, $auth, $skin);
     }//end post()
 
+    public function put($url, $file, $function, $inputs = [], $auth = false, $skin = false)
+    {
+        // add a shorthand version
+        $this->add('PUT', $url, $file, $function, $inputs, $auth, $skin);
+    }//end get()
+
+    public function delete($url, $file, $function, $inputs = [], $auth = false, $skin = false)
+    {
+        // add a shorthand version
+        $this->add('DELETE', $url, $file, $function, $inputs, $auth, $skin);
+    }//end post()
+
     public function add($type, $url, $file, $function, $inputs = [], $auth = false, $skin = false)
     {
         // Testing out array version
