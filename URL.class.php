@@ -73,7 +73,7 @@ class URL
 
     public static function getUriPart($token_num)
     {
-        $parts = getenv('REQUEST_URI');
+        $parts = explode('/', trim(getenv('REQUEST_URI'), '/'));
         if ($token_num < 0) {
             return $parts[count($parts) + $token_num] ?? false;
         } else {
