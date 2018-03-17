@@ -65,4 +65,16 @@ class Path
     {
         return $this->variables[$variable];
     }//end getVar()
+
+    /**
+     * Get a variable from the path, statically
+     *
+     * @param string $variable The variable to get
+     *
+     * @return variable
+     */
+    public static function variable($variable)
+    {
+        return self::$variables[$variable];
+    }//end variable()
 }//end class
