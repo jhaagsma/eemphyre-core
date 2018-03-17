@@ -245,30 +245,91 @@ class Router
         }
     }//end rest()
 
+    /**
+     * Add a tree entry for GET
+     *
+     * @param  string  $url      The URL of the request
+     * @param  string  $file     The filename of the function
+     * @param  string  $function The function to call
+     * @param  array   $inputs   The inputs for the $data var of the function
+     * @param  boolean $auth     The authentication type
+     * @param  boolean $skin     The skin to use
+     *
+     * @return null
+     */
     public function get($url, $file, $function, $inputs = [], $auth = false, $skin = false)
     {
         // add a shorthand version
         $this->add('GET', $url, $file, $function, $inputs, $auth, $skin);
     }//end get()
 
+    /**
+     * Add a tree entry for POST
+     *
+     * @param  string  $url      The URL of the request
+     * @param  string  $file     The filename of the function
+     * @param  string  $function The function to call
+     * @param  array   $inputs   The inputs for the $data var of the function
+     * @param  boolean $auth     The authentication type
+     * @param  boolean $skin     The skin to use
+     *
+     * @return null
+     */
     public function post($url, $file, $function, $inputs = [], $auth = false, $skin = false)
     {
         // add a shorthand version
         $this->add('POST', $url, $file, $function, $inputs, $auth, $skin);
     }//end post()
 
+    /**
+     * Add a tree entry for PUT
+     *
+     * @param  string  $url      The URL of the request
+     * @param  string  $file     The filename of the function
+     * @param  string  $function The function to call
+     * @param  array   $inputs   The inputs for the $data var of the function
+     * @param  boolean $auth     The authentication type
+     * @param  boolean $skin     The skin to use
+     *
+     * @return null
+     */
     public function put($url, $file, $function, $inputs = [], $auth = false, $skin = false)
     {
         // add a shorthand version
         $this->add('PUT', $url, $file, $function, $inputs, $auth, $skin);
-    }//end get()
+    }//end put()
 
+    /**
+     * Add a tree entry for DELETE
+     *
+     * @param  string  $url      The URL of the request
+     * @param  string  $file     The filename of the function
+     * @param  string  $function The function to call
+     * @param  array   $inputs   The inputs for the $data var of the function
+     * @param  boolean $auth     The authentication type
+     * @param  boolean $skin     The skin to use
+     *
+     * @return null
+     */
     public function delete($url, $file, $function, $inputs = [], $auth = false, $skin = false)
     {
         // add a shorthand version
         $this->add('DELETE', $url, $file, $function, $inputs, $auth, $skin);
-    }//end post()
+    }//end delete()
 
+    /**
+     * Add a tree entry; can specify the type
+     *
+     * @param  string  $type     The type of request; GET | POST | PUT | DELETE
+     * @param  string  $url      The URL of the request
+     * @param  string  $file     The filename of the function
+     * @param  string  $function The function to call
+     * @param  array   $inputs   The inputs for the $data var of the function
+     * @param  boolean $auth     The authentication type
+     * @param  boolean $skin     The skin to use
+     *
+     * @return null
+     */
     public function add($type, $url, $file, $function, $inputs = [], $auth = false, $skin = false)
     {
         // Testing out array version
