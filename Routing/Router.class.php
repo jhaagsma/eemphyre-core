@@ -578,8 +578,8 @@ class Router
                 return 'DELETE';
             // case 'HEAD':
             //     return 'HEAD';
-            // case 'OPTIONS':
-            //     return 'OPTIONS';
+            case 'OPTIONS':
+                return 'OPTIONS';
             default:
                 return 'GET';
         }
@@ -672,6 +672,18 @@ class Router
     {
         $type = $this->getType();
         $uri  = getenv('REQUEST_URI');
+        if ($type == 'OPTIONS') {
+            $url_parts = parse_url($_SERVER['HTTP_REFERER']);
+            $origin = $url_parts['scheme'].'://'.$url_parts['host'];
+            if ($url_parts['port']) {
+                $origin = $origin.':'.$url_parts['port'];
+            }
+            
+            header("Access-Control-Allow-Origin: ".$origin);
+            header("Access-Control-Allow-Credentials: true");
+            header("Access-Control-Allow-Headers: Content-Type");
+            exit;
+        }
 
         if (!isset($this->paths)) {
             trigger_error($type . ': ' . getenv('SERVER_NAME') . ' ' . $uri);
