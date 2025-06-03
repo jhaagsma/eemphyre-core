@@ -69,7 +69,7 @@ class Cache
         return $success;
     }//end add()
 
-
+/*
     public static function store($key, $val, $ttl = 0)
     {
         $start   = microtime(true);
@@ -77,6 +77,51 @@ class Cache
         self::addquery(['store', $success, microtime(true) - $start, $key, $ttl]);
         return $success;
     }//end store()
+*/
+
+public static function store($key, $val, $ttl = 0)
+{
+    $start = microtime(true);
+
+    // 1) Validate $key: must be a string or an array of key=>value pairs
+    if (!is_string($key) && !is_array($key)) {
+        $type    = gettype($key);
+        $keyDump = var_export($key, true);
+        $duration = microtime(true) - $start;
+
+        // Log the failed attempt with success=false
+        self::addquery([
+            'store',
+            false,               // success = false
+            $duration, 
+            $key, 
+            $ttl
+        ]);
+
+        // Trigger a PHP warning with debug info
+        trigger_error(
+            "Cache::store(): invalid key type '{$type}'. Key contents: {$keyDump}",
+            E_USER_WARNING
+        );
+
+        return false;
+    }
+
+    // 2) If $key is valid, call apcu_store as before
+    $success = apcu_store($key, $val, $ttl);
+    $duration = microtime(true) - $start;
+
+    // 3) Log the real store timing and return status
+    self::addquery([
+        'store',
+        $success,
+        $duration,
+        $key,
+        $ttl
+    ]);
+
+    return $success;
+}
 
 
     public static function fetch($key, $default = null)
