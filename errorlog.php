@@ -28,6 +28,7 @@
  * @since    First release, September 3, 2012
  */
 
+
 global $errorlogging;
 
 if ($errorlogging) {
