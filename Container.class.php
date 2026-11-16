@@ -92,8 +92,9 @@ class Container
             // make 3 more things to handle more parameters
         }
 
-        self::$instances[$database]->createIfNotExists();
-
+        // No createIfNotExists() here: it cost a SHOW DATABASES on every call and created a database
+        // for a mistyped name instead of failing (#7). Setup code that wants a database created
+        // calls getDb($name)->createIfNotExists() itself (as demo3's migrations do).
         return self::$instances[$database];
     }//end getDb()
 

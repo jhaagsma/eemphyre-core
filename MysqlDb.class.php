@@ -39,6 +39,9 @@ class MysqlDb
     private $persist;
     private $setDb = false;
 
+    /** seconds a connection may sit idle before the next query pings it first */
+    const PING_AFTER_IDLE = 10;
+
     private $con       = null;
     private $lasttime  = 0;
     public $queries    = [];
@@ -107,34 +110,64 @@ class MysqlDb
 
 
     /**
-     * Actually connect to the database
+     * Actually connect to the database. A connection idle for longer than PING_AFTER_IDLE seconds is
+     * pinged first and replaced if the server has gone away (long-running scripts; #7).
      *
      * @return bool Always true if we didn't exit
      */
     private function connect()
     {
+        if ($this->con && self::needsPing($this->lasttime, time()) && !$this->isAlive()) {
+            $this->close();
+            $this->setDb = false;   // the new connection has no database selected yet
+        }
+
+        if (!$this->con) {
+            if (!$this->canConnect()) {
+                $connErr = 'Connect Error ('.$this->con->connect_errno.') ';
+                error_log('EmPHyre\\MysqlDb: '.$connErr.$this->con->connect_error);
+                $this->con = null;
+                trigger_error('Could not connect to the database.', E_USER_ERROR);
+                exit; //if the redirect doesn't exist??
+            }
+        }
+
         if (!$this->setDb) {
             $this->con->select_db($this->db);
             $this->setDb = true;
         }
 
-        if ($this->con) {
-            if ($this->lasttime > time() - 10) {
-                return $this->con->ping();
-            }
-
-            return true;
-        }
-
-        if (!$this->canConnect()) {
-            $connErr = 'Connect Error ('.$this->con->connect_errno.') ';
-            trigger_error($connErr.$this->con->connect_error, E_USER_ERROR);
-            $this->con = null;
-            exit; //if the redirect doesn't exist??
-        }
-
         return true;
     }//end connect()
+
+
+    /**
+     * Whether a connection last used at $lastUsed should be pinged before the next query
+     *
+     * @param  integer $lastUsed Unix time of the last query (0: none yet)
+     * @param  integer $now      Unix time now
+     *
+     * @return boolean           True once it has been idle for longer than PING_AFTER_IDLE
+     */
+    private static function needsPing($lastUsed, $now)
+    {
+        return $lastUsed < $now - self::PING_AFTER_IDLE;
+    }//end needsPing()
+
+
+    /**
+     * Ping the server
+     *
+     * @return boolean Whether the connection still works
+     */
+    private function isAlive()
+    {
+        try {
+            return $this->con->ping();
+        } catch (\mysqli_sql_exception $e) {
+            return false;   // PHP 8.1+ throws where 7.2 returns false (#9); the caller reconnects
+        }
+    }//end isAlive()
 
 
     /**
@@ -185,12 +218,11 @@ class MysqlDb
             $list[] = explode('/', $f);
         }
 
-        $total = count($list);
-        for ($i = 0; $i <= $total; $i++) {
-            $column = array_column($list, 0);
-            if (count(array_unique($column) === 1)) {
-                $this->deleteCol($list, 0);
-            }
+        // strip the leading directories all files share (never a file's last part)
+        while ($list && min(array_map('count', $list)) > 1
+            && count(array_unique(array_column($list, 0))) == 1
+        ) {
+            $this->deleteCol($list, 0);
         }
 
         foreach ($list as $l => $f) {
@@ -245,7 +277,10 @@ class MysqlDb
         $connErr = "QueryErr:".$err.", $stuff";
         //new \dBug($backtrace) && exit;
 
-        trigger_error($connErr." \"$query\"", E_USER_ERROR);
+        // The details (SQL, error, call site) go to the log only: an E_USER_ERROR message is shown
+        // to the visitor when display_errors is on (#7, ADR 003).
+        error_log('EmPHyre\\MysqlDb: '.$connErr." \"$query\"");
+        trigger_error('Database query failed (details in the error log).', E_USER_ERROR);
         exit;
     }//end queryError()
 
