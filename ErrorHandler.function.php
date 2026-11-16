@@ -42,11 +42,13 @@
 function emphyreErrorRelayText($text, $max = 400)
 {
     $text = preg_replace('/[\x00-\x1f\x7f]+/', ' ', (string)$text);
-    $text = preg_replace(
-        '/\b(apicode|api_key|apikey|key|token|access_token|password|pass|pwd|secret|player_site_id|session|sid)=[^&\s,;"\']*/i',
-        '$1=***',
-        $text
-    );
+    $names = '(?:[A-Za-z0-9]+[_-])*(?:apicode|api_?key|key|token|password|passwd|pass|pwd|secret|player_site_id|session|sess_?id|sid|phpsessid)';
+    // name=value and name%3Dvalue (query strings, form data, cookies), any prefix: auth_token=, client_secret=
+    $text = preg_replace('/\b('.$names.')(=|%3D)[^&\s,;"\']*/i', '$1$2***', $text);
+    // JSON / PHP-array style: "token":"value", 'key' => 'value'
+    $text = preg_replace('/(["\']'.$names.'["\']\s*(?::|=>)\s*)(["\'])(?:\\\\.|(?!\2).)*\2/i', '$1$2***$2', $text);
+    // user:password@ in URLs
+    $text = preg_replace('#(\w+://[^/\s:@]+):[^/\s@]*@#', '$1:***@', $text);
     if (strlen($text) > $max) {
         $text = substr($text, 0, $max - 3).'...';
     }
@@ -86,15 +88,16 @@ function emphyreErrorCsvField($value)
  * @param int    $linenum  the line number of the error
  * @param array  $vars     the error context (PHP < 8 only; unused)
  *
- * @return bool            false for @-suppressed errors (PHP carries on), true otherwise
+ * @return bool            true (handled); fatal levels end the script
  */
 function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars = null)
 {
     global $sitebasedir, $errorlogging, $output_errors_to_irc, $debug, $user;
 
     if (!(error_reporting() & $errno)) {
-        // disabled with the @ operator, or not reported at this level
-        return false;
+        // disabled with the @ operator, or not reported at this level: handled, carry on (returning
+        // false would hand it to PHP, which still ends the script for @E_USER_ERROR on 7.2)
+        return true;
     }
 
     $time   = gmdate("M d Y H:i:s");
@@ -153,9 +156,10 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars = null)
     $str    = implode(',', array_map('emphyreErrorCsvField', $fields))."\r\n";
 
     if ($debug) {
-        echo htmlspecialchars($str);
+        echo htmlspecialchars($str, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 
+    $logged = false;
     if ($base) {
         if (in_array($errno, [E_USER_ERROR], true)) {
             $file = $base.'logs/usererrors.csv';
@@ -165,7 +169,7 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars = null)
             $file = $base.'logs/userwarnings.csv';
         }
 
-        @file_put_contents($file, $str, FILE_APPEND | LOCK_EX);
+        $logged = (file_put_contents($file, $str, FILE_APPEND | LOCK_EX) !== false);
     }
 
     if ($output_errors_to_irc && class_exists('CommClient')) {
@@ -180,11 +184,16 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars = null)
         $comm->send('forward', ['type' => 'website_error', 'data' => emphyreErrorRelayText($str2)."\r\n"]);
     }
 
+    if (!$logged) {
+        // no log directory configured (or not writable): PHP's own error_log still gets it
+        error_log(rtrim($str));
+    }
+
     // Terminate script if fatal error
     $nonfatal = [E_WARNING, E_NOTICE, E_USER_WARNING, E_USER_NOTICE, E_STRICT, E_DEPRECATED, E_USER_DEPRECATED];
     if (!in_array($errno, $nonfatal, true)) {
         if ($errorlogging >= 2 || ($userid && $debug)) {
-            die("A fatal error has occured. Script execution has been aborted:<br/>\n".htmlspecialchars($str));
+            die("A fatal error has occured. Script execution has been aborted:<br/>\n".htmlspecialchars($str, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
         }
 
         die("A fatal error has occured. Script execution has been aborted<br/>");

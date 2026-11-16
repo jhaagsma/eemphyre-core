@@ -22,6 +22,12 @@ final class ErrorHandlerTest extends TestCase
             ['https://h/p?player_site_id=99&key=s3cr3t', 'https://h/p?player_site_id=***&key=***'],
             ['token=abc password=hunter2', 'token=*** password=***'],
             ['APIKEY=Z,next', 'APIKEY=***,next'],
+            ['PHPSESSID=abc; x=1', 'PHPSESSID=***; x=1'],
+            ['secret_key=a&client_secret=b&auth_token=c&new_password=d', 'secret_key=***&client_secret=***&auth_token=***&new_password=***'],
+            ['body {"apicode":"abc","n":1}', 'body {"apicode":"***","n":1}'],
+            ["['token' => 'abc\\'d']", "['token' => '***']"],
+            ['GET /x?apicode%3Dabc%26y', 'GET /x?apicode%3D***'],
+            ['https://bob:pw@host/p', 'https://bob:***@host/p'],
         ];
     }
 
