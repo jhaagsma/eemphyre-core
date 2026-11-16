@@ -66,7 +66,15 @@ final class RouterExtensionTypeTest extends TestCase
         $this->assertTrue(isset($GLOBALS['emphyre_test_404']), 'the 404 page is shown');
     }
 
+    // Fails if the null guard goes: no api_function is no extension (the base route), not a 404.
+    public function testAbsentFunctionRoutesToTheBase()
+    {
+        $route = $this->route(['api_payload' => '{"turns":1}']);
+        $this->assertSame('api_base', $route->function);
+    }
+
     // Baseline: a string, as EE's bots send it (api_function as its own field).
+    // (An integer can only come inside the payload, which needs #33 to route at all; test it after.)
     public function testStringStillRoutes()
     {
         $route = $this->route(['api_function' => 'cash', 'api_payload' => '{"turns":1}']);
