@@ -182,8 +182,8 @@ class Cors
 
 
     /**
-     * The path Router::route() matches for a URL path (no query: the Router has already removed it, and
-     * so must callers): leading slashes dropped, cut at the first empty segment (urlRoute() stops there:
+     * The path Router::route() matches for a URL path. Callers pass it without the query (Router::route()
+     * strips it once and uses the same string for routing): leading slashes dropped, cut at the first empty segment (urlRoute() stops there:
      * '/rest//x' routes '/rest', and trailing slashes vanish the same way).
      * Limit: it can't see the route tree, so it doesn't know when urlRoute() returns a 404 early (a '0'
      * segment or an empty one at a node without a handler). Keep each scope prefix a statically
@@ -279,7 +279,7 @@ class Cors
             return [];
         }
 
-        $lines = ['Vary: Origin'];
+        $lines = [$preflight ? 'Vary: Origin, Access-Control-Request-Method' : 'Vary: Origin'];
         if ($allowed === null) {
             return $lines;
         }
@@ -333,7 +333,7 @@ class Cors
 
 
     /**
-     * The header part of preflight(), without ending the request (tests use it). Approval only for an
+     * @internal Tests only (apps call preflight(), which ends the request): the header part of preflight(). Approval only for an
      * allowed origin on a scoped path asking for an allowed method (Access-Control-Request-Method).
      *
      * @param string|null $path the path being routed (null = this request's URI)
@@ -375,16 +375,15 @@ class Cors
         } elseif ($method === null) {
             $method = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : 'GET';
         }
-        $methodOk = in_array(strtoupper((string)$method), self::$methods, true);
+        // preflight: compared exactly, as browsers compare it with Allow-Methods; routed methods are upper case
+        $methodOk = in_array($preflight ? (string)$method : strtoupper((string)$method), self::$methods, true);
 
         $allowed = $methodOk ? self::origin(isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '') : null;
 
         $file = $line = '?';
         $alreadySent = self::$headersSentCheck === null ? headers_sent($file, $line) : (bool)call_user_func(self::$headersSentCheck);
-        if ($alreadySent) {
-            if ($allowed !== null) {   // say so (once: cached below) when CORS headers were really due
-                trigger_error("Cors: headers already sent (output started at $file:$line); CORS headers not sent", E_USER_WARNING);
-            }
+        if ($alreadySent) {   // output before routing on an in-scope path: say so, once per request
+            trigger_error("Cors: headers already sent (output started at $file:$line); CORS headers not sent", E_USER_WARNING);
             return self::$sent = false;
         }
 

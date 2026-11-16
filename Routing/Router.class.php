@@ -672,21 +672,23 @@ class Router
     {
         $type = $this->getType();
         $uri  = getenv('REQUEST_URI');
+        // The URL path being routed, worked out once: CORS and routing must agree on it.
+        $routeUrl = $url ? $url : explode('?', (string)$uri, 2)[0];
+
         // CORS (Routing/Cors.class.php): for the path being routed, only on the paths and methods the app
         // listed with Cors::allow(). Preflights end here (empty 204 unless approved); other responses get
         // their headers before routing, so 404s and auth errors on API paths carry them too.
-        $corsPath = Cors::routedPath($url ? $url : (string)$uri);   // the same path urlRoute() matches
+        $corsPath = Cors::routedPath($routeUrl);
         if ($type == 'OPTIONS') {
             Cors::preflight($corsPath);
         }
         Cors::headers($corsPath, $type);   // $type: the method it is routed as (unknown ones route as GET)
 
-
         if (!isset($this->paths)) {
             trigger_error($type . ': ' . getenv('SERVER_NAME') . ' ' . $uri);
         }
 
-        $url = ($url ? [$url] : explode('?', $uri, 2));
+        $url = [$routeUrl];
 
         $path = new Path($url = rtrim($url[0], '/'));
         $s    = explode('/', ltrim($path->url, '/'));

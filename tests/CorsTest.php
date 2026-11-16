@@ -43,7 +43,7 @@ final class CorsTest extends TestCase
         $this->assertContains('Access-Control-Allow-Credentials: true', $lines, 'expected header missing');
         $this->assertContains('Access-Control-Allow-Methods: GET, POST', $lines, 'expected header missing');
         $this->assertContains('Access-Control-Allow-Headers: Content-Type', $lines, 'expected header missing');
-        $this->assertContains('Vary: Origin', $lines, 'expected header missing');
+        $this->assertContains('Vary: Origin, Access-Control-Request-Method', $lines, 'preflight varies on the requested method too');
     }
 
     public function testRealResponseHasNoPreflightHeaders()
@@ -66,7 +66,7 @@ final class CorsTest extends TestCase
     public function testOtherOriginsAreNeverEchoed($origin)
     {
         Cors::allow([self::APP], self::PATHS, true);
-        $this->assertSame(['Vary: Origin'], Cors::headerLines($origin, true), "origin $origin must never be echoed");
+        $this->assertSame(['Vary: Origin, Access-Control-Request-Method'], Cors::headerLines($origin, true), "origin $origin must never be echoed");
     }
 
     public function strangers()
@@ -165,7 +165,7 @@ final class CorsTest extends TestCase
     {
         Cors::allow([self::APP], self::PATHS);
         $this->assertSame('Vary: Origin', Cors::headerLines('https://evil.example', false)[0], 'Vary first, so send() adds it without replacing');
-        $this->assertSame('Vary: Origin', Cors::headerLines(self::APP, true)[0], 'also for allowed origins');
+        $this->assertSame('Vary: Origin, Access-Control-Request-Method', Cors::headerLines(self::APP, true)[0], 'preflights vary on the requested method too');
     }
 
     public function testHeadersSendsForAllowedOriginOnce()
@@ -362,14 +362,14 @@ final class CorsTest extends TestCase
         $_SERVER['HTTP_ORIGIN'] = self::APP;
         $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'] = 'DELETE';
         $this->assertFalse(Cors::preflightHeaders('/rest'), 'DELETE is not an allowed method');
-        $this->assertSame([['Vary: Origin', false]], $this->sent, 'only Vary for a disallowed requested method');
+        $this->assertSame([['Vary: Origin, Access-Control-Request-Method', false]], $this->sent, 'only Vary for a disallowed requested method');
         $this->sent = [];
         $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'] = 'POST';
         $this->assertTrue(Cors::preflightHeaders('/rest'), 'POST is allowed');
         $this->assertContains(['Access-Control-Allow-Methods: GET, POST', true], $this->sent, 'approval sent');
     }
 
-    public function testNoWarningWhenOnlyVaryWouldGoOut()
+    public function testInScopeWarnsOnceEvenForADisallowedMethod()
     {
         Cors::allow([self::APP], self::PATHS, true);
         Cors::setEmitterForTests(function ($line, $replace) {
@@ -385,7 +385,8 @@ final class CorsTest extends TestCase
             return true;
         });
         Cors::headers('/rest');
+        Cors::headers('/rest');
         restore_error_handler();
-        $this->assertSame(0, $warnings, 'a disallowed method would only have got Vary: no warning');
+        $this->assertSame(1, $warnings, 'output before routing on an in-scope path is reported, once per request');
     }
 }
