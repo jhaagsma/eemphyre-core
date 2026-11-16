@@ -208,26 +208,37 @@ abstract class CRUD
     }//end addByArray()
 
 
+    /**
+     * Primary keys of the whole table, sorted by primary key
+     *
+     * @param  integer|null $limit  At most this many keys; null or 0 = no limit
+     * @param  integer      $offset Skip this many first; only used with a limit
+     * @param  boolean      $asc    The sort direction
+     *
+     * @return array           Primary Keys!!
+     */
     public static function primaryList($limit = null, $offset = 0, $asc = true)
     {
         static::db();
 
         $dir = ($asc ? 'ASC' : 'DESC');
+        list($limitSql, $limitArgs) = static::limitClause($limit, $offset);
 
-        return static::$db->pquery(
-            'SELECT `'.static::$primaryKey.'` FROM `'.static::$tableName.'` ORDER BY `'.static::$primaryKey.'` '.$dir
-        )->fetchFieldSet();
+        return static::$db->pqueryArray(array_merge(
+            ['SELECT `'.static::$primaryKey.'` FROM `'.static::$tableName.'` ORDER BY `'.static::$primaryKey.'` '.$dir.$limitSql],
+            $limitArgs
+        ))->fetchFieldSet();
     }//end primaryList()
 
 
     /**
      * This returns primary keys FROM table WHERE $column = $value
      *
-     * @param  string  $column The column you want to specify a value of
-     * @param  mixed   $value  The value you want to specify for column
-     * @param  integer $limit  The limit; this is not enabled??
-     * @param  integer $offset The offset; this is not implemented??
-     * @param  boolean $asc    The sort direction
+     * @param  string       $column The column you want to specify a value of
+     * @param  mixed        $value  The value you want to specify for column
+     * @param  integer|null $limit  At most this many keys; null or 0 = no limit
+     * @param  integer      $offset Skip this many first; only used with a limit
+     * @param  boolean      $asc    The sort direction
      *
      * @return array           Primary Keys!!
      */
@@ -236,13 +247,17 @@ abstract class CRUD
         static::db();
 
         $dir = ($asc ? 'ASC' : 'DESC');
+        list($limitSql, $limitArgs) = static::limitClause($limit, $offset);
 
-        return static::$db->pquery(
-            'SELECT `'.static::$primaryKey.'` FROM `'
-            .static::$tableName.'` WHERE `'.$column.'`=?'
-            .' ORDER BY `'.static::$primaryKey.'` '.$dir,
-            $value
-        )->fetchFieldSet();
+        return static::$db->pqueryArray(array_merge(
+            [
+                'SELECT `'.static::$primaryKey.'` FROM `'
+                .static::$tableName.'` WHERE `'.$column.'`=?'
+                .' ORDER BY `'.static::$primaryKey.'` '.$dir.$limitSql,
+                $value,
+            ],
+            $limitArgs
+        ))->fetchFieldSet();
     }//end filterColumn()
 
     /**
@@ -266,6 +281,18 @@ abstract class CRUD
         )->fetchField();
     }//end getUniqueId()
 
+    /**
+     * Primary keys among $keys WHERE $column = $value
+     *
+     * @param  array        $keys   The primary keys to filter
+     * @param  string       $column The column you want to specify a value of
+     * @param  mixed        $value  The value you want to specify for column
+     * @param  integer|null $limit  At most this many keys; null or 0 = no limit
+     * @param  integer      $offset Skip this many first; only used with a limit
+     * @param  boolean      $asc    The sort direction
+     *
+     * @return array           Primary Keys!!
+     */
     public static function filterPKArray($keys, $column, $value, $limit = null, $offset = 0, $asc = true)
     {
         static::db();
@@ -276,21 +303,56 @@ abstract class CRUD
             return [];
         }
 
-        return static::$db->pquery(
-            'SELECT `'.static::$primaryKey
-            .'` FROM `'.static::$tableName
-            .'` WHERE `'.static::$primaryKey.'` IN(?) AND `'.$column.'`=?'
-            .' ORDER BY `'.static::$primaryKey.'` '.$dir,
-            $keys,
-            $value
-        )->fetchFieldSet();
+        list($limitSql, $limitArgs) = static::limitClause($limit, $offset);
+
+        return static::$db->pqueryArray(array_merge(
+            [
+                'SELECT `'.static::$primaryKey
+                .'` FROM `'.static::$tableName
+                .'` WHERE `'.static::$primaryKey.'` IN(?) AND `'.$column.'`=?'
+                .' ORDER BY `'.static::$primaryKey.'` '.$dir.$limitSql,
+                $keys,
+                $value,
+            ],
+            $limitArgs
+        ))->fetchFieldSet();
     }//end filterPKArray()
 
 
+    /**
+     * Primary keys of the rows that are not disabled (see filterColumn())
+     *
+     * @param  integer|null $limit  At most this many keys; null or 0 = no limit
+     * @param  integer      $offset Skip this many first; only used with a limit
+     * @param  boolean      $asc    The sort direction
+     *
+     * @return array           Primary Keys!!
+     */
     public static function primaryListNotDisabled($limit = null, $offset = 0, $asc = true)
     {
-        return static::filterColumn('disabled', 'false');
+        return static::filterColumn('disabled', 'false', $limit, $offset, $asc);
     }//end primaryListNotDisabled()
+
+    /**
+     * The LIMIT part of a list query, with its placeholder values cast to int (ADR 006).
+     * No limit (null, 0 or negative) means no LIMIT at all, as before #12; MySQL has no
+     * OFFSET without LIMIT, so the offset only applies together with a limit.
+     *
+     * @param  mixed $limit  At most this many rows; null, 0 or negative = no limit
+     * @param  mixed $offset Skip this many rows; negative counts as 0
+     *
+     * @return array         [SQL suffix, placeholder values]: ['', []] without a limit
+     */
+    protected static function limitClause($limit, $offset)
+    {
+        $limit = (int)$limit;
+        if ($limit <= 0) {
+            return ['', []];
+        }
+
+        return [' LIMIT ? OFFSET ?', [$limit, max(0, (int)$offset)]];
+    }//end limitClause()
+
 
     /**
      * Disable the object

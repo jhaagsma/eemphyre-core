@@ -36,8 +36,9 @@ load the server.
 
 ### Known legacy (fix when touched)
 
-- `CRUD::primaryList()` and `filterColumn()` take `$limit` / `$offset` and ignore them; both return
-  the whole table or match set (breaks rules 3 and 4). `Action::actions()` has no limit either.
+- `CRUD::primaryList()`, `filterColumn()`, `filterPKArray()` and `primaryListNotDisabled()` apply
+  `$limit` / `$offset` since #12, but default to no limit (no caller passes one yet), so they still
+  return the whole table or match set by default (rule 3). `Action::actions()` has no limit either.
 - `Session::clearOldSessions()` selects every expired row and deletes them one by one.
 - `Group::alterUserGroups()` and `Group::disable()` add or delete link rows one query per group or
   member.
