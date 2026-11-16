@@ -44,7 +44,6 @@ class User extends \EmPHyre\CRUD
     protected static $db;
     protected static $tableName  = 'users';
     protected static $primaryKey = 'user_id';
-    private static $apcuUserline;
 
     /**
      * Make a user, from a user_id
@@ -241,17 +240,21 @@ class User extends \EmPHyre\CRUD
     {
         $changed = false;
         if ($user_name != $this->user_name) {
-            if ($error = Validate::email($user_name) == true) {
+            // (each returns a Result, and an object is always truthy: check isError(); #8)
+            $error = Validate::email($user_name);
+            if ($error->isError()) {
                 return $error;
             }
 
-            if ($error = self::checkExists($user_name) == true) {
+            $error = self::checkExists($user_name);
+            if ($error->isError()) {
                 return $error;
             }
         }
 
         if ($pw1) {
-            if ($error = $this->changePassword($pw1, $pw2) == true) {
+            $error = $this->changePassword($pw1, $pw2);
+            if ($error->isError()) {
                 return $error;
             }
 
@@ -346,10 +349,21 @@ class User extends \EmPHyre\CRUD
     }//end commit()
 
 
+    /**
+     * APCu key of this user's row (was the undeclared, never-set self::$apcu_userline; #8)
+     *
+     * @return string The key
+     */
+    private function apcuUserlineKey()
+    {
+        return APC_USER_PREPEND.$this->getId();
+    }//end apcuUserlineKey()
+
+
     private function apcUserline($column = null)
     {
         // deliberately errors if column isn't in the array
-        $user_line = \EmPHyre\Cache::Fetch(self::$apcu_userline);
+        $user_line = \EmPHyre\Cache::Fetch($this->apcuUserlineKey());
         if (!$user_line) {
              // this ideally shouldn't select *,
              // but for now we'll do it for convenience
@@ -357,7 +371,7 @@ class User extends \EmPHyre\CRUD
                 'SELECT * FROM users WHERE user_id = ?',
                 $this->getId()
             )->fetchRow();
-            \EmPHyre\Cache::Store(self::$apcu_userline, $user_line, 1800);
+            \EmPHyre\Cache::Store($this->apcuUserlineKey(), $user_line, 1800);
         }
 
         return ($column ? $user_line[$column] : $user_line);
@@ -366,7 +380,7 @@ class User extends \EmPHyre\CRUD
 
     private function apcDelUserline()
     {
-        \EmPHyre\Cache::Delete(self::$apcu_userline);
+        \EmPHyre\Cache::Delete($this->apcuUserlineKey());
     }//end apcDelUserline()
 
 
