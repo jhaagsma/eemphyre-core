@@ -679,7 +679,7 @@ class Router
         // listed with Cors::allow(). Preflights end here (empty 204 unless approved); other responses get
         // their headers before routing, so 404s and auth errors on API paths carry them too.
         $corsPath = Cors::routedPath($routeUrl);
-        if ($type == 'OPTIONS') {
+        if ($type == 'OPTIONS' && Cors::enabled() && Cors::inScope($corsPath)) {   // else: as before (no CORS)
             Cors::preflight($corsPath);
         }
         Cors::headers($corsPath, $type);   // $type: the method it is routed as (unknown ones route as GET)
@@ -688,9 +688,8 @@ class Router
             trigger_error($type . ': ' . getenv('SERVER_NAME') . ' ' . $uri);
         }
 
-        $url = [$routeUrl];
-
-        $path = new Path($url = rtrim($url[0], '/'));
+        $url  = rtrim($routeUrl, '/');
+        $path = new Path($url);
         $s    = explode('/', ltrim($path->url, '/'));
 
         $node = $this->urlRoute($s, $this->paths[$type], $path);

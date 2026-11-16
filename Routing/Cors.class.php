@@ -333,7 +333,9 @@ class Cors
 
 
     /**
-     * @internal Tests only (apps call preflight(), which ends the request): the header part of preflight(). Approval only for an
+     * The header part of preflight(), without ending the request.
+     *
+     * @internal Tests only: apps call preflight(), which ends the request. Approval only for an
      * allowed origin on a scoped path asking for an allowed method (Access-Control-Request-Method).
      *
      * @param string|null $path the path being routed (null = this request's URI)
@@ -357,15 +359,16 @@ class Cors
      */
     private static function send($path, $method, $preflight)
     {
-        if ($path === null) {
-            $path = explode('?', isset($_SERVER['REQUEST_URI']) ? (string)$_SERVER['REQUEST_URI'] : '', 2)[0];
-        }
-        if (!self::enabled() || !self::inScope($path)) {   // out-of-scope paths get no CORS at all
-            return false;
+        if (self::$sent !== null && !$preflight) {   // decided once per request (Router::route() can recurse)
+            return self::$sent;
         }
 
-        if (self::$sent !== null && !$preflight) {   // already done for this request
-            return self::$sent;
+        if ($path === null) {   // same source as Router::route()
+            $uri  = getenv('REQUEST_URI');
+            $path = explode('?', (string)($uri !== false ? $uri : (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '')), 2)[0];
+        }
+        if (!self::enabled() || !self::inScope($path)) {   // out-of-scope paths get no CORS at all
+            return $preflight ? false : (self::$sent = false);
         }
 
         // the method: as routed for real requests, as requested for a preflight. A method that isn't
@@ -382,8 +385,10 @@ class Cors
 
         $file = $line = '?';
         $alreadySent = self::$headersSentCheck === null ? headers_sent($file, $line) : (bool)call_user_func(self::$headersSentCheck);
-        if ($alreadySent) {   // output before routing on an in-scope path: say so, once per request
-            trigger_error("Cors: headers already sent (output started at $file:$line); CORS headers not sent", E_USER_WARNING);
+        if ($alreadySent) {   // output before routing on an in-scope path
+            if (isset($_SERVER['HTTP_ORIGIN'])) {   // only cross-origin browser calls can be affected: say so (once)
+                trigger_error('Cors: headers already sent (output started at ' . basename((string)$file) . ":$line); CORS headers not sent", E_USER_WARNING);
+            }
             return self::$sent = false;
         }
 
@@ -401,6 +406,8 @@ class Cors
 
 
     /**
+     * Capture headers instead of sending them, for tests.
+     *
      * @internal Tests only, never call from app code: capture headers instead of sending them
      * (null restores PHP's header()), optionally pretend headers were already sent; also forgets the
      * per-request state.

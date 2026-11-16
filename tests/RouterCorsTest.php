@@ -58,4 +58,23 @@ final class RouterCorsTest extends TestCase
         $this->assertSame([], $this->sent, 'no CORS headers for /account, whatever the query says');
         $this->assertSame('account', $route->function, 'routes to /account');
     }
+
+    public function testExplicitUrlArgument()
+    {
+        putenv('REQUEST_URI=/account');   // the request URI says /account ...
+        putenv('REQUEST_METHOD=GET');
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $router = new Router();
+        $router->get('/rest', 'x.php', 'rest_get');
+        $route = $router->route('/rest');   // ... but the app routes /rest explicitly
+        $this->assertSame('rest_get', $route->function, 'routes the explicit URL');
+        $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, $this->sent, 'and CORS follows the routed URL');
+    }
+
+    public function testFirstDecisionPerRequestWins()
+    {
+        $this->route('GET', '/account');
+        $this->assertFalse(\EmPHyre\Cors::headers('/rest'), 'a later call in the same request (e.g. a recursion) keeps the first decision');
+        $this->assertSame([], $this->sent, 'nothing sent');
+    }
 }
