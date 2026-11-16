@@ -363,12 +363,8 @@ class Cors
             return self::$sent;
         }
 
-        if ($path === null) {   // same source as Router::route(); an empty value counts as missing
-            $uri  = getenv('REQUEST_URI');
-            if ($uri === false || $uri === '') {
-                $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
-            }
-            $path = explode('?', (string)$uri, 2)[0];
+        if ($path === null) {   // the same request URI the Router uses
+            $path = explode('?', Router::requestUri(), 2)[0];
         }
         if (!self::enabled() || !self::inScope($path)) {   // out-of-scope paths get no CORS at all
             return false;
@@ -389,7 +385,7 @@ class Cors
         $file = $line = '?';
         $alreadySent = self::$headersSentCheck === null ? headers_sent($file, $line) : (bool)call_user_func(self::$headersSentCheck);
         if ($alreadySent) {
-            if ($allowed !== null) {   // CORS headers were due for an allowed origin: that's a real failure
+            if ($allowed !== null) {   // CORS headers were due (allowed origin and method): a real failure
                 trigger_error('Cors: headers already sent (output started at ' . basename((string)$file) . ":$line); CORS headers not sent", E_USER_WARNING);
             }
             return self::$sent = false;   // once per request

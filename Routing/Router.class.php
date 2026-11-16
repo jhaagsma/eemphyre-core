@@ -32,8 +32,6 @@ namespace EmPHyre;
 class Router
 {
     public $paths;
-    /** @var bool CORS handled for this request (see route()); not part of the cached router state */
-    private $corsDecided = false;
     public $optimize = 0;
     //inherit everything other than the function
     // 0 => dir (string)
@@ -664,29 +662,45 @@ class Router
 
 
     /**
+     * The request URI, from the environment like the Router always read it, falling back to $_SERVER when
+     * it's missing or empty. Cors uses the same function.
+     *
+     * @return string
+     */
+    public static function requestUri()
+    {
+        $uri = getenv('REQUEST_URI');
+        if ($uri === false || $uri === '') {
+            $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+        }
+        return (string)$uri;
+    }//end requestUri()
+
+
+    /**
      * Do the actual routing!
      *
-     * @param  string $url The url we are at
+     * @param  string $url    The url we are at
+     * @param  bool   $nested Internal: true for the path-extension recursion
      *
      * @return object      Rediret or return a Route object
      */
-    public function route($url = null)
+    public function route($url = null, $nested = false)
     {
         $type = $this->getType();
-        $uri  = getenv('REQUEST_URI');
+        $uri  = self::requestUri();
         // The URL path being routed, worked out once: CORS and routing must agree on it.
-        $routeUrl = $url ? $url : explode('?', (string)$uri, 2)[0];
+        $routeUrl = $url ? $url : explode('?', $uri, 2)[0];
 
-        // CORS (Routing/Cors.class.php): for the path being routed, only on the paths and methods the app
-        // listed with Cors::allow(). Preflights end here (empty 204 unless approved); other responses get
-        // their headers before routing, so 404s and auth errors on API paths carry them too.
-        // Decided once per request: route() recurses for path extensions (built from user input), and the
-        // recursion must not change the decision.
-        if (!$this->corsDecided) {
-            $this->corsDecided = true;
+        // CORS (Routing/Cors.class.php), on the outermost call only (the path-extension recursion builds its
+        // URL from user input and must not change the decision): for the path being routed, only on the
+        // paths and methods the app listed with Cors::allow(). Every OPTIONS request ends here, as before
+        // (an empty 204 unless approved); other responses get their headers before routing, so 404s and
+        // auth errors on API paths carry them too.
+        if (!$nested) {
             $corsPath = Cors::routedPath($routeUrl);
             if ($type == 'OPTIONS') {
-                Cors::preflight($corsPath);   // always ends the request (as before): empty 204 unless approved
+                Cors::preflight($corsPath);
             }
             Cors::headers($corsPath, $type);   // $type: the method it is routed as (unknown ones route as GET)
         }
@@ -723,7 +737,7 @@ class Router
         if ($extension) {
             unset($node->path_extension);
             unset($node->extractable_json);
-            return $this->route($url . '/' . $extension);
+            return $this->route($url . '/' . $extension, true);   // nested: CORS was decided by the outer call
         }
 
         $path->skin = $node->skin;

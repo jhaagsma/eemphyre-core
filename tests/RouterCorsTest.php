@@ -71,17 +71,28 @@ final class RouterCorsTest extends TestCase
         $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, $this->sent, 'and CORS follows the routed URL');
     }
 
-    public function testFirstDecisionPerRequestWins()
+    public function testNestedCallDoesNotDecideCors()
     {
-        putenv('REQUEST_URI=/account');
+        putenv('REQUEST_METHOD=GET');
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $router = new Router();
+        $router->get('/rest', 'x.php', 'rest_get');
+        $route = $router->route('/rest', true);   // what the path-extension recursion does
+        $this->assertSame('rest_get', $route->function, 'still routes');
+        $this->assertSame([], $this->sent, 'but CORS is left to the outer call');
+    }
+
+    public function testReusedRouterStillDecidesPerCall()
+    {
         putenv('REQUEST_METHOD=GET');
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $router = new Router();
         $router->get('/rest', 'x.php', 'rest_get');
         $router->get('/account', 'x.php', 'account');
-        $router->route();         // out of scope: no CORS
-        $router->route('/rest');  // like the internal recursion with a user-chosen extension
-        $this->assertSame([], $this->sent, 'the first decision in the request stands');
+        $router->route('/account');
+        $this->assertSame([], $this->sent, 'first call: out of scope');
+        $router->route('/rest');
+        $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, $this->sent, 'a later outer call (new request in a loop) decides again');
     }
 
     public function testCorsBeforeRoutingDoesNotLockTheRequest()
