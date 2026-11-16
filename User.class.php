@@ -429,6 +429,10 @@ class User extends \EmPHyre\CRUD
             if ($result->isError()) {
                 return $result;
             }
+
+            if (!$newUser) {
+                Session::endOtherSessions($this->getId());   // (#16)
+            }
         }
 
         return new Result('EDITED_PASSWORD', $this->getId(), true);

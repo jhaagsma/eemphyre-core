@@ -146,4 +146,31 @@ final class SessionTest extends TestCase
         $this->assertSame([['DELETE FROM active_sessions WHERE user_id = ?', 42]], $this->db->deletes(),
             'log-out-everywhere still works for the real session holder');
     }
+
+    public function testEndOtherSessionsKeepsTheCurrentOne()
+    {
+        $this->cookie('42:' . self::KEY);
+        $this->assertTrue(Session::activeSession(true), 'precondition: the cookie is a live session');
+        Session::endOtherSessions(42);
+        $this->assertSame([['DELETE FROM active_sessions WHERE user_id = ? AND login_id != ?', 42, 7]],
+            $this->db->deletes(), 'every session of user 42 but this one (login 7) ends');
+    }
+
+    public function testEndOtherSessionsForAnotherUserEndsAll()
+    {
+        $this->cookie('42:' . self::KEY);
+        $this->assertTrue(Session::activeSession(true), 'precondition: logged in as 42');
+        Session::endOtherSessions(99);
+        $this->assertSame([['DELETE FROM active_sessions WHERE user_id = ? AND login_id != ?', 99, 0]],
+            $this->db->deletes(), 'an admin changing user 99\'s password ends all of 99\'s sessions');
+    }
+
+    public function testEndOtherSessionsWithoutAcceptedCookieEndsAll()
+    {
+        $this->cookie('42:' . str_repeat('d', 32));   // well-formed, matches no session
+        Session::activeSession(true);
+        Session::endOtherSessions(42);
+        $this->assertSame([['DELETE FROM active_sessions WHERE user_id = ? AND login_id != ?', 42, 0]],
+            $this->db->deletes(), 'an unverified cookie protects no session');
+    }
 }
