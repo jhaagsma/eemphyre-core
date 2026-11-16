@@ -18,7 +18,7 @@
  * act as (and read every CORS response of) the logged-in user: ordinary pages (account settings, API
  * keys, forms) must stay out of scope. Router::route() applies it centrally with the path it routes
  * (preflight() for OPTIONS, headers() for everything else, before routing, so 404s and auth errors on
- * API paths carry it too); a script outside the Router can call Cors::headers($path) itself. Only the
+ * API paths carry it too); a script outside the Router can call Cors::headers() itself. Only the
  * configured methods (default GET, POST) get CORS, so an in-scope path routed by a fallback for another
  * method never does.
  *
@@ -92,12 +92,12 @@ class Cors
     {
         $scoped = [];
         foreach ($paths as $path) {
-            $norm = (is_string($path) && strpos($path, '/') === 0) ? self::normalisePath($path) : '';
-            if ($norm === '' || $norm === '/' || !preg_match('#\A(/[A-Za-z0-9_~-][A-Za-z0-9._~-]*)+\z#', $norm)
-                || preg_match('#/\.\.?(/|\z)#', $norm)
-            ) {   // '/' would put every page in scope; dot segments never reach the server
+            $ok = is_string($path) && strpos($path, '/') === 0 && strpos($path, '?') === false
+                && preg_match('#\A(/[A-Za-z0-9_~-][A-Za-z0-9._~-]*)+/?\z#', $path);   // no '/', '//', '.x' segments
+            if (!$ok) {   // '/' would put every page in scope
                 throw new \InvalidArgumentException('Cors::allow: invalid path ' . self::describe($path));
             }
+            $norm = rtrim($path, '/');
             $scoped[] = $norm;
         }
 
@@ -184,23 +184,33 @@ class Cors
 
 
     /**
-     * A request path as the Router sees it: no query, one leading slash, no repeated or trailing slashes.
+     * The path the Router actually matches for a URL: no query, leading and trailing slashes dropped, and
+     * cut at the first empty segment (Router::urlRoute() stops there: '/rest//x' routes '/rest').
+     * Router::route() and inScope() both use this, so the CORS scope can't disagree with the routing.
      *
-     * @param string $path
+     * @param string $url
      *
      * @return string
      */
-    private static function normalisePath($path)
+    public static function routedPath($url)
     {
-        $path = explode('?', $path, 2)[0];
-        return '/' . trim(preg_replace('#/+#', '/', $path), '/');
-    }//end normalisePath()
+        $url  = rtrim(explode('?', (string)$url, 2)[0], '/');
+        $segs = [];
+        foreach (explode('/', ltrim($url, '/')) as $seg) {
+            if ($seg === '') {
+                break;
+            }
+            $segs[] = $seg;
+        }
+
+        return '/' . implode('/', $segs);
+    }//end routedPath()
 
 
     /**
      * Is this request path covered by the configured path prefixes?
      *
-     * @param mixed $path the path being routed (query ignored; normalised like the Router does)
+     * @param mixed $path the path being routed (reduced with routedPath() first)
      *
      * @return bool
      */
@@ -210,7 +220,7 @@ class Cors
             return false;
         }
 
-        $path = self::normalisePath($path);
+        $path = self::routedPath($path);
         foreach (self::$paths as $prefix) {
             if ($path === $prefix || strpos($path, $prefix . '/') === 0) {
                 return true;
@@ -294,18 +304,14 @@ class Cors
      * Router can call it itself. Idempotent within a request. Note: a handler that later sets its own
      * Vary header must include Origin in it (header() replaces by default).
      *
-     * @param string $path the path being routed
+     * @param string|null $path   the path being routed (null = this request's URI)
+     * @param string|null $method the method it is routed as (null = this request's method)
      *
      * @return bool true if the request's origin was allowed (and its headers sent)
      */
-    public static function headers($path)
+    public static function headers($path = null, $method = null)
     {
-        $method = isset($_SERVER['REQUEST_METHOD']) ? strtoupper($_SERVER['REQUEST_METHOD']) : 'GET';
-        if (!in_array($method, self::$methods, true)) {   // e.g. PUT/DELETE when only GET/POST are allowed
-            return false;
-        }
-
-        return self::send($path, false);
+        return self::send($path, $method, false);
     }//end headers()
 
 
@@ -313,13 +319,13 @@ class Cors
      * Answer a preflight (OPTIONS) request and stop. Allowed origins get the approval headers;
      * everyone else gets an empty 204, which the browser treats as "no".
      *
-     * @param string $path the path being routed
+     * @param string|null $path the path being routed (null = this request's URI)
      *
      * @return void (exits)
      */
-    public static function preflight($path)
+    public static function preflight($path = null)
     {
-        self::send($path, true);
+        self::send($path, 'OPTIONS', true);
         http_response_code(204);
         exit;
     }//end preflight()
@@ -328,13 +334,17 @@ class Cors
     /**
      * Emit headerLines() for the current request.
      *
-     * @param string $path      the path being routed
-     * @param bool   $preflight true for an OPTIONS preflight
+     * @param string|null $path      the path being routed (null = this request's URI)
+     * @param string|null $method    the method it is routed as (null = this request's method)
+     * @param bool        $preflight true for an OPTIONS preflight
      *
      * @return bool true if the request's origin was allowed (and its headers sent)
      */
-    private static function send($path, $preflight)
+    private static function send($path, $method, $preflight)
     {
+        if ($path === null) {
+            $path = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+        }
         if (!self::enabled() || !self::inScope($path)) {   // out-of-scope paths get no CORS at all
             return false;
         }
@@ -350,7 +360,12 @@ class Cors
             return self::$sent = false;   // cached: warn once per request
         }
 
-        $allowed = self::origin(isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '');
+        if ($method === null) {
+            $method = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : 'GET';
+        }
+        // a method that isn't allowed (e.g. PUT when only GET/POST are) gets Vary but never Allow-Origin
+        $methodOk = $preflight || in_array(strtoupper($method), self::$methods, true);
+        $allowed  = $methodOk ? self::origin(isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '') : null;
         foreach (self::build($allowed, $preflight) as $i => $headerLine) {
             // line 0 is Vary: add it to any Vary the app sets instead of replacing it
             if (self::$emitter === null) {

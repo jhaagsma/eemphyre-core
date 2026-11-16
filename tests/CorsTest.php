@@ -264,6 +264,9 @@ final class CorsTest extends TestCase
             'only slashes' => ['//'],
             'dot dot'      => ['/rest/..'],
             'dot'          => ['/./x'],
+            'query'        => ['/rest?debug'],
+            'empty segment' => ['/rest//x'],
+            'dot segment start' => ['/.well-known'],
         ];
     }
 
@@ -302,12 +305,56 @@ final class CorsTest extends TestCase
         $_SERVER['HTTP_ORIGIN']    = self::APP;
         $_SERVER['REQUEST_METHOD'] = 'DELETE';
         $this->assertFalse(Cors::headers('/rest'), 'DELETE is not in the default methods');
-        $this->assertSame([], $this->sent, 'nothing sent for a method that is not allowed');
+        $this->assertSame([['Vary: Origin', false]], $this->sent, 'Vary but no Allow-Origin for a method that is not allowed');
     }
 
     public function testQueryOnPathIsIgnored()
     {
         Cors::allow([self::APP], self::PATHS, true);
         $this->assertFalse(Cors::inScope('/account?next=/rest'), 'a /rest in the query is not the path');
+    }
+
+    /**
+     * @dataProvider routedPaths
+     */
+    public function testRoutedPathMatchesRouterRules($url, $routed)
+    {
+        $this->assertSame($routed, Cors::routedPath($url), "routed path of $url");
+    }
+
+    public function routedPaths()
+    {
+        return [
+            'plain'          => ['/rest/x', '/rest/x'],
+            'query'          => ['/rest/x?y=1', '/rest/x'],
+            'trailing'       => ['/rest/x/', '/rest/x'],
+            'leading double' => ['//rest/x', '/rest/x'],
+            'empty segment'  => ['/rest//public', '/rest'],   // urlRoute() stops at the empty segment
+            'root'           => ['/', '/'],
+        ];
+    }
+
+    public function testEmptySegmentDoesNotReachDeeperScope()
+    {
+        Cors::allow([self::APP], ['/rest/public'], true);
+        $this->assertFalse(Cors::inScope('/rest//public'), 'routes as /rest, which is not in scope');
+        $this->assertTrue(Cors::inScope('/rest/public/x'), 'the real path is');
+    }
+
+    public function testMethodFromTheRouterWins()
+    {
+        Cors::allow([self::APP], self::PATHS, true);
+        $_SERVER['HTTP_ORIGIN']    = self::APP;
+        $_SERVER['REQUEST_METHOD'] = 'HEAD';   // the Router routes it as GET and passes that
+        $this->assertTrue(Cors::headers('/rest', 'GET'), 'routed as GET: allowed');
+    }
+
+    public function testDefaultsReadTheRequest()
+    {
+        Cors::allow([self::APP], self::PATHS, true);
+        $_SERVER['HTTP_ORIGIN'] = self::APP;
+        $_SERVER['REQUEST_URI'] = '/rest/x?y=1';
+        $this->assertTrue(Cors::headers(), 'no-argument form uses REQUEST_URI and REQUEST_METHOD');
+        unset($_SERVER['REQUEST_URI']);
     }
 }

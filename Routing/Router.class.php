@@ -675,11 +675,11 @@ class Router
         // CORS (Routing/Cors.class.php): for the path being routed, only on the paths and methods the app
         // listed with Cors::allow(). Preflights end here (empty 204 unless approved); other responses get
         // their headers before routing, so 404s and auth errors on API paths carry them too.
-        $corsPath = $url ? $url : explode('?', (string)$uri, 2)[0];
+        $corsPath = Cors::routedPath($url ? $url : (string)$uri);   // the same path urlRoute() matches
         if ($type == 'OPTIONS') {
             Cors::preflight($corsPath);
         }
-        Cors::headers($corsPath);
+        Cors::headers($corsPath, $type);   // $type: the method it is routed as (unknown ones route as GET)
 
 
         if (!isset($this->paths)) {
