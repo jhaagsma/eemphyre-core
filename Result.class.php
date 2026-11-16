@@ -166,6 +166,8 @@ class Result
                 => 'Password must contain a number (as well as a special character).',
             'PASSWORD_NO_SPECIAL'
                 => 'Password must contain a special character (as well as a number).',
+            'PASSWORD_INVALID_CHAR'
+                => 'Password contains a character that is not allowed.',
             'INVALID_INPUT'
                 => 'Invalid Input'.($this->val ? ': '.$this->val : null),
             'INSERT_FAIL'

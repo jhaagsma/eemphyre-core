@@ -300,7 +300,8 @@ class User extends \EmPHyre\CRUD
     public function checkPassword($password)
     {
         list($ok, $needsRehash) = Password::verify($password, $this->password, $this->salt);
-        if ($ok && $needsRehash) {
+        // (an old password with a NUL byte can't be bcrypt-hashed: keep its old hash)
+        if ($ok && $needsRehash && strpos((string)$password, "\0") === false) {
             $this->password = Password::hash($password);
             $this->salt     = '';
             $this->commit();   // if this fails the old hash stays valid; try again next login

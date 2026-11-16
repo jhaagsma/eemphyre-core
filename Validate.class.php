@@ -62,8 +62,12 @@ class Validate
      */
     public static function password($pwd, $pwd2, $length = 8, $letters = true, $numbers = true, $specials = true)
     {
-        if ($pwd != $pwd2) {
+        if ((string)$pwd !== (string)$pwd2) {
+            // strict: with != "1e3" and "1000" counted as the same password
             return new Result('PASSWORD_NOMATCH');
+        } elseif (strpos((string)$pwd, "\0") !== false) {
+            // bcrypt (Password::hash) stops at a NUL byte; PHP 8 refuses it outright (#5)
+            return new Result('PASSWORD_INVALID_CHAR');
         } elseif (strlen($pwd) < $length) {
             return new Result('PASSWORD_SHORT', $length);
         } elseif ($letters && !preg_match("/[A-z]/", $pwd)) {
