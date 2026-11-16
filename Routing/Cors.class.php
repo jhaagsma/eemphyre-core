@@ -12,16 +12,15 @@
  *
  *     \EmPHyre\Cors::allow(['https://app.example.com'], true);
  *
- * then in any handler that serves cross-origin callers (real responses):
- *
- *     \EmPHyre\Cors::headers();
- *
- * Preflight (OPTIONS) requests are answered by Router::route() via Cors::preflight().
+ * Router::route() then answers preflight (OPTIONS) requests with Cors::preflight() and adds the CORS
+ * headers to every other routed response with Cors::headers(), so handlers don't have to. A script that
+ * doesn't go through the Router can call Cors::headers() itself.
  *
  * Rules:
- *  - The request's Origin header must match an allowed origin EXACTLY
- *    (scheme://host[:port], no path, no trailing slash). Never echo an origin
- *    that isn't on the list, and never use the Referer for this.
+ *  - The request's Origin header must match an allowed origin exactly (scheme://host[:port], no path;
+ *    case, a trailing slash and a default port :443/:80 are normalised). Never echo an origin that
+ *    isn't on the list, and never use the Referer for this.
+ *  - An invalid configured origin is a bug: allow() throws InvalidArgumentException (ADR 003).
  *  - With $credentials = true, cookies are allowed: every listed origin can act as
  *    the logged-in user. List only front-ends you control.
  *  - "Vary: Origin" is always sent when CORS is configured, so caches don't hand one
@@ -39,52 +38,54 @@ namespace EmPHyre;
 
 class Cors
 {
-    /** @var string[] allowed origins, exact match */
+    const DEFAULT_METHODS = ['GET', 'POST'];
+    const DEFAULT_HEADERS = ['Content-Type'];
+    const MAX_AGE         = 600;   // seconds a browser may cache a preflight answer
+
+    /** @var string[] allowed origins, normalised */
     private static $origins = [];
 
     /** @var bool send Access-Control-Allow-Credentials */
     private static $credentials = false;
 
     /** @var string[] methods a preflight may approve */
-    private static $methods = ['GET', 'POST'];
+    private static $methods = self::DEFAULT_METHODS;
 
     /** @var string[] request headers a preflight may approve */
-    private static $headers = ['Content-Type'];
+    private static $headers = self::DEFAULT_HEADERS;
 
-    /** @var int seconds a browser may cache a preflight answer */
-    private static $max_age = 600;
+    /** @var bool|null result of the first send() in this request (Router::route() can recurse) */
+    private static $sent = null;
 
 
     /**
-     * Configure CORS. Call once at startup; calling again replaces the settings.
+     * Configure CORS. Call once at startup; calling again replaces ALL settings (anything not passed
+     * goes back to its default), and allow([]) turns CORS off.
      *
-     * @param string[] $origins     Allowed origins, e.g. ['https://app.example.com']
-     * @param bool     $credentials Allow cookies / HTTP auth on cross-origin requests
-     * @param string[] $methods     Methods to approve in preflights
-     * @param string[] $headers     Request headers to approve in preflights
+     * @param string[]      $origins     Allowed origins, e.g. ['https://app.example.com']
+     * @param bool          $credentials Allow cookies / HTTP auth on cross-origin requests
+     * @param string[]|null $methods     Methods to approve in preflights (default GET, POST)
+     * @param string[]|null $headers     Request headers to approve in preflights (default Content-Type)
      *
      * @return void
+     * @throws \InvalidArgumentException for an origin that isn't scheme://host[:port]
      */
-    public static function allow(array $origins, $credentials = false, array $methods = null, array $headers = null)
+    public static function allow(array $origins, $credentials = false, ?array $methods = null, ?array $headers = null)
     {
-        self::$origins = [];
+        $normalised = [];
         foreach ($origins as $o) {
-            $o = rtrim(trim((string)$o), '/');
-            if (preg_match('#^https?://[a-z0-9.-]+(:[0-9]+)?$#i', $o)) {
-                self::$origins[] = strtolower($o);
-            } else {
-                trigger_error("Cors::allow ignored an invalid origin: $o");
+            $n = self::normalise($o);
+            if ($n === null) {
+                throw new \InvalidArgumentException('Cors::allow: invalid origin ' . json_encode($o));
             }
+            $normalised[] = $n;
         }
 
+        self::$origins     = array_values(array_unique($normalised));
         self::$credentials = (bool)$credentials;
-        if ($methods !== null) {
-            self::$methods = array_values(array_map('strtoupper', $methods));
-        }
-
-        if ($headers !== null) {
-            self::$headers = array_values($headers);
-        }
+        self::$methods     = $methods === null ? self::DEFAULT_METHODS : array_values(array_map('strtoupper', $methods));
+        self::$headers     = $headers === null ? self::DEFAULT_HEADERS : array_values($headers);
+        self::$sent        = null;
     }//end allow()
 
 
@@ -100,9 +101,38 @@ class Cors
 
 
     /**
+     * The given origin, normalised (lowercase, no trailing slash, no default port), or null if it
+     * isn't a valid scheme://host[:port].
+     *
+     * @param mixed $origin
+     *
+     * @return string|null
+     */
+    private static function normalise($origin)
+    {
+        if (!is_string($origin)) {
+            return null;
+        }
+
+        $o = strtolower(rtrim(trim($origin), '/'));
+        $label = '[a-z0-9]([a-z0-9-]*[a-z0-9])?';
+        if (!preg_match('#\A(https?)://(' . $label . '(\.' . $label . ')*)(:([0-9]{1,5}))?\z#', $o, $m)) {
+            return null;
+        }
+
+        $port = isset($m[7]) ? $m[7] : '';
+        if (($m[1] === 'https' && $port === '443') || ($m[1] === 'http' && $port === '80')) {
+            $port = '';
+        }
+
+        return $m[1] . '://' . $m[2] . ($port !== '' ? ':' . $port : '');
+    }//end normalise()
+
+
+    /**
      * The given (or current request's) Origin if it is on the allowlist, otherwise null.
      *
-     * @param string|null $origin Origin to check; null = the request's Origin header
+     * @param mixed $origin Origin to check; null = the request's Origin header
      *
      * @return string|null
      */
@@ -112,20 +142,17 @@ class Cors
             $origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
         }
 
-        $origin = strtolower(rtrim((string)$origin, '/'));
-        if ($origin === '' || !in_array($origin, self::$origins, true)) {
-            return null;
-        }
-
-        return $origin;
+        $n = self::normalise($origin);
+        return ($n !== null && in_array($n, self::$origins, true)) ? $n : null;
     }//end origin()
 
 
     /**
      * The CORS headers to send for a request. Pure: sends nothing (tests use this).
+     * Vary: Origin comes first whenever CORS is configured.
      *
-     * @param string|null $origin    The request's Origin header ('' or null = none)
-     * @param bool        $preflight true for an OPTIONS preflight
+     * @param mixed $origin    The request's Origin header ('' or null = none)
+     * @param bool  $preflight true for an OPTIONS preflight
      *
      * @return string[] header lines
      */
@@ -136,7 +163,7 @@ class Cors
         }
 
         $lines   = ['Vary: Origin'];
-        $allowed = self::origin((string)$origin);
+        $allowed = self::origin($origin === null ? '' : $origin);
         if ($allowed === null) {
             return $lines;
         }
@@ -149,7 +176,7 @@ class Cors
         if ($preflight) {
             $lines[] = 'Access-Control-Allow-Methods: ' . implode(', ', self::$methods);
             $lines[] = 'Access-Control-Allow-Headers: ' . implode(', ', self::$headers);
-            $lines[] = 'Access-Control-Max-Age: ' . self::$max_age;
+            $lines[] = 'Access-Control-Max-Age: ' . self::MAX_AGE;
         }
 
         return $lines;
@@ -157,10 +184,10 @@ class Cors
 
 
     /**
-     * Send the CORS headers for a real (non-preflight) response.
-     * Does nothing unless CORS is configured; sends Allow-Origin only for an allowed Origin.
+     * Send the CORS headers for a real (non-preflight) response. Router::route() calls this for
+     * every routed request; does nothing unless CORS is configured.
      *
-     * @return bool true if the request's origin was allowed
+     * @return bool true if the request's origin was allowed (and its headers sent)
      */
     public static function headers()
     {
@@ -169,8 +196,8 @@ class Cors
 
 
     /**
-     * Answer a preflight (OPTIONS) request and stop. Allowed origins get the approval
-     * headers; everyone else gets an empty 204, which the browser treats as "no".
+     * Answer a preflight (OPTIONS) request and stop. Allowed origins get the approval headers;
+     * everyone else gets an empty 204, which the browser treats as "no".
      *
      * @return void (exits)
      */
@@ -187,20 +214,28 @@ class Cors
      *
      * @param bool $preflight true for an OPTIONS preflight
      *
-     * @return bool true if the request's origin was allowed
+     * @return bool true if the request's origin was allowed (and its headers sent)
      */
     private static function send($preflight)
     {
-        if (headers_sent()) {
+        if (!self::enabled()) {
             return false;
         }
 
-        $allowed = false;
-        foreach (self::headerLines(isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '', $preflight) as $line) {
-            header($line, strpos($line, 'Vary:') !== 0);  // don't replace other Vary headers
-            $allowed = $allowed || strpos($line, 'Access-Control-Allow-Origin:') === 0;
+        if (self::$sent !== null && !$preflight) {   // already done for this request
+            return self::$sent;
         }
 
-        return $allowed;
+        if (headers_sent($file, $line)) {   // e.g. output before routing: say so instead of failing quietly
+            trigger_error("Cors: headers already sent (output started at $file:$line); CORS headers not sent", E_USER_WARNING);
+            return false;
+        }
+
+        $origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
+        foreach (self::headerLines($origin, $preflight) as $i => $line) {
+            header($line, $i !== 0);   // line 0 is Vary: add to any Vary the app sets, don't replace it
+        }
+
+        return self::$sent = (self::origin($origin) !== null);
     }//end send()
 }//end class

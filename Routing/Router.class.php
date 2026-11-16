@@ -678,6 +678,10 @@ class Router
             Cors::preflight();
         }
 
+        // CORS headers for every other routed response (only for allowed origins; nothing if CORS is off),
+        // so handlers don't each have to remember it.
+        Cors::headers();
+
         if (!isset($this->paths)) {
             trigger_error($type . ': ' . getenv('SERVER_NAME') . ' ' . $uri);
         }
