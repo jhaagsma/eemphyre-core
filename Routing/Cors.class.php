@@ -12,9 +12,13 @@
  *
  *     \EmPHyre\Cors::allow(['https://app.example.com'], true);
  *
- * Router::route() then answers preflight (OPTIONS) requests with Cors::preflight() and adds the CORS
- * headers to every other routed response with Cors::headers(), so handlers don't have to. A script that
- * doesn't go through the Router can call Cors::headers() itself.
+ * then, in each handler that is MEANT to be called cross-origin (e.g. a JSON API), and only there:
+ *
+ *     \EmPHyre\Cors::headers();
+ *
+ * Opt-in per handler on purpose: an allowed origin with credentials can read every response that carries
+ * these headers as the logged-in user, so ordinary pages (account settings, API keys, forms with CSRF
+ * tokens) must not get them. Router::route() answers preflight (OPTIONS) requests with Cors::preflight().
  *
  * Rules:
  *  - The request's Origin header must match an allowed origin exactly (scheme://host[:port], no path;
@@ -54,13 +58,17 @@ class Cors
     /** @var string[] request headers a preflight may approve */
     private static $headers = self::DEFAULT_HEADERS;
 
-    /** @var bool|null result of the first send() in this request (Router::route() can recurse) */
+    /** @var bool|null result of the first headers() in this request (so repeat calls are no-ops) */
     private static $sent = null;
+
+    /** @var callable|null header emitter for tests (null = PHP's header()) */
+    private static $emitter = null;
 
 
     /**
-     * Configure CORS. Call once at startup; calling again replaces ALL settings (anything not passed
-     * goes back to its default), and allow([]) turns CORS off.
+     * Configure CORS. Call once at startup, before routing; calling again replaces ALL settings (anything
+     * not passed goes back to its default; allow([]) turns CORS off) but cannot take back headers
+     * already sent in this request.
      *
      * @param string[]      $origins     Allowed origins, e.g. ['https://app.example.com']
      * @param bool          $credentials Allow cookies / HTTP auth on cross-origin requests
@@ -76,7 +84,7 @@ class Cors
         foreach ($origins as $o) {
             $n = self::normalise($o);
             if ($n === null) {
-                throw new \InvalidArgumentException('Cors::allow: invalid origin ' . json_encode($o));
+                throw new \InvalidArgumentException('Cors::allow: invalid origin ' . var_export($o, true));
             }
             $normalised[] = $n;
         }
@@ -120,12 +128,18 @@ class Cors
             return null;
         }
 
-        $port = isset($m[7]) ? $m[7] : '';
-        if (($m[1] === 'https' && $port === '443') || ($m[1] === 'http' && $port === '80')) {
-            $port = '';
+        $port = '';
+        if (isset($m[7]) && $m[7] !== '') {
+            $p = (int)$m[7];   // also drops leading zeros (:0443 = :443)
+            if ($p < 1 || $p > 65535) {
+                return null;
+            }
+            if (!(($m[1] === 'https' && $p === 443) || ($m[1] === 'http' && $p === 80))) {
+                $port = ':' . $p;
+            }
         }
 
-        return $m[1] . '://' . $m[2] . ($port !== '' ? ':' . $port : '');
+        return $m[1] . '://' . $m[2] . $port;
     }//end normalise()
 
 
@@ -184,8 +198,9 @@ class Cors
 
 
     /**
-     * Send the CORS headers for a real (non-preflight) response. Router::route() calls this for
-     * every routed request; does nothing unless CORS is configured.
+     * Send the CORS headers for a real (non-preflight) response. Call it in handlers meant for
+     * cross-origin callers only (see the class comment); does nothing unless CORS is configured.
+     * Idempotent within a request.
      *
      * @return bool true if the request's origin was allowed (and its headers sent)
      */
@@ -226,16 +241,32 @@ class Cors
             return self::$sent;
         }
 
-        if (headers_sent($file, $line)) {   // e.g. output before routing: say so instead of failing quietly
+        if (self::$emitter === null && headers_sent($file, $line)) {   // say so once, instead of failing quietly
             trigger_error("Cors: headers already sent (output started at $file:$line); CORS headers not sent", E_USER_WARNING);
-            return false;
+            return self::$sent = false;
         }
 
-        $origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
-        foreach (self::headerLines($origin, $preflight) as $i => $line) {
-            header($line, $i !== 0);   // line 0 is Vary: add to any Vary the app sets, don't replace it
+        $lines = self::headerLines(isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '', $preflight);
+        foreach ($lines as $i => $line) {
+            // line 0 is Vary: add it to any Vary the app sets instead of replacing it
+            self::$emitter === null ? header($line, $i !== 0) : call_user_func(self::$emitter, $line, $i !== 0);
         }
 
-        return self::$sent = (self::origin($origin) !== null);
+        return self::$sent = (count($lines) > 1);   // more than Vary = Allow-Origin was sent
     }//end send()
+
+
+    /**
+     * Tests only: capture headers instead of sending them (null restores header()); also forgets the
+     * per-request state.
+     *
+     * @param callable|null $emitter function (string $line, bool $replace)
+     *
+     * @return void
+     */
+    public static function setEmitter(?callable $emitter)
+    {
+        self::$emitter = $emitter;
+        self::$sent    = null;
+    }//end setEmitter()
 }//end class

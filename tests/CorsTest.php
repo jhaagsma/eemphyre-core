@@ -6,9 +6,23 @@ final class CorsTest extends TestCase
 {
     private const APP = 'https://alphaui.earthempires.com';
 
+    /** @var array[] headers captured by the emitter: [line, replace] */
+    private $sent = [];
+
     protected function setUp(): void
     {
         Cors::allow([]);   // back to the default: off
+        $this->sent = [];
+        Cors::setEmitter(function ($line, $replace) {
+            $this->sent[] = [$line, $replace];
+        });
+        unset($_SERVER['HTTP_ORIGIN']);
+    }
+
+    protected function tearDown(): void
+    {
+        Cors::setEmitter(null);
+        unset($_SERVER['HTTP_ORIGIN']);
     }
 
     public function testOffByDefault()
@@ -89,6 +103,8 @@ final class CorsTest extends TestCase
             'empty labels'   => ['https://..'],
             'not a string'   => [['https://example.com']],
             'query'          => ['https://example.com?x=1'],
+            'port 0'         => ['https://example.com:0'],
+            'port too big'   => ['https://example.com:99999'],
         ];
     }
 
@@ -124,6 +140,7 @@ final class CorsTest extends TestCase
             'https :443 configured' => ['https://a.example:443', 'https://a.example'],
             'http :80 configured'   => ['http://a.example:80', 'http://a.example'],
             'https :443 sent'       => ['https://a.example', 'https://a.example:443'],
+            'leading zero port'     => ['https://a.example:0443', 'https://a.example'],
         ];
     }
 
@@ -145,5 +162,42 @@ final class CorsTest extends TestCase
         Cors::allow([self::APP]);
         $this->assertSame('Vary: Origin', Cors::headerLines('https://evil.example', false)[0], 'Vary first, so send() adds it without replacing');
         $this->assertSame('Vary: Origin', Cors::headerLines(self::APP, true)[0], 'also for allowed origins');
+    }
+
+    public function testHeadersSendsForAllowedOriginOnce()
+    {
+        Cors::allow([self::APP], true);
+        $_SERVER['HTTP_ORIGIN'] = self::APP;
+        $this->assertTrue(Cors::headers(), 'allowed origin reports true');
+        $this->assertTrue(Cors::headers(), 'second call in the same request reports the same');
+        $this->assertSame([
+            ['Vary: Origin', false],
+            ['Access-Control-Allow-Origin: ' . self::APP, true],
+            ['Access-Control-Allow-Credentials: true', true],
+        ], $this->sent, 'sent once; Vary added without replacing, the rest replacing');
+    }
+
+    public function testHeadersForOtherOriginSendsOnlyVary()
+    {
+        Cors::allow([self::APP], true);
+        $_SERVER['HTTP_ORIGIN'] = 'https://evil.example';
+        $this->assertFalse(Cors::headers(), 'other origin reports false');
+        $this->assertSame([['Vary: Origin', false]], $this->sent, 'only Vary for a stranger');
+    }
+
+    public function testHeadersSendNothingWhenOff()
+    {
+        $_SERVER['HTTP_ORIGIN'] = self::APP;
+        $this->assertFalse(Cors::headers(), 'off reports false');
+        $this->assertSame([], $this->sent, 'nothing sent while off');
+    }
+
+    public function testAllowResetsPerRequestState()
+    {
+        Cors::allow([self::APP]);
+        $_SERVER['HTTP_ORIGIN'] = 'https://evil.example';
+        $this->assertFalse(Cors::headers(), 'stranger first');
+        Cors::allow(['https://evil.example']);
+        $this->assertTrue(Cors::headers(), 'after allow() the check runs again');
     }
 }
