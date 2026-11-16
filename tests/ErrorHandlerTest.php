@@ -28,6 +28,9 @@ final class ErrorHandlerTest extends TestCase
             ["['token' => 'abc\\'d']", "['token' => '***']"],
             ['GET /x?apicode%3Dabc%26y', 'GET /x?apicode%3D***'],
             ['https://bob:pw@host/p', 'https://bob:***@host/p'],
+            ['session_id=abc&x', 'session_id=***&x'],
+            ['{"player_site_id": 99, "n": 1}', '{"player_site_id": ***, "n": 1}'],
+            ['host:8080/p and http://h:8080/p', 'host:8080/p and http://h:8080/p'],
         ];
     }
 
@@ -54,5 +57,20 @@ final class ErrorHandlerTest extends TestCase
     {
         $this->assertSame('"say ""hi"" there"', emphyreErrorCsvField("say \"hi\"\r\nthere"));
         $this->assertSame('"42"', emphyreErrorCsvField(42));
+    }
+
+    public function testHostileInputStaysFast()
+    {
+        $inputs = [
+            '{"token":"' . str_repeat('\\', 5000) . 'x',      // unterminated JSON value full of backslashes
+            str_repeat('a-', 50000) . 'b',                      // long prefix-like run
+            str_repeat('"key":', 5000),
+        ];
+        foreach ($inputs as $in) {
+            $start = microtime(true);
+            $out   = emphyreErrorRelayText($in);
+            $this->assertLessThan(0.5, microtime(true) - $start, 'linear-time cleaning');
+            $this->assertNotSame('', $out, 'no blank relay line');
+        }
     }
 }

@@ -41,14 +41,44 @@
  */
 function emphyreErrorRelayText($text, $max = 400)
 {
-    $text = preg_replace('/[\x00-\x1f\x7f]+/', ' ', (string)$text);
-    $names = '(?:[A-Za-z0-9]+[_-])*(?:apicode|api_?key|key|token|password|passwd|pass|pwd|secret|player_site_id|session|sess_?id|sid|phpsessid)';
-    // name=value and name%3Dvalue (query strings, form data, cookies), any prefix: auth_token=, client_secret=
-    $text = preg_replace('/\b('.$names.')(=|%3D)[^&\s,;"\']*/i', '$1$2***', $text);
-    // JSON / PHP-array style: "token":"value", 'key' => 'value'
-    $text = preg_replace('/(["\']'.$names.'["\']\s*(?::|=>)\s*)(["\'])(?:\\\\.|(?!\2).)*\2/i', '$1$2***$2', $text);
-    // user:password@ in URLs
-    $text = preg_replace('#(\w+://[^/\s:@]+):[^/\s@]*@#', '$1:***@', $text);
+    // Every pattern starts only where a run of name characters starts and uses possessive
+    // quantifiers: error text can be long and hostile, so matching must stay linear.
+    $id      = '(?<![A-Za-z0-9_-])([A-Za-z0-9_-]++)';
+    $secret  = function ($name) {
+        // the name, or its last part after _ or -: auth_token, client-secret, PHPSESSID; not monkey
+        return preg_match('/(?:^|[_-])(?:apicode|api_?key|key|token|password|passwd|pass|pwd|secret|player_site_id|session|session_?id|sess_?id|sid|phpsessid)$/i', $name) === 1;
+    };
+    $steps = [
+        // control characters (CR/LF would start a new IRC command)
+        ['/[\x00-\x1f\x7f]++/', function ($m) {
+            return ' ';
+        }],
+        // name=value, name%3Dvalue (query strings, form data, cookies)
+        ['/'.$id.'(=|%3D)[^&\s,;"\']*+/i', function ($m) use ($secret) {
+            return $secret($m[1]) ? $m[1].$m[2].'***' : $m[0];
+        }],
+        // JSON / PHP-array style: "token":"value", 'key' => 'value', "player_site_id": 99
+        ['/(["\'])'.$id.'\1(\s*+(?::|=>)\s*+)(?:(["\'])(?:\\\\.|(?!\4)[^\\\\])*+\4|-?[0-9][0-9.eE+-]*+)/', function ($m) use ($secret) {
+            if (!$secret($m[2])) {
+                return $m[0];
+            }
+            $q = (isset($m[4]) ? $m[4] : '');
+            return $m[1].$m[2].$m[1].$m[3].$q.'***'.$q;
+        }],
+        // user:password@ in URLs
+        ['#(\w++://[^/\s:@]++):[^/\s@]*+@#', function ($m) {
+            return $m[1].':***@';
+        }],
+    ];
+    $text = (string)$text;
+    foreach ($steps as $step) {
+        $text = preg_replace_callback($step[0], $step[1], $text);
+        if ($text === null) {
+            // PCRE gave up (limits): relay nothing rather than something unmasked
+            return '[error text could not be cleaned for relay; see the log]';
+        }
+    }
+
     if (strlen($text) > $max) {
         $text = substr($text, 0, $max - 3).'...';
     }
