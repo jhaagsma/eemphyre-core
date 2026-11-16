@@ -134,6 +134,9 @@ class Script
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CONNECTTIMEOUT => self::$connectTimeout,
             CURLOPT_TIMEOUT        => self::$timeout,
+            // HTTP(S) only: no file://, gopher://, ... (also for redirects, if a caller enables them)
+            CURLOPT_PROTOCOLS      => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
         ]);
 
         $serverOutput = curl_exec($ch);
@@ -143,8 +146,8 @@ class Script
 
         curl_close($ch);
 
-        // no query string in the message: GET data can hold keys or passwords
-        $where = $method.' '.explode('?', $url, 2)[0];
+        // no query string or user:password@ in the message: either can hold secrets
+        $where = $method.' '.preg_replace('#^([a-z][a-z0-9+.-]*://)[^/@]*@#i', '$1', explode('?', $url, 2)[0]);
 
         if ($serverOutput === false || $curlErrno !== 0) {
             throw new \RuntimeException($where.' failed: '.$curlError.' (curl error '.$curlErrno.')');
@@ -166,7 +169,9 @@ class Script
      */
     private static function urlfix($url)
     {
-        if (strpos($url, "http://") !== false) {
+        // add http:// only when the URL has no scheme (this test was inverted: it prefixed URLs that
+        // already had http://, so every such call failed with "Could not resolve host: http")
+        if (!preg_match('#^[a-z][a-z0-9+.-]*://#i', $url)) {
             $url = 'http://'.$url;
         }
 

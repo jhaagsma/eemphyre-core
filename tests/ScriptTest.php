@@ -4,7 +4,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Script::post() / get() against a local `php -S` server (tests/fixtures/script-http-server.php).
- * URLs are given without "http://": urlfix() mangles URLs that already have it (see the PR).
+ * URLs are mostly given without "http://" (urlfix() adds it); one test passes a full URL.
  */
 final class ScriptTest extends TestCase
 {
@@ -146,5 +146,30 @@ final class ScriptTest extends TestCase
         $this->assertNotNull($e, 'a 403 throws');
         $this->assertStringNotContainsString('secret123', $e->getMessage(), 'GET data can hold keys: not in the message');
         $this->assertStringContainsString('/status/403', $e->getMessage());
+    }
+
+    public function testFullHttpUrlWorks()
+    {
+        $this->assertSame('GET {"a":"1"}', Script::get('http://'.self::$base.'/echo', ['a' => 1]),
+            'a URL that already has http:// is used as is (urlfix() used to prefix it again)');
+    }
+
+    public function testNonHttpSchemesAreRefused()
+    {
+        $e = self::thrownBy(function () {
+            Script::get('file:///etc/hostname', []);
+        });
+        $this->assertNotNull($e, 'file:// is not fetched');
+        $this->assertStringContainsString('(curl error 1)', $e->getMessage(), 'refused as an unsupported protocol (CURLE_UNSUPPORTED_PROTOCOL)');
+    }
+
+    public function testErrorMessageLeavesOutUserinfo()
+    {
+        $e = self::thrownBy(function () {
+            Script::get('http://bob:hunter2@'.self::$base.'/status/403', []);
+        });
+        $this->assertNotNull($e, 'a 403 throws');
+        $this->assertStringNotContainsString('hunter2', $e->getMessage(), 'no password from the URL in the message');
+        $this->assertStringNotContainsString('bob', $e->getMessage(), 'no user name either');
     }
 }
