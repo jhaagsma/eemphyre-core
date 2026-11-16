@@ -32,6 +32,11 @@
 //THIS IS HOW LONG WE WANT LOGIN SESSIONS TO LAST IN SECONDS (obivously)
 define('SESSION_TIME', 16 * 3600);
 defined('COOKIE_NAME') or define('COOKIE_NAME', 'emphyre');
+// Cookie scope (#6). COOKIE_DOMAIN: null = this host only (the default); set e.g. '.example.com' to
+// share the login with subdomains. COOKIE_SECURE: null = Secure when the request came over HTTPS
+// (directly or via a proxy's X-Forwarded-Proto), true/false to force.
+defined('COOKIE_DOMAIN') or define('COOKIE_DOMAIN', null);
+defined('COOKIE_SECURE') or define('COOKIE_SECURE', null);
 defined('APC_LAST_CLEAR_SESSION') or define('APC_LAST_CLEAR_SESSION', 'em:lcs');
 defined('APC_ACTIVE_SESSION_PREFIX') or define('APC_ACTIVE_SESSION_PREFIX', 'em:as-');
 
@@ -70,8 +75,62 @@ abstract class Session
             $expire
         )->insertid();
 
-        setcookie(COOKIE_NAME, "$user_id:$key", 0, "/", '.'.URL::getDomainName(), false, true);
+        self::clearLegacyDomainCookie();
+        header(self::cookieHeader("$user_id:$key", 0), false);
     }//end newSession()
+
+
+    /**
+     * The Set-Cookie header for the session cookie: Path=/, HttpOnly, SameSite=Lax, Secure over
+     * HTTPS, host-only unless COOKIE_DOMAIN is set (#6). Built by hand because PHP 7.2's
+     * setcookie() has no SameSite option.
+     *
+     * @param string    $value   Cookie value ('' to clear)
+     * @param int       $expires Unix time; 0 = session cookie
+     * @param bool|null $secure  null: COOKIE_SECURE, else detect HTTPS
+     * @param string    $domain  null: COOKIE_DOMAIN
+     *
+     * @return string            The full header line
+     */
+    public static function cookieHeader($value, $expires, $secure = null, $domain = null)
+    {
+        if ($secure === null) {
+            $secure = (COOKIE_SECURE !== null ? (bool)COOKIE_SECURE : self::requestIsHttps());
+        }
+
+        $domain = ($domain === null ? COOKIE_DOMAIN : $domain);
+
+        $line = 'Set-Cookie: '.COOKIE_NAME.'='.rawurlencode((string)$value);
+        if ($expires) {
+            $line .= '; Expires='.gmdate('D, d M Y H:i:s', (int)$expires).' GMT; Max-Age='.max(0, (int)$expires - time());
+        }
+
+        $line .= '; Path=/';
+        if ($domain) {
+            $line .= '; Domain='.preg_replace('/[^A-Za-z0-9.\-]/', '', $domain);
+        }
+
+        return $line.($secure ? '; Secure' : '').'; HttpOnly; SameSite=Lax';
+    }//end cookieHeader()
+
+
+    /**
+     * Before #6 the cookie was set for '.<last two host labels>'. A browser that still has that one
+     * would send both; clear it so only the new host-only cookie is left.
+     */
+    private static function clearLegacyDomainCookie()
+    {
+        if (COOKIE_DOMAIN === null && !empty($_SERVER['SERVER_NAME'])) {   // URL::getDomainName() reads SERVER_NAME
+            header(self::cookieHeader('', 1, null, '.'.URL::getDomainName()), false);
+        }
+    }//end clearLegacyDomainCookie()
+
+
+    private static function requestIsHttps()
+    {
+        return (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off')
+            || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+    }//end requestIsHttps()
 
 
     public static function parseCookie()
@@ -134,7 +193,8 @@ abstract class Session
         }
 
         //clear the cookie to nothing
-        setcookie(COOKIE_NAME, '', 1);
+        header(self::cookieHeader('', 1), false);   // same path/domain as when set, or the browser keeps it
+        self::clearLegacyDomainCookie();
     }//end expireSession()
 
 
