@@ -16,9 +16,11 @@
  * '/api' covers '/api' and '/api/x', not '/apix'). Only those paths get CORS: the preflight approval AND
  * the response headers. Everything else gets neither, because an allowed origin with credentials can
  * act as (and read every CORS response of) the logged-in user: ordinary pages (account settings, API
- * keys, forms) must stay out of scope. Router::route() applies it centrally (preflight() for OPTIONS,
- * headers() for everything else, before routing, so 404s and auth errors on API paths carry it too);
- * a script outside the Router can call Cors::headers() itself.
+ * keys, forms) must stay out of scope. Router::route() applies it centrally with the path it routes
+ * (preflight() for OPTIONS, headers() for everything else, before routing, so 404s and auth errors on
+ * API paths carry it too); a script outside the Router can call Cors::headers($path) itself. Only the
+ * configured methods (default GET, POST) get CORS, so an in-scope path routed by a fallback for another
+ * method never does.
  *
  * Rules:
  *  - The request's Origin header must match an allowed origin exactly (scheme://host[:port], no path;
@@ -67,8 +69,8 @@ class Cors
     /** @var callable|null header emitter for tests (null = PHP's header()) */
     private static $emitter = null;
 
-    /** @var bool tests: pretend headers were already sent */
-    private static $testHeadersSent = false;
+    /** @var callable|null tests: replaces headers_sent() (null = the real check) */
+    private static $headersSentCheck = null;
 
 
     /**
@@ -90,10 +92,13 @@ class Cors
     {
         $scoped = [];
         foreach ($paths as $path) {
-            if (!is_string($path) || !preg_match('#\A/[A-Za-z0-9._~/-]*\z#', $path)) {
+            $norm = (is_string($path) && strpos($path, '/') === 0) ? self::normalisePath($path) : '';
+            if ($norm === '' || $norm === '/' || !preg_match('#\A(/[A-Za-z0-9_~-][A-Za-z0-9._~-]*)+\z#', $norm)
+                || preg_match('#/\.\.?(/|\z)#', $norm)
+            ) {   // '/' would put every page in scope; dot segments never reach the server
                 throw new \InvalidArgumentException('Cors::allow: invalid path ' . self::describe($path));
             }
-            $scoped[] = rtrim($path, '/') === '' ? '/' : rtrim($path, '/');
+            $scoped[] = $norm;
         }
 
         if ($origins && !$scoped) {
@@ -179,25 +184,35 @@ class Cors
 
 
     /**
+     * A request path as the Router sees it: no query, one leading slash, no repeated or trailing slashes.
+     *
+     * @param string $path
+     *
+     * @return string
+     */
+    private static function normalisePath($path)
+    {
+        $path = explode('?', $path, 2)[0];
+        return '/' . trim(preg_replace('#/+#', '/', $path), '/');
+    }//end normalisePath()
+
+
+    /**
      * Is this request path covered by the configured path prefixes?
      *
-     * @param mixed $uri request URI or path (query ignored); null = the current request
+     * @param mixed $path the path being routed (query ignored; normalised like the Router does)
      *
      * @return bool
      */
-    public static function inScope($uri = null)
+    public static function inScope($path)
     {
-        if ($uri === null) {
-            $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
-        }
-
-        if (!is_string($uri)) {
+        if (!is_string($path)) {
             return false;
         }
 
-        $path = explode('?', $uri, 2)[0];
+        $path = self::normalisePath($path);
         foreach (self::$paths as $prefix) {
-            if ($prefix === '/' || $path === $prefix || strpos($path, $prefix . '/') === 0) {
+            if ($path === $prefix || strpos($path, $prefix . '/') === 0) {
                 return true;
             }
         }
@@ -274,15 +289,23 @@ class Cors
 
 
     /**
-     * Send the CORS headers for a real (non-preflight) response. Call it in handlers meant for
-     * cross-origin callers only (see the class comment); does nothing unless CORS is configured.
-     * Idempotent within a request.
+     * Send the CORS headers for a real (non-preflight) response, if this request is in scope (an allowed
+     * method on a configured path). Router::route() calls it for every request; a script outside the
+     * Router can call it itself. Idempotent within a request. Note: a handler that later sets its own
+     * Vary header must include Origin in it (header() replaces by default).
+     *
+     * @param string $path the path being routed
      *
      * @return bool true if the request's origin was allowed (and its headers sent)
      */
-    public static function headers()
+    public static function headers($path)
     {
-        return self::send(false);
+        $method = isset($_SERVER['REQUEST_METHOD']) ? strtoupper($_SERVER['REQUEST_METHOD']) : 'GET';
+        if (!in_array($method, self::$methods, true)) {   // e.g. PUT/DELETE when only GET/POST are allowed
+            return false;
+        }
+
+        return self::send($path, false);
     }//end headers()
 
 
@@ -290,11 +313,13 @@ class Cors
      * Answer a preflight (OPTIONS) request and stop. Allowed origins get the approval headers;
      * everyone else gets an empty 204, which the browser treats as "no".
      *
+     * @param string $path the path being routed
+     *
      * @return void (exits)
      */
-    public static function preflight()
+    public static function preflight($path)
     {
-        self::send(true);
+        self::send($path, true);
         http_response_code(204);
         exit;
     }//end preflight()
@@ -303,13 +328,14 @@ class Cors
     /**
      * Emit headerLines() for the current request.
      *
-     * @param bool $preflight true for an OPTIONS preflight
+     * @param string $path      the path being routed
+     * @param bool   $preflight true for an OPTIONS preflight
      *
      * @return bool true if the request's origin was allowed (and its headers sent)
      */
-    private static function send($preflight)
+    private static function send($path, $preflight)
     {
-        if (!self::enabled() || !self::inScope()) {   // out-of-scope paths get no CORS at all
+        if (!self::enabled() || !self::inScope($path)) {   // out-of-scope paths get no CORS at all
             return false;
         }
 
@@ -317,8 +343,9 @@ class Cors
             return self::$sent;
         }
 
-        $file = $line = null;
-        if (self::$emitter !== null ? self::$testHeadersSent : headers_sent($file, $line)) {
+        $file = $line = '?';
+        $sent = self::$headersSentCheck === null ? headers_sent($file, $line) : (bool)call_user_func(self::$headersSentCheck);
+        if ($sent) {
             trigger_error("Cors: headers already sent (output started at $file:$line); CORS headers not sent", E_USER_WARNING);
             return self::$sent = false;   // cached: warn once per request
         }
@@ -342,15 +369,15 @@ class Cors
      * (null restores PHP's header()), optionally pretend headers were already sent; also forgets the
      * per-request state.
      *
-     * @param callable|null $emitter     function (string $line, bool $replace)
-     * @param bool          $headersSent simulate output having started
+     * @param callable|null $emitter          function (string $line, bool $replace)
+     * @param callable|null $headersSentCheck function (): bool, replacing headers_sent() (null = real check)
      *
      * @return void
      */
-    public static function setEmitterForTests(?callable $emitter, $headersSent = false)
+    public static function setEmitterForTests(?callable $emitter, ?callable $headersSentCheck = null)
     {
-        self::$emitter         = $emitter;
-        self::$testHeadersSent = (bool)$headersSent;
-        self::$sent            = null;
+        self::$emitter          = $emitter;
+        self::$headersSentCheck = $headersSentCheck;
+        self::$sent             = null;
     }//end setEmitterForTests()
 }//end class

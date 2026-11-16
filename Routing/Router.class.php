@@ -672,15 +672,14 @@ class Router
     {
         $type = $this->getType();
         $uri  = getenv('REQUEST_URI');
+        // CORS (Routing/Cors.class.php): for the path being routed, only on the paths and methods the app
+        // listed with Cors::allow(). Preflights end here (empty 204 unless approved); other responses get
+        // their headers before routing, so 404s and auth errors on API paths carry them too.
+        $corsPath = $url ? $url : explode('?', (string)$uri, 2)[0];
         if ($type == 'OPTIONS') {
-            // CORS preflight: approved only for the origins and paths the app listed with Cors::allow();
-            // everyone else gets an empty 204 (see Routing/Cors.class.php).
-            Cors::preflight();
+            Cors::preflight($corsPath);
         }
-
-        // CORS headers for responses on the configured paths (before routing, so 404s and auth errors
-        // there carry them too); nothing elsewhere, nothing if CORS is off.
-        Cors::headers();
+        Cors::headers($corsPath);
 
 
         if (!isset($this->paths)) {
