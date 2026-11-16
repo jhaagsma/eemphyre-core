@@ -76,14 +76,18 @@ abstract class Session
 
     public static function parseCookie()
     {
-        //THIS IS ASSIGNING COOKIE VAL, SO SINGLE EQUALS IS CORRECT
-        if (!($cookiebits = URL::getCOOKIEval(COOKIE_NAME))) {
+        self::$cookieUser = null;
+        self::$cookieKey  = null;
+
+        $cookie = URL::getCOOKIEval(COOKIE_NAME);
+        // "<user id>:<32 hex key>" only (newSession() sets md5 hex keys). Anything else is no session,
+        // so a forged cookie never reaches the SQL lookups below (#4).
+        if (!is_string($cookie) || !preg_match('/^([1-9][0-9]{0,9}):([0-9a-f]{32})$/D', $cookie, $m)) {
             return null;
         }
 
-        $cookiebits       = explode(":", $cookiebits);
-        self::$cookieUser = $cookiebits[0];
-        self::$cookieKey  = $cookiebits[1];
+        self::$cookieUser = $m[1];
+        self::$cookieKey  = $m[2];
     }//end parseCookie()
 
 
@@ -112,18 +116,18 @@ abstract class Session
     {
         self::$db = Container::getDb();
         self::parseCookie();
-        self::clearActiveSession();
 
-        if ($single) {
-            //Just this user session
-            self::$db->pquery(
-                "DELETE FROM active_sessions WHERE user_id = ? and `cookieval` = ?",
-                self::$cookieUser,
-                self::$cookieKey
-            );
-        } else {
-            //ALL of the user's sessions
-            self::$db->pquery("DELETE FROM active_sessions WHERE user_id = ?", self::$cookieUser);
+        // Only the holder of a live session may end sessions: the cookie's key must match one (#10).
+        // Before, a forged "<victim id>:anything" cookie deleted all of the victim's sessions.
+        if (self::$cookieUser !== null && self::activeSession(true)) {
+            self::clearActiveSession();
+            if ($single) {
+                //Just this session
+                self::$db->pquery("DELETE FROM active_sessions WHERE login_id = ?", (int)self::$login_id);
+            } else {
+                //ALL of the user's sessions
+                self::$db->pquery("DELETE FROM active_sessions WHERE user_id = ?", (int)self::$cookieUser);
+            }
         }
 
         //clear the cookie to nothing
@@ -133,15 +137,20 @@ abstract class Session
 
     public static function activeSession($force = false)
     {
+        if (self::$cookieUser === null || self::$cookieKey === null) {
+            return false;
+        }
+
         $activerow = \EmPHyre\Cache::fetch(APC_ACTIVE_SESSION_PREFIX.self::$cookieUser);
-        if (!$activerow || $activerow['cookieval'] != self::$cookieKey || $force) {
+        if (!$activerow || !hash_equals((string)$activerow['cookieval'], self::$cookieKey) || $force) {
             $activerow = self::$db->pquery(
                 'SELECT login_id, cookieval, expiretime FROM active_sessions WHERE user_id = ? and `cookieval` = ?',
-                self::$cookieUser,
+                (int)self::$cookieUser,
                 self::$cookieKey
             )->fetchRow();
 
-            if (!$activerow) {
+            // the SQL match is case-insensitive under most collations; the key must match exactly
+            if (!$activerow || !hash_equals((string)$activerow['cookieval'], self::$cookieKey)) {
                 return false;
             }
 

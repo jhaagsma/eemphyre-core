@@ -352,12 +352,10 @@ class MysqlDb
             case 'double':
                 return $part;
             case 'string':
-                if (is_numeric($part)) {
-                    return $part;
-                }
+                // Always quoted, numeric-looking or not: an unquoted "0" or "1e3" would compare
+                // numerically against a string column ("0" matches most non-numeric values; #4).
+                // MySQL converts quoted numbers for numeric columns. LIMIT/OFFSET need real ints.
                 return "'".$this->con->real_escape_string($part)."'";
-                //What this used to be:
-                // mysql_real_escape_string($part, $this->con)
             case 'boolean':
                 return ($part ? 1 : 0);
             case 'NULL':
