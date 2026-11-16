@@ -51,7 +51,7 @@ abstract class Session
         self::$db = Container::getDb();
 
         $time = time();
-        $key  = md5(rand());
+        $key  = bin2hex(random_bytes(16));   // 32 hex chars, the shape parseCookie() accepts (#5)
 
         //THIS IS HOW LONG WE WANT LOGIN SESSIONS TO LAST IN SECONDS (obivously);
         $expire = $time + SESSION_TIME;

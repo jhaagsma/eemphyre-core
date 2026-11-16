@@ -289,10 +289,24 @@ class User extends \EmPHyre\CRUD
     }//end disableUser()
 
 
+    /**
+     * Check a password. On success, an old sha512 hash (or one with outdated settings) is
+     * replaced by a password_hash() one: this writes to users (#5).
+     *
+     * @param  string $password The plain password tried
+     *
+     * @return boolean          Whether it is the user's password
+     */
     public function checkPassword($password)
     {
-        $cryptPass = \EmPHyre\Password::cryptSHA512($password, $this->salt);
-        return $cryptPass == $this->password ? true : false;
+        list($ok, $needsRehash) = Password::verify($password, $this->password, $this->salt);
+        if ($ok && $needsRehash) {
+            $this->password = Password::hash($password);
+            $this->salt     = '';
+            $this->commit();   // if this fails the old hash stays valid; try again next login
+        }
+
+        return $ok;
     }//end checkPassword()
 
 
@@ -407,10 +421,8 @@ class User extends \EmPHyre\CRUD
         if (!$newUser && $result->isError()) {
             return $result;
         } else {
-            $salt           = Password::generateSalt();
-            $password       = Password::cryptSHA512($pw1, $salt);
-            $this->password = $password;
-            $this->salt     = $salt;
+            $this->password = Password::hash($pw1);
+            $this->salt     = '';   // password_hash() keeps its own salt (#5)
 
             $result = $this->commit();
             if ($result->isError()) {
