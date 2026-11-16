@@ -39,11 +39,12 @@ namespace EmPHyre;
  */
 class M2M
 {
-    // The database.
+    // The database (shared). Table and keys are per instance: as statics, each new M2M
+    // redirected every earlier one to its table (#8).
     protected static $db;
-    protected static $tableName   = null;
-    protected static $primaryKeys = ['id1', 'id2'];
-    protected static $pkCount     = 2;
+    protected $tableName   = null;
+    protected $primaryKeys = ['id1', 'id2'];
+    protected $pkCount     = 2;
 
     /**
      * The construct
@@ -54,7 +55,7 @@ class M2M
      */
     public function __construct($table_name, $primary_key_1 = [], $primary_key_2 = null)
     {
-        static::$tableName = $table_name;
+        $this->tableName = $table_name;
 
         $part1 = is_array($primary_key_1) ? $primary_key_1 : [$primary_key_1];
         $part2 = [];
@@ -62,8 +63,8 @@ class M2M
             $part2 = is_array($primary_key_2) ? $primary_key_2 : [$primary_key_2];
         }
 
-        static::$primaryKeys = array_merge($part1, $part2);
-        static::$pkCount     = count(static::$primaryKeys);
+        $this->primaryKeys = array_merge($part1, $part2);
+        $this->pkCount     = count($this->primaryKeys);
         $this->initialize();
     }//end __construct()
 
@@ -103,11 +104,11 @@ class M2M
      */
     public function initialize()
     {
-        if (!static::$tableName) {
+        if (!$this->tableName) {
             trigger_error('TABLE NAME NOT SET IN '.get_class($this));
         }
 
-        if (count(static::$primaryKeys) < 2) {
+        if (count($this->primaryKeys) < 2) {
             trigger_error('NOT ENOUGH PRIMARY KEYS SET?');
         }
     }//end initialize()
@@ -132,7 +133,7 @@ class M2M
             $pksFixedValues = [0 => $pksFixedValues];
         }
 
-        $pkElim = static::$primaryKeys;
+        $pkElim = $this->primaryKeys;
 
         //new dBug($pkElim);
         //new dBug($pksFixedValues);
@@ -142,7 +143,7 @@ class M2M
         $searchConstraints = null;
 
         foreach ($pksFixedValues as $pk => $fixedValue) {
-            $searchConstraints .= self::getKey($pk)."` IN(?) AND `";
+            $searchConstraints .= $this->getKey($pk)."` IN(?) AND `";
             $call_args[]        = $fixedValue;
 
             if (!is_numeric($pk)) {
@@ -153,7 +154,7 @@ class M2M
         }
 
         if ($pkIndex != null) {
-            $pkSearch = static::$primaryKeys[$pkIndex];
+            $pkSearch = $this->primaryKeys[$pkIndex];
         } elseif (!is_numeric(key($pkSearchValues))) {
             $pkSearch       = key($pkSearchValues);
             $pkSearchValues = current($pkSearchValues);
@@ -166,7 +167,7 @@ class M2M
             return false;
         }
 
-        $query = "SELECT 1 FROM `".static::$tableName."` WHERE `".
+        $query = "SELECT 1 FROM `".$this->tableName."` WHERE `".
             $searchConstraints.$pkSearch."` IN(?) LIMIT 1";
 
         $call_args[]  = $pkSearchValues;
@@ -194,12 +195,12 @@ class M2M
         list($pksFixedValues, $pkIndex)
             = self::inputCompatibility($pksFixedValues, $pkIndex);
 
-        $pkElim = static::$primaryKeys;
+        $pkElim = $this->primaryKeys;
 
         $call_args    = $searchBits = [];
         $call_args[0] = null;
         foreach ($pksFixedValues as $pk => $fixedValue) {
-            $searchBits[] = "`".self::getKey($pk)."`=?";
+            $searchBits[] = "`".$this->getKey($pk)."`=?";
             $call_args[]  = $fixedValue;
 
             if (!is_numeric($pk)) {
@@ -211,7 +212,7 @@ class M2M
 
         $fieldSet = true;
         if ($pkIndex != null) {
-            $pkSearch = static::$primaryKeys[$pkIndex];
+            $pkSearch = $this->primaryKeys[$pkIndex];
         } else {
             //decide if we're returning a FieldSet or RowSet
             $fieldSet = count($pkElim) == 1 ? true : false;
@@ -219,7 +220,7 @@ class M2M
         }
 
         //$pkSearch is pre-escaped above
-        $query = "SELECT $pkSearch FROM `".static::$tableName."` WHERE ".
+        $query = "SELECT $pkSearch FROM `".$this->tableName."` WHERE ".
             implode(' AND ', $searchBits);
 
         $call_args[0] = $query;
@@ -253,18 +254,18 @@ class M2M
         list($pksFixedValues, $pkIndex)
             = self::inputCompatibility($pksFixedValues, $pkIndex);
 
-        //new dBug(static::$primaryKeys);
+        //new dBug($this->primaryKeys);
         //new dBug($pksFixedValues);
         //new dBug($pkIndex);
 
-        $pkElim = static::$primaryKeys;
+        $pkElim = $this->primaryKeys;
 
         //new dBug($pkElim);
         $call_args    = $searchBits = [];
         $call_args[0] = null;
 
         foreach ($pksFixedValues as $pk => $fixedValue) {
-            $searchBits[] = "`".self::getKey($pk)."`=?";
+            $searchBits[] = "`".$this->getKey($pk)."`=?";
             $call_args[]  = $fixedValue;
 
             if (!is_numeric($pk)) {
@@ -276,7 +277,7 @@ class M2M
         }
 
         //$pkSearch is pre-escaped above
-        $query = "SELECT COUNT(1) FROM `".static::$tableName."` WHERE ".
+        $query = "SELECT COUNT(1) FROM `".$this->tableName."` WHERE ".
             implode(' AND ', $searchBits);
 
         $call_args[0] = $query;
@@ -319,13 +320,13 @@ class M2M
      *
      * @return [type]     [description]
      */
-    private static function getKey($pk)
+    private function getKey($pk)
     {
-        if (!is_numeric($pk) && in_array($pk, static::$primaryKeys)) {
+        if (!is_numeric($pk) && in_array($pk, $this->primaryKeys)) {
             return $pk;
         }
 
-        return isset(static::$primaryKeys[$pk]) ? static::$primaryKeys[$pk] : null;
+        return isset($this->primaryKeys[$pk]) ? $this->primaryKeys[$pk] : null;
     }//end getKey()
 
     /**
@@ -346,11 +347,11 @@ class M2M
         $call_args    = $bits = [];
         $call_args[0] = null;
         foreach ($pkValues as $pk => $value) {
-            $bits[]      = "`".self::getKey($pk)."` = ?";
+            $bits[]      = "`".$this->getKey($pk)."` = ?";
             $call_args[] = $value;
         }
 
-        $query = "INSERT INTO `".static::$tableName.'` SET '.implode(", ", $bits);
+        $query = "INSERT INTO `".$this->tableName.'` SET '.implode(", ", $bits);
 
         $call_args[0] = $query;
 
@@ -376,11 +377,11 @@ class M2M
         $call_args    = $bits = [];
         $call_args[0] = null;
         foreach ($pkValues as $pk => $value) {
-            $bits[]      = "`".self::getKey($pk)."` = ?";
+            $bits[]      = "`".$this->getKey($pk)."` = ?";
             $call_args[] = $value;
         }
 
-        $query = "DELETE FROM `".static::$tableName.'` WHERE '.implode(" AND ", $bits);
+        $query = "DELETE FROM `".$this->tableName.'` WHERE '.implode(" AND ", $bits);
 
         $call_args[0] = $query;
 

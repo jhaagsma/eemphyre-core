@@ -38,6 +38,21 @@ abstract class CRUD
 
 
     /**
+     * Backtick-quote a column name for SQL (a ` inside is doubled), so a key that came from
+     * outside (addByArray($_POST)) can't break out of the identifier (#8). Choosing which
+     * columns a caller may write is still the caller's job (ADR 004).
+     *
+     * @param  string $name The column name
+     *
+     * @return string       The quoted name
+     */
+    protected static function quoteIdentifier($name)
+    {
+        return '`'.str_replace('`', '``', (string)$name).'`';
+    }//end quoteIdentifier()
+
+
+    /**
      * GET the primary key
      * this from FuelPHP
      *
@@ -138,7 +153,7 @@ abstract class CRUD
         $pk = static::$primaryKey;
 
         foreach ($this->_data as $key => $value) {
-            if (!isset($this->$pk) || $key == $this->$pk || $this->$pk != $this->_data[$pk]) {
+            if (!isset($this->$pk) || $key == $pk || $this->$pk != $this->_data[$pk]) {
                 //never commit a change to the primary key, that would be weird
                 continue;
             }
@@ -161,7 +176,7 @@ abstract class CRUD
         $call_args[0] = null;
 
         foreach ($update as $key => $value) {
-            $bits[]      = "`$key` = ?";
+            $bits[]      = static::quoteIdentifier($key).' = ?';
             $call_args[] = $value;
         }
 
@@ -195,7 +210,7 @@ abstract class CRUD
         $call_args[0] = null;
 
         foreach ($keyValue as $key => $value) {
-            $bits[]      = "`$key` = ?";
+            $bits[]      = static::quoteIdentifier($key).' = ?';
             $call_args[] = $value;
         }
 
@@ -261,7 +276,7 @@ abstract class CRUD
 
         return static::$db->pquery(
             'SELECT `'.static::$primaryKey.'` FROM `'
-            .static::$tableName.'` WHERE `'.$column.'`=?',
+            .static::$tableName.'` WHERE '.static::quoteIdentifier($column).'=?',
             $value
         )->fetchField();
     }//end getUniqueId()
@@ -347,7 +362,7 @@ abstract class CRUD
     {
         static::db();
         $check = static::$db->pquery(
-            "SELECT `".$uuidColumn."` FROM `".static::$tableName."` WHERE uuid = ?",
+            "SELECT ".static::quoteIdentifier($uuidColumn)." FROM `".static::$tableName."` WHERE uuid = ?",
             $uuid
         )->fetchField();
 
