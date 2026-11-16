@@ -13,10 +13,10 @@ implementation:
 - domain methods (`User::add()`, `User::edit()`, `Group::alterUserGroups()`, `Validate::*`) return a
   `Result` object whose `isError()` says how it went;
 - some methods return `false` or `null` for failure (`MysqlDb::query()` when not connected,
-  `Cache::store()` on a bad key, `getSeqID()` with no table, `Script::post()` when `curl_exec` fails);
+  `Cache::store()` on a bad key, `getSeqID()` with no table; `Script::post()` when `curl_exec` failed, until #11);
 - misconfiguration (`TABLE NAME NOT SET`) is a default-level `trigger_error` and execution continues.
 
-There are no exceptions, `try` or `catch` anywhere in the core. `ErrorHandler.function.php` and
+Apart from `Script::post()` / `get()` throwing on a failed request (#11), there are no exceptions, `try` or `catch` in the core. `ErrorHandler.function.php` and
 `errorlog.php` are broken (undefined variables, a misspelled include path), and failing SQL text can
 reach the browser when `display_errors` is on: known legacy, tracked in #7. PHP 8.1 makes mysqli
 throw by default, which bypasses `queryError()` entirely: tracked in #9.
@@ -65,7 +65,7 @@ throw by default, which bypasses `queryError()` entirely: tracked in #9.
 | Bad request input | `TypeValidator` coerces to the declared type or default; no error | none | n/a |
 | Auth failure | `URL::redirect()` to `/login?result=...` | TBD (none today) | login page |
 | APCu miss or failed store | treat as a miss and read the source | `E_USER_WARNING` on a bad key | nothing |
-| Outbound HTTP (`Script::post/get`) | TBD (no timeout or error check today) | TBD | TBD |
+| Outbound HTTP (`Script::post/get`) | timeouts (connect 5 s, total 15 s, `Script::setTimeouts()`); curl error, timeout or non-2xx throws `\RuntimeException` (code 0 or the HTTP status, #11) | the caller's or the request boundary's | the caller decides |
 | Misconfiguration (table name, route conflicts) | bug to fix | `trigger_error` | n/a |
 
 ## Rationale

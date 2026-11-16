@@ -18,6 +18,10 @@ class Script
 {
     private static $nl_required = false;
 
+    // seconds; see setTimeouts()
+    private static $connectTimeout = 5;
+    private static $timeout        = 15;
+
     /**
      * This echos a string, and formats things and stuff
      *
@@ -58,28 +62,40 @@ class Script
 
 
     /**
+     * Timeouts for post() and get(), in seconds
+     *
+     * @param  integer $connect Give up connecting after this long (default 5)
+     * @param  integer $total   Give up on the whole request after this long (default 15)
+     *
+     * @return null
+     */
+    public static function setTimeouts($connect = 5, $total = 15)
+    {
+        // at least 1 s: curl reads 0 as "no timeout", which is what #11 fixed
+        self::$connectTimeout = max(1, (int)$connect);
+        self::$timeout        = max(1, (int)$total);
+    }//end setTimeouts()
+
+
+    /**
      * Make a POST request
      *
      * @param  string $address The address to post to
      * @param  mixed  $data    The data to post
      *
-     * @return string          The server output
+     * @return string          The server output (the body of a 2xx response)
+     *
+     * @throws \RuntimeException If the request fails (code 0: connect, timeout or other curl
+     *                           error) or the status is not 2xx (code: the HTTP status)
      */
     public static function post($address = 'http://localhost', $data = null)
     {
         $address = self::urlfix($address);
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $address);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-        $serverOutput = curl_exec($ch);
-
-        curl_close($ch);
-
-        return $serverOutput;
+        return self::request('POST', $address, [
+            CURLOPT_POST       => 1,
+            CURLOPT_POSTFIELDS => http_build_query($data),
+        ]);
     }//end post()
 
     /**
@@ -88,22 +104,58 @@ class Script
      * @param  string $address The address to request to
      * @param  mixed  $data    The data to send
      *
-     * @return string          The server output
+     * @return string          The server output (the body of a 2xx response)
+     *
+     * @throws \RuntimeException As post()
      */
     public static function get($address, $data)
     {
         $address = self::urlfix($address);
 
+        return self::request('GET', $address.'?'.http_build_query($data), []);
+    }//end get()
+
+    /**
+     * Run one curl request with the timeouts; the only place that calls curl_* (ADR 004)
+     *
+     * @param  string $method  POST or GET, for the error message
+     * @param  string $url     The full URL
+     * @param  array  $options Extra CURLOPT_* options
+     *
+     * @return string          The body of a 2xx response
+     *
+     * @throws \RuntimeException As post()
+     */
+    private static function request($method, $url, array $options)
+    {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $address.'?'.http_build_query($data));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt_array($ch, $options + [
+            CURLOPT_URL            => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => self::$connectTimeout,
+            CURLOPT_TIMEOUT        => self::$timeout,
+        ]);
 
         $serverOutput = curl_exec($ch);
+        $curlErrno    = curl_errno($ch);
+        $curlError    = curl_error($ch);
+        $status       = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
 
         curl_close($ch);
 
+        // no query string in the message: GET data can hold keys or passwords
+        $where = $method.' '.explode('?', $url, 2)[0];
+
+        if ($serverOutput === false || $curlErrno !== 0) {
+            throw new \RuntimeException($where.' failed: '.$curlError.' (curl error '.$curlErrno.')');
+        }
+
+        if ($status < 200 || $status > 299) {
+            throw new \RuntimeException($where.' failed: HTTP '.$status, $status);
+        }
+
         return $serverOutput;
-    }//end get()
+    }//end request()
 
     /**
      * Fix the url to have http:// in front if it doesn't have it

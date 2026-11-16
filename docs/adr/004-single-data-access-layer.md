@@ -52,7 +52,6 @@ error handling the core already has, and a later change (PHP 8 mysqli exceptions
 - `M2M` keeps `$tableName` / `$primaryKeys` static, so a second instance redirects the first: #8.
 - `Container::getDb()` runs `createIfNotExists()` (a `SHOW DATABASES`, possibly `CREATE DATABASE`)
   on every call: #7.
-- `Script::post()` / `get()` set no timeout and ignore `curl_exec` failure: not filed yet.
 
 ## Rationale
 
