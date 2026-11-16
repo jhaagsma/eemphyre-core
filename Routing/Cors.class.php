@@ -10,15 +10,15 @@
  *
  * Usage (once, before routing):
  *
- *     \EmPHyre\Cors::allow(['https://app.example.com'], true);
+ *     \EmPHyre\Cors::allow(['https://app.example.com'], ['/api'], true);
  *
- * then, in each handler that is MEANT to be called cross-origin (e.g. a JSON API), and only there:
- *
- *     \EmPHyre\Cors::headers();
- *
- * Opt-in per handler on purpose: an allowed origin with credentials can read every response that carries
- * these headers as the logged-in user, so ordinary pages (account settings, API keys, forms with CSRF
- * tokens) must not get them. Router::route() answers preflight (OPTIONS) requests with Cors::preflight().
+ * The second argument scopes CORS to request paths (a prefix matches itself and anything below it:
+ * '/api' covers '/api' and '/api/x', not '/apix'). Only those paths get CORS: the preflight approval AND
+ * the response headers. Everything else gets neither, because an allowed origin with credentials can
+ * act as (and read every CORS response of) the logged-in user: ordinary pages (account settings, API
+ * keys, forms) must stay out of scope. Router::route() applies it centrally (preflight() for OPTIONS,
+ * headers() for everything else, before routing, so 404s and auth errors on API paths carry it too);
+ * a script outside the Router can call Cors::headers() itself.
  *
  * Rules:
  *  - The request's Origin header must match an allowed origin exactly (scheme://host[:port], no path;
@@ -49,6 +49,9 @@ class Cors
     /** @var string[] allowed origins, normalised */
     private static $origins = [];
 
+    /** @var string[] path prefixes CORS applies to */
+    private static $paths = [];
+
     /** @var bool send Access-Control-Allow-Credentials */
     private static $credentials = false;
 
@@ -64,6 +67,9 @@ class Cors
     /** @var callable|null header emitter for tests (null = PHP's header()) */
     private static $emitter = null;
 
+    /** @var bool tests: pretend headers were already sent */
+    private static $testHeadersSent = false;
+
 
     /**
      * Configure CORS. Call once at startup, before routing; calling again replaces ALL settings (anything
@@ -71,25 +77,40 @@ class Cors
      * already sent in this request.
      *
      * @param string[]      $origins     Allowed origins, e.g. ['https://app.example.com']
+     * @param string[]      $paths       Path prefixes CORS applies to, e.g. ['/api'] (required when origins are given)
      * @param bool          $credentials Allow cookies / HTTP auth on cross-origin requests
      * @param string[]|null $methods     Methods to approve in preflights (default GET, POST)
      * @param string[]|null $headers     Request headers to approve in preflights (default Content-Type)
      *
      * @return void
-     * @throws \InvalidArgumentException for an origin that isn't scheme://host[:port]
+     * @throws \InvalidArgumentException for an origin that isn't scheme://host[:port], a path that isn't
+     *                                   '/...', or origins without paths
      */
-    public static function allow(array $origins, $credentials = false, ?array $methods = null, ?array $headers = null)
+    public static function allow(array $origins, array $paths = [], $credentials = false, ?array $methods = null, ?array $headers = null)
     {
+        $scoped = [];
+        foreach ($paths as $path) {
+            if (!is_string($path) || !preg_match('#\A/[A-Za-z0-9._~/-]*\z#', $path)) {
+                throw new \InvalidArgumentException('Cors::allow: invalid path ' . self::describe($path));
+            }
+            $scoped[] = rtrim($path, '/') === '' ? '/' : rtrim($path, '/');
+        }
+
+        if ($origins && !$scoped) {
+            throw new \InvalidArgumentException('Cors::allow: give the paths CORS applies to (e.g. [\'/api\'])');
+        }
+
         $normalised = [];
         foreach ($origins as $o) {
             $n = self::normalise($o);
             if ($n === null) {
-                throw new \InvalidArgumentException('Cors::allow: invalid origin ' . var_export($o, true));
+                throw new \InvalidArgumentException('Cors::allow: invalid origin ' . self::describe($o));
             }
             $normalised[] = $n;
         }
 
         self::$origins     = array_values(array_unique($normalised));
+        self::$paths       = array_values(array_unique($scoped));
         self::$credentials = (bool)$credentials;
         self::$methods     = $methods === null ? self::DEFAULT_METHODS : array_values(array_map('strtoupper', $methods));
         self::$headers     = $headers === null ? self::DEFAULT_HEADERS : array_values($headers);
@@ -124,14 +145,15 @@ class Cors
 
         $o = strtolower(rtrim(trim($origin), '/'));
         $label = '[a-z0-9]([a-z0-9-]*[a-z0-9])?';
-        if (!preg_match('#\A(https?)://(' . $label . '(\.' . $label . ')*)(:([0-9]{1,5}))?\z#', $o, $m)) {
+        if (!preg_match('#\A(https?)://(' . $label . '(\.' . $label . ')*)(:([0-9]+))?\z#', $o, $m)) {
             return null;
         }
 
         $port = '';
         if (isset($m[7]) && $m[7] !== '') {
-            $p = (int)$m[7];   // also drops leading zeros (:0443 = :443)
-            if ($p < 1 || $p > 65535) {
+            $digits = ltrim($m[7], '0');   // leading zeros don't count (:0443 = :443)
+            $p      = (int)$digits;
+            if (strlen($digits) > 5 || $p < 1 || $p > 65535) {
                 return null;
             }
             if (!(($m[1] === 'https' && $p === 443) || ($m[1] === 'http' && $p === 80))) {
@@ -141,6 +163,47 @@ class Cors
 
         return $m[1] . '://' . $m[2] . $port;
     }//end normalise()
+
+
+    /**
+     * Short, safe description of a bad config value for an exception message.
+     *
+     * @param mixed $value
+     *
+     * @return string
+     */
+    private static function describe($value)
+    {
+        return is_string($value) ? '"' . addcslashes(substr($value, 0, 100), "\0..\37\"\\") . '"' : gettype($value);
+    }//end describe()
+
+
+    /**
+     * Is this request path covered by the configured path prefixes?
+     *
+     * @param mixed $uri request URI or path (query ignored); null = the current request
+     *
+     * @return bool
+     */
+    public static function inScope($uri = null)
+    {
+        if ($uri === null) {
+            $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+        }
+
+        if (!is_string($uri)) {
+            return false;
+        }
+
+        $path = explode('?', $uri, 2)[0];
+        foreach (self::$paths as $prefix) {
+            if ($prefix === '/' || $path === $prefix || strpos($path, $prefix . '/') === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }//end inScope()
 
 
     /**
@@ -172,12 +235,25 @@ class Cors
      */
     public static function headerLines($origin, $preflight = false)
     {
+        return self::build(self::origin($origin === null ? '' : $origin), $preflight);
+    }//end headerLines()
+
+
+    /**
+     * Header lines for an already-checked origin (null = not allowed).
+     *
+     * @param string|null $allowed
+     * @param bool        $preflight
+     *
+     * @return string[]
+     */
+    private static function build($allowed, $preflight)
+    {
         if (!self::enabled()) {
             return [];
         }
 
-        $lines   = ['Vary: Origin'];
-        $allowed = self::origin($origin === null ? '' : $origin);
+        $lines = ['Vary: Origin'];
         if ($allowed === null) {
             return $lines;
         }
@@ -194,7 +270,7 @@ class Cors
         }
 
         return $lines;
-    }//end headerLines()
+    }//end build()
 
 
     /**
@@ -233,7 +309,7 @@ class Cors
      */
     private static function send($preflight)
     {
-        if (!self::enabled()) {
+        if (!self::enabled() || !self::inScope()) {   // out-of-scope paths get no CORS at all
             return false;
         }
 
@@ -241,32 +317,40 @@ class Cors
             return self::$sent;
         }
 
-        if (self::$emitter === null && headers_sent($file, $line)) {   // say so once, instead of failing quietly
+        $file = $line = null;
+        if (self::$emitter !== null ? self::$testHeadersSent : headers_sent($file, $line)) {
             trigger_error("Cors: headers already sent (output started at $file:$line); CORS headers not sent", E_USER_WARNING);
-            return self::$sent = false;
+            return self::$sent = false;   // cached: warn once per request
         }
 
-        $lines = self::headerLines(isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '', $preflight);
-        foreach ($lines as $i => $line) {
+        $allowed = self::origin(isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '');
+        foreach (self::build($allowed, $preflight) as $i => $headerLine) {
             // line 0 is Vary: add it to any Vary the app sets instead of replacing it
-            self::$emitter === null ? header($line, $i !== 0) : call_user_func(self::$emitter, $line, $i !== 0);
+            if (self::$emitter === null) {
+                header($headerLine, $i !== 0);
+            } else {
+                call_user_func(self::$emitter, $headerLine, $i !== 0);
+            }
         }
 
-        return self::$sent = (count($lines) > 1);   // more than Vary = Allow-Origin was sent
+        return self::$sent = ($allowed !== null);
     }//end send()
 
 
     /**
-     * Tests only: capture headers instead of sending them (null restores header()); also forgets the
+     * @internal Tests only, never call from app code: capture headers instead of sending them
+     * (null restores PHP's header()), optionally pretend headers were already sent; also forgets the
      * per-request state.
      *
-     * @param callable|null $emitter function (string $line, bool $replace)
+     * @param callable|null $emitter     function (string $line, bool $replace)
+     * @param bool          $headersSent simulate output having started
      *
      * @return void
      */
-    public static function setEmitter(?callable $emitter)
+    public static function setEmitterForTests(?callable $emitter, $headersSent = false)
     {
-        self::$emitter = $emitter;
-        self::$sent    = null;
-    }//end setEmitter()
+        self::$emitter         = $emitter;
+        self::$testHeadersSent = (bool)$headersSent;
+        self::$sent            = null;
+    }//end setEmitterForTests()
 }//end class

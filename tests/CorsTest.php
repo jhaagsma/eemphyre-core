@@ -4,7 +4,8 @@ use PHPUnit\Framework\TestCase;
 
 final class CorsTest extends TestCase
 {
-    private const APP = 'https://alphaui.earthempires.com';
+    private const APP   = 'https://alphaui.earthempires.com';
+    private const PATHS = ['/rest'];
 
     /** @var array[] headers captured by the emitter: [line, replace] */
     private $sent = [];
@@ -13,16 +14,17 @@ final class CorsTest extends TestCase
     {
         Cors::allow([]);   // back to the default: off
         $this->sent = [];
-        Cors::setEmitter(function ($line, $replace) {
+        Cors::setEmitterForTests(function ($line, $replace) {
             $this->sent[] = [$line, $replace];
         });
         unset($_SERVER['HTTP_ORIGIN']);
+        $_SERVER['REQUEST_URI'] = '/rest';
     }
 
     protected function tearDown(): void
     {
-        Cors::setEmitter(null);
-        unset($_SERVER['HTTP_ORIGIN']);
+        Cors::setEmitterForTests(null);
+        unset($_SERVER['HTTP_ORIGIN'], $_SERVER['REQUEST_URI']);
     }
 
     public function testOffByDefault()
@@ -33,7 +35,7 @@ final class CorsTest extends TestCase
 
     public function testAllowedOriginOnPreflightGetsApproval()
     {
-        Cors::allow([self::APP], true);
+        Cors::allow([self::APP], self::PATHS, true);
         $lines = Cors::headerLines(self::APP, true);
         $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, $lines, 'expected header missing');
         $this->assertContains('Access-Control-Allow-Credentials: true', $lines, 'expected header missing');
@@ -44,7 +46,7 @@ final class CorsTest extends TestCase
 
     public function testRealResponseHasNoPreflightHeaders()
     {
-        Cors::allow([self::APP], true);
+        Cors::allow([self::APP], self::PATHS, true);
         $lines = Cors::headerLines(self::APP, false);
         $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, $lines, 'expected header missing');
         $this->assertNotContains('Access-Control-Allow-Methods: GET, POST', $lines, 'header must not be sent here');
@@ -52,7 +54,7 @@ final class CorsTest extends TestCase
 
     public function testCredentialsOnlyWhenAsked()
     {
-        Cors::allow([self::APP]);
+        Cors::allow([self::APP], self::PATHS);
         $this->assertNotContains('Access-Control-Allow-Credentials: true', Cors::headerLines(self::APP, true), 'header must not be sent here');
     }
 
@@ -61,7 +63,7 @@ final class CorsTest extends TestCase
      */
     public function testOtherOriginsAreNeverEchoed($origin)
     {
-        Cors::allow([self::APP], true);
+        Cors::allow([self::APP], self::PATHS, true);
         $this->assertSame(['Vary: Origin'], Cors::headerLines($origin, true), "origin $origin must never be echoed");
     }
 
@@ -80,7 +82,7 @@ final class CorsTest extends TestCase
 
     public function testCaseAndTrailingSlashAreNormalised()
     {
-        Cors::allow([self::APP . '/'], true);
+        Cors::allow([self::APP . '/'], self::PATHS, true);
         $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, Cors::headerLines('HTTPS://AlphaUI.EarthEmpires.com', false), 'expected header missing');
     }
 
@@ -90,7 +92,7 @@ final class CorsTest extends TestCase
     public function testInvalidConfiguredOriginThrows($origin)
     {
         $this->expectException(\InvalidArgumentException::class);
-        Cors::allow([self::APP, $origin]);
+        Cors::allow([self::APP, $origin], self::PATHS);
     }
 
     public function invalidOrigins()
@@ -110,8 +112,8 @@ final class CorsTest extends TestCase
 
     public function testLaterAllowResetsMethodsAndHeaders()
     {
-        Cors::allow([self::APP], true, ['PUT'], ['X-Foo']);
-        Cors::allow([self::APP], true);
+        Cors::allow([self::APP], self::PATHS, true, ['PUT'], ['X-Foo']);
+        Cors::allow([self::APP], self::PATHS, true);
         $lines = Cors::headerLines(self::APP, true);
         $this->assertContains('Access-Control-Allow-Methods: GET, POST', $lines, 'methods must go back to the default');
         $this->assertContains('Access-Control-Allow-Headers: Content-Type', $lines, 'headers must go back to the default');
@@ -119,7 +121,7 @@ final class CorsTest extends TestCase
 
     public function testCustomMethodsAndHeaders()
     {
-        Cors::allow([self::APP], false, ['get', 'put'], ['Content-Type', 'X-Requested-With']);
+        Cors::allow([self::APP], self::PATHS, false, ['get', 'put'], ['Content-Type', 'X-Requested-With']);
         $lines = Cors::headerLines(self::APP, true);
         $this->assertContains('Access-Control-Allow-Methods: GET, PUT', $lines, 'methods are upper-cased');
         $this->assertContains('Access-Control-Allow-Headers: Content-Type, X-Requested-With', $lines, 'custom headers listed');
@@ -130,7 +132,7 @@ final class CorsTest extends TestCase
      */
     public function testDefaultPortIsNormalised($configured, $sent)
     {
-        Cors::allow([$configured], true);
+        Cors::allow([$configured], self::PATHS, true);
         $this->assertNotNull(Cors::origin($sent), "configured $configured should match browser Origin $sent");
     }
 
@@ -146,27 +148,27 @@ final class CorsTest extends TestCase
 
     public function testNonDefaultPortIsKept()
     {
-        Cors::allow(['https://a.example:8443']);
+        Cors::allow(['https://a.example:8443'], self::PATHS);
         $this->assertNull(Cors::origin('https://a.example'), 'port 8443 is a different origin');
         $this->assertNotNull(Cors::origin('https://a.example:8443'), 'same port matches');
     }
 
     public function testNonStringOriginIsRejectedQuietly()
     {
-        Cors::allow([self::APP]);
+        Cors::allow([self::APP], self::PATHS);
         $this->assertNull(Cors::origin(['x']), 'an array Origin is not an origin (and must not warn)');
     }
 
     public function testVaryIsTheFirstLine()
     {
-        Cors::allow([self::APP]);
+        Cors::allow([self::APP], self::PATHS);
         $this->assertSame('Vary: Origin', Cors::headerLines('https://evil.example', false)[0], 'Vary first, so send() adds it without replacing');
         $this->assertSame('Vary: Origin', Cors::headerLines(self::APP, true)[0], 'also for allowed origins');
     }
 
     public function testHeadersSendsForAllowedOriginOnce()
     {
-        Cors::allow([self::APP], true);
+        Cors::allow([self::APP], self::PATHS, true);
         $_SERVER['HTTP_ORIGIN'] = self::APP;
         $this->assertTrue(Cors::headers(), 'allowed origin reports true');
         $this->assertTrue(Cors::headers(), 'second call in the same request reports the same');
@@ -179,7 +181,7 @@ final class CorsTest extends TestCase
 
     public function testHeadersForOtherOriginSendsOnlyVary()
     {
-        Cors::allow([self::APP], true);
+        Cors::allow([self::APP], self::PATHS, true);
         $_SERVER['HTTP_ORIGIN'] = 'https://evil.example';
         $this->assertFalse(Cors::headers(), 'other origin reports false');
         $this->assertSame([['Vary: Origin', false]], $this->sent, 'only Vary for a stranger');
@@ -194,10 +196,89 @@ final class CorsTest extends TestCase
 
     public function testAllowResetsPerRequestState()
     {
-        Cors::allow([self::APP]);
+        Cors::allow([self::APP], self::PATHS);
         $_SERVER['HTTP_ORIGIN'] = 'https://evil.example';
         $this->assertFalse(Cors::headers(), 'stranger first');
-        Cors::allow(['https://evil.example']);
+        Cors::allow(['https://evil.example'], self::PATHS);
         $this->assertTrue(Cors::headers(), 'after allow() the check runs again');
+    }
+
+    /**
+     * @dataProvider scopes
+     */
+    public function testScope($uri, $inScope)
+    {
+        Cors::allow([self::APP], ['/rest', '/api/v1/'], true);
+        $this->assertSame($inScope, Cors::inScope($uri), "scope of " . json_encode($uri));
+    }
+
+    public function scopes()
+    {
+        return [
+            'exact'            => ['/rest', true],
+            'below'            => ['/rest/x', true],
+            'query ignored'    => ['/rest?x=/account', true],
+            'trailing slash cfg' => ['/api/v1/things', true],
+            'prefix lookalike' => ['/restore', false],
+            'other page'       => ['/account/settings', false],
+            'root'             => ['/', false],
+            'not a string'     => [['/rest'], false],
+        ];
+    }
+
+    public function testOutOfScopeGetsNoHeadersAtAll()
+    {
+        Cors::allow([self::APP], self::PATHS, true);
+        $_SERVER['HTTP_ORIGIN'] = self::APP;
+        $_SERVER['REQUEST_URI'] = '/account/settings';
+        $this->assertFalse(Cors::headers(), 'allowed origin on an out-of-scope path is not allowed');
+        $this->assertSame([], $this->sent, 'not even Vary outside the scope');
+    }
+
+    public function testOriginsWithoutPathsThrow()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        Cors::allow([self::APP]);
+    }
+
+    /**
+     * @dataProvider invalidPaths
+     */
+    public function testInvalidPathThrows($path)
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        Cors::allow([self::APP], [$path]);
+    }
+
+    public function invalidPaths()
+    {
+        return ['relative' => ['rest'], 'url' => ['https://x/rest'], 'query' => ['/rest?x'], 'not a string' => [5]];
+    }
+
+    public function testHeadersAlreadySentWarnsOncePerRequest()
+    {
+        Cors::allow([self::APP], self::PATHS, true);
+        Cors::setEmitterForTests(function ($line, $replace) {
+            $this->sent[] = [$line, $replace];
+        }, true);
+        $_SERVER['HTTP_ORIGIN'] = self::APP;
+        $warnings = 0;
+        set_error_handler(function ($no) use (&$warnings) {
+            $warnings += ($no === E_USER_WARNING);
+            return true;
+        });
+        $first  = Cors::headers();
+        $second = Cors::headers();
+        restore_error_handler();
+        $this->assertFalse($first, 'nothing could be sent');
+        $this->assertFalse($second, 'cached for the request');
+        $this->assertSame(1, $warnings, 'warned exactly once');
+        $this->assertSame([], $this->sent, 'no header attempted');
+    }
+
+    public function testLongZeroPaddedPortIsTheSamePort()
+    {
+        Cors::allow(['https://a.example:000443'], self::PATHS);
+        $this->assertNotNull(Cors::origin('https://a.example'), ':000443 is :443, the default');
     }
 }
