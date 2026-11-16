@@ -26,7 +26,7 @@ final class CorsTest extends TestCase
     protected function tearDown(): void
     {
         Cors::setEmitterForTests(null);
-        unset($_SERVER['HTTP_ORIGIN'], $_SERVER['REQUEST_METHOD']);
+        unset($_SERVER['HTTP_ORIGIN'], $_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']);
     }
 
     public function testOffByDefault()
@@ -219,7 +219,7 @@ final class CorsTest extends TestCase
         return [
             'exact'            => ['/rest', true],
             'below'            => ['/rest/x', true],
-            'query ignored'    => ['/rest?x=/account', true],
+            'query not stripped' => ['/rest?x=/account', false],   // callers pass the routed path (no query)
             'trailing slash cfg' => ['/api/v1/things', true],
             'prefix lookalike' => ['/restore', false],
             'other page'       => ['/account/settings', false],
@@ -326,7 +326,6 @@ final class CorsTest extends TestCase
     {
         return [
             'plain'          => ['/rest/x', '/rest/x'],
-            'query'          => ['/rest/x?y=1', '/rest/x'],
             'trailing'       => ['/rest/x/', '/rest/x'],
             'leading double' => ['//rest/x', '/rest/x'],
             'empty segment'  => ['/rest//public', '/rest'],   // urlRoute() stops at the empty segment
@@ -355,6 +354,38 @@ final class CorsTest extends TestCase
         $_SERVER['HTTP_ORIGIN'] = self::APP;
         $_SERVER['REQUEST_URI'] = '/rest/x?y=1';
         $this->assertTrue(Cors::headers(), 'no-argument form uses REQUEST_URI and REQUEST_METHOD');
-        unset($_SERVER['REQUEST_URI']);
+    }
+
+    public function testPreflightChecksTheRequestedMethod()
+    {
+        Cors::allow([self::APP], self::PATHS, true);
+        $_SERVER['HTTP_ORIGIN'] = self::APP;
+        $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'] = 'DELETE';
+        $this->assertFalse(Cors::preflightHeaders('/rest'), 'DELETE is not an allowed method');
+        $this->assertSame([['Vary: Origin', false]], $this->sent, 'only Vary for a disallowed requested method');
+        $this->sent = [];
+        $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'] = 'POST';
+        $this->assertTrue(Cors::preflightHeaders('/rest'), 'POST is allowed');
+        $this->assertContains(['Access-Control-Allow-Methods: GET, POST', true], $this->sent, 'approval sent');
+    }
+
+    public function testNoWarningWhenOnlyVaryWouldGoOut()
+    {
+        Cors::allow([self::APP], self::PATHS, true);
+        Cors::setEmitterForTests(function ($line, $replace) {
+            $this->sent[] = [$line, $replace];
+        }, function () {
+            return true;
+        });
+        $_SERVER['HTTP_ORIGIN']    = self::APP;
+        $_SERVER['REQUEST_METHOD'] = 'DELETE';
+        $warnings = 0;
+        set_error_handler(function ($no) use (&$warnings) {
+            $warnings += ($no === E_USER_WARNING);
+            return true;
+        });
+        Cors::headers('/rest');
+        restore_error_handler();
+        $this->assertSame(0, $warnings, 'a disallowed method would only have got Vary: no warning');
     }
 }
