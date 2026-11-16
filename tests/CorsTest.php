@@ -352,8 +352,9 @@ final class CorsTest extends TestCase
     {
         Cors::allow([self::APP], self::PATHS, true);
         $_SERVER['HTTP_ORIGIN'] = self::APP;
-        $_SERVER['REQUEST_URI'] = '/rest/x?y=1';
+        putenv('REQUEST_URI=/rest/x?y=1');   // read like Router::route() reads it
         $this->assertTrue(Cors::headers(), 'no-argument form uses REQUEST_URI and REQUEST_METHOD');
+        putenv('REQUEST_URI');
     }
 
     public function testPreflightChecksTheRequestedMethod()

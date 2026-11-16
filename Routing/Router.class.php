@@ -662,33 +662,31 @@ class Router
 
 
     /**
-     * The request URI, from the environment like the Router always read it, falling back to $_SERVER when
-     * it's missing or empty. Cors uses the same function.
-     *
-     * @return string
-     */
-    public static function requestUri()
-    {
-        $uri = getenv('REQUEST_URI');
-        if ($uri === false || $uri === '') {
-            $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
-        }
-        return (string)$uri;
-    }//end requestUri()
-
-
-    /**
      * Do the actual routing!
      *
-     * @param  string $url    The url we are at
-     * @param  bool   $nested Internal: true for the path-extension recursion
+     * @param  string $url The url we are at
      *
      * @return object      Rediret or return a Route object
      */
-    public function route($url = null, $nested = false)
+    public function route($url = null)
+    {
+        return $this->routeUrl($url, false);
+    }//end route()
+
+
+    /**
+     * route(), with a flag for the internal path-extension recursion (which must not redo CORS or the
+     * OPTIONS exit: the outer call already did). Private so callers can't skip either.
+     *
+     * @param string|null $url
+     * @param bool        $nested
+     *
+     * @return object
+     */
+    private function routeUrl($url, $nested)
     {
         $type = $this->getType();
-        $uri  = self::requestUri();
+        $uri  = (string)getenv('REQUEST_URI');
         // The URL path being routed, worked out once: CORS and routing must agree on it.
         $routeUrl = $url ? $url : explode('?', $uri, 2)[0];
 
@@ -737,10 +735,10 @@ class Router
         if ($extension) {
             unset($node->path_extension);
             unset($node->extractable_json);
-            return $this->route($url . '/' . $extension, true);   // nested: CORS was decided by the outer call
+            return $this->routeUrl($url . '/' . $extension, true);   // nested: CORS was decided by the outer call
         }
 
         $path->skin = $node->skin;
         return new Route($node->file, $node->function, $data, $path, $node->auth);
-    }//end route()
+    }//end routeUrl()
 }//end class

@@ -22,6 +22,9 @@
  * configured methods (default GET, POST) get CORS, so an in-scope path routed by a fallback for another
  * method never does.
  *
+ * State is per HTTP request (PHP statics start fresh with each one); CLI loops don't serve browsers.
+ * If an app routes again within one request, CORS follows the route that answers.
+ *
  * Rules:
  *  - The request's Origin header must match an allowed origin exactly (scheme://host[:port], no path;
  *    case, a trailing slash and a default port :443/:80 are normalised). Never echo an origin that
@@ -363,8 +366,8 @@ class Cors
             return self::$sent;
         }
 
-        if ($path === null) {   // the same request URI the Router uses
-            $path = explode('?', Router::requestUri(), 2)[0];
+        if ($path === null) {   // the same request URI the Router reads
+            $path = explode('?', (string)getenv('REQUEST_URI'), 2)[0];
         }
         if (!self::enabled() || !self::inScope($path)) {   // out-of-scope paths get no CORS at all
             return false;
