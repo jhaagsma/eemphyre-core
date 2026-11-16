@@ -78,6 +78,9 @@ abstract class Session
     {
         self::$cookieUser = null;
         self::$cookieKey  = null;
+        self::$login_id   = null;   // set again only by activeSession() for this cookie
+        self::$expiretime = null;
+        self::$lastreal   = null;
 
         $cookie = URL::getCOOKIEval(COOKIE_NAME);
         // "<user id>:<32 hex key>" only (newSession() sets md5 hex keys). Anything else is no session,
@@ -137,6 +140,7 @@ abstract class Session
 
     public static function activeSession($force = false)
     {
+        self::$login_id = null;
         if (self::$cookieUser === null || self::$cookieKey === null) {
             return false;
         }
@@ -213,6 +217,28 @@ abstract class Session
 
         return;
     }//end updateActiveSession()
+
+
+    /**
+     * End all of a user's sessions except the one making this request (if it is theirs), e.g.
+     * after a password change, so a stolen session cookie stops working (#16). For another user
+     * (an admin changing someone's password) all their sessions end.
+     *
+     * @param int $user_id The user whose sessions to end
+     *
+     * @return null
+     */
+    public static function endOtherSessions($user_id)
+    {
+        self::$db = Container::getDb();
+        $user_id  = (int)$user_id;
+        // login_id is only set once activeSession() accepted this request's cookie
+        $mine = (self::$cookieUser !== null && (int)self::$cookieUser === $user_id && self::$login_id);
+        $keep = ($mine ? (int)self::$login_id : 0);
+
+        self::$db->pquery('DELETE FROM active_sessions WHERE user_id = ? AND login_id != ?', $user_id, $keep);
+        \EmPHyre\Cache::delete(APC_ACTIVE_SESSION_PREFIX.$user_id);
+    }//end endOtherSessions()
 
 
     public static function clearActiveSession()
