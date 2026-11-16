@@ -13,33 +13,33 @@ final class CorsTest extends TestCase
 
     public function testOffByDefault()
     {
-        $this->assertFalse(Cors::enabled());
-        $this->assertSame([], Cors::headerLines(self::APP, true));
+        $this->assertFalse(Cors::enabled(), 'CORS must be off until allow() is called');
+        $this->assertSame([], Cors::headerLines(self::APP, true), 'no CORS headers at all while off');
     }
 
     public function testAllowedOriginOnPreflightGetsApproval()
     {
         Cors::allow([self::APP], true);
         $lines = Cors::headerLines(self::APP, true);
-        $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, $lines);
-        $this->assertContains('Access-Control-Allow-Credentials: true', $lines);
-        $this->assertContains('Access-Control-Allow-Methods: GET, POST', $lines);
-        $this->assertContains('Access-Control-Allow-Headers: Content-Type', $lines);
-        $this->assertContains('Vary: Origin', $lines);
+        $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, $lines, 'expected header missing');
+        $this->assertContains('Access-Control-Allow-Credentials: true', $lines, 'expected header missing');
+        $this->assertContains('Access-Control-Allow-Methods: GET, POST', $lines, 'expected header missing');
+        $this->assertContains('Access-Control-Allow-Headers: Content-Type', $lines, 'expected header missing');
+        $this->assertContains('Vary: Origin', $lines, 'expected header missing');
     }
 
     public function testRealResponseHasNoPreflightHeaders()
     {
         Cors::allow([self::APP], true);
         $lines = Cors::headerLines(self::APP, false);
-        $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, $lines);
-        $this->assertNotContains('Access-Control-Allow-Methods: GET, POST', $lines);
+        $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, $lines, 'expected header missing');
+        $this->assertNotContains('Access-Control-Allow-Methods: GET, POST', $lines, 'header must not be sent here');
     }
 
     public function testCredentialsOnlyWhenAsked()
     {
         Cors::allow([self::APP]);
-        $this->assertNotContains('Access-Control-Allow-Credentials: true', Cors::headerLines(self::APP, true));
+        $this->assertNotContains('Access-Control-Allow-Credentials: true', Cors::headerLines(self::APP, true), 'header must not be sent here');
     }
 
     /**
@@ -48,7 +48,7 @@ final class CorsTest extends TestCase
     public function testOtherOriginsAreNeverEchoed($origin)
     {
         Cors::allow([self::APP], true);
-        $this->assertSame(['Vary: Origin'], Cors::headerLines($origin, true));
+        $this->assertSame(['Vary: Origin'], Cors::headerLines($origin, true), "origin $origin must never be echoed");
     }
 
     public function strangers()
@@ -67,7 +67,7 @@ final class CorsTest extends TestCase
     public function testCaseAndTrailingSlashAreNormalised()
     {
         Cors::allow([self::APP . '/'], true);
-        $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, Cors::headerLines('HTTPS://AlphaUI.EarthEmpires.com', false));
+        $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, Cors::headerLines('HTTPS://AlphaUI.EarthEmpires.com', false), 'expected header missing');
     }
 
     public function testInvalidConfiguredOriginIsIgnored()
@@ -79,8 +79,8 @@ final class CorsTest extends TestCase
         });
         Cors::allow(['https://example.com/some/path', '*', self::APP]);
         restore_error_handler();
-        $this->assertCount(2, $notices);
-        $this->assertSame(['Vary: Origin'], Cors::headerLines('https://example.com', false));
-        $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, Cors::headerLines(self::APP, false));
+        $this->assertCount(2, $notices, 'both invalid configured origins should raise a notice');
+        $this->assertSame(['Vary: Origin'], Cors::headerLines('https://example.com', false), 'an ignored origin must not be allowed');
+        $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, Cors::headerLines(self::APP, false), 'expected header missing');
     }
 }
