@@ -49,9 +49,24 @@ class URL
         $loc .= $ext;
 
         header("Location: $loc", true, $code);
-        echo "Redirecting to: <a href='".htmlentities($loc)."'>$loc</a>";
+        echo self::redirectLink($loc);
         exit;
     }//end redirect()
+
+
+    /**
+     * The fallback link shown while redirecting. $loc is escaped in both places, quotes too:
+     * the link text was raw and the href quote unescaped (#8).
+     *
+     * @param  string $loc Where we redirect to
+     *
+     * @return string      HTML
+     */
+    private static function redirectLink($loc)
+    {
+        $html = htmlentities($loc, ENT_QUOTES);
+        return "Redirecting to: <a href='".$html."'>".$html."</a>";
+    }//end redirectLink()
 
 
     public static function moved($loc, $options = [])

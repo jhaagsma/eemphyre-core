@@ -224,9 +224,13 @@ class TypeValidator
             $type = self::typeAlias($type[0]);
         }
 
+        // An array or object where a scalar type is expected gets the default: settype() turned
+        // arrays into "Array" or 1 and objects (from extractable JSON) into a fatal error (#8).
+        $scalar = isset($source[$key]) && $source[$key] !== "" && is_scalar($source[$key]);
+
         switch ($type) {
             case "u_int":
-                if (isset($source[$key]) && $source[$key] !== "") {
+                if ($scalar) {
                     $ret = $source[$key];
 
                     if ($si == true && !is_numeric($ret)) {
@@ -253,7 +257,7 @@ class TypeValidator
             case "float":
             case "double":
             case "string":
-                if (isset($source[$key]) && $source[$key] !== "") {
+                if ($scalar) {
                     $ret = $source[$key];
 
                     if (settype($ret, $type)) {
