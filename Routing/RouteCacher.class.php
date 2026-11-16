@@ -33,7 +33,10 @@
 namespace EmPHyre;
 
 defined('ROUTER_PREFIX') or define("ROUTER_PREFIX", 'R-');
-defined('ROUTER_NAME') or define("ROUTER_NAME", ROUTER_PREFIX . getenv('HTTP_HOST') . ':');
+// APCu key of the cached router: one per copy of the core (so per app), not per Host header, which
+// the client chooses: any made-up Host used to build and store another router copy (#7). The
+// routes don't depend on the host. An app that needs per-host routers defines ROUTER_NAME itself.
+defined('ROUTER_NAME') or define("ROUTER_NAME", ROUTER_PREFIX . dirname(__DIR__) . ':');
 
 /**
  * This cache builds, stores, and fetches the Router object
