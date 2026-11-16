@@ -66,7 +66,7 @@ function emphyreErrorRelayText($text, $max = 400)
             return $m[1].$m[2].$m[1].$m[3].$q.'***'.$q;
         }],
         // user:password@ in URLs
-        ['#(\w++://[^/\s:@]++):[^/\s@]*+@#', function ($m) {
+        ['#(?<!\w)(\w++://[^/\s:@]++):[^/\s@]*+@#', function ($m) {
             return $m[1].':***@';
         }],
     ];

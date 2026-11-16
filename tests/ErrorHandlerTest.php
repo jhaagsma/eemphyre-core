@@ -59,6 +59,13 @@ final class ErrorHandlerTest extends TestCase
         $this->assertSame('"42"', emphyreErrorCsvField(42));
     }
 
+    /**
+     * Own process: compiled patterns are cached per process, so pcre.jit=0 must be set before the
+     * first use.
+     *
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
     public function testHostileInputStaysFast()
     {
         $inputs = [
@@ -66,11 +73,15 @@ final class ErrorHandlerTest extends TestCase
             str_repeat('a-', 50000) . 'b',                      // long prefix-like run
             str_repeat('"key":', 5000),
         ];
+        $inputs[] = str_repeat('a', 100000) . ':/@';               // URL-userinfo step without a scheme
+        $jit = ini_get('pcre.jit');
+        ini_set('pcre.jit', '0');   // the slow cases only show without the JIT (prod may run without it)
         foreach ($inputs as $in) {
             $start = microtime(true);
             $out   = emphyreErrorRelayText($in);
             $this->assertLessThan(0.5, microtime(true) - $start, 'linear-time cleaning');
             $this->assertNotSame('', $out, 'no blank relay line');
         }
+        ini_set('pcre.jit', $jit);
     }
 }
