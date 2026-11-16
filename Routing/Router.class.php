@@ -732,6 +732,13 @@ class Router
 
         //basically this lets us set a variable, like api_function, at say /ai/
         //and then automagically put us to /ai/cash or /ai/explore, based on input
+        // The value is the client's (a form field or any JSON type): only a string or an integer names a
+        // function. An array or object would break the URL below (an object is a fatal error), so it gets
+        // the same 404 as an unknown name.
+        if ($extension !== null && !is_string($extension) && !is_int($extension)) {
+            return FourOhFour::notFound($data, $path);
+        }
+
         if ($extension) {
             unset($node->path_extension);
             unset($node->extractable_json);
