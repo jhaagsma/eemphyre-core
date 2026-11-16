@@ -30,124 +30,165 @@
  */
 
 
- /**
-  * Custom Error Handler
-  *
-  * @param power_of_2 $errno    the php error number
-  * @param string     $errmsg   the php error message
-  * @param string     $filename the filename of the error
-  * @param int        $linenum  the line number of the error
-  * @param array      $vars     the error context
-  *
-  * @return null
-  */
-function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars)
+/**
+ * Text safe to relay to IRC (#15): control characters (CR/LF could inject IRC commands as the
+ * bot) become spaces, secret query parameters are masked, length is capped.
+ *
+ * @param string $text Error text; may contain outside input (remote responses, player text, URLs)
+ * @param int    $max  Maximum length
+ *
+ * @return string
+ */
+function emphyreErrorRelayText($text, $max = 400)
 {
-    global $base_dir, $user, $debug;
-    $userid = (get_class($user) == "User" ? $user->userid : 0);
-    if (error_reporting() == 0) {
-        // likely disabled with the @ operator
-        return;
+    $text = preg_replace('/[\x00-\x1f\x7f]+/', ' ', (string)$text);
+    $text = preg_replace(
+        '/\b(apicode|api_key|apikey|key|token|access_token|password|pass|pwd|secret|player_site_id|session|sid)=[^&\s,;"\']*/i',
+        '$1=***',
+        $text
+    );
+    if (strlen($text) > $max) {
+        $text = substr($text, 0, $max - 3).'...';
     }
 
-    $time = gmdate("M d Y H:i:s");
+    return trim($text);
+}//end emphyreErrorRelayText()
 
-    // Get the error type from the error number
+
+/**
+ * One CSV field: quotes doubled, newlines flattened, so a message can't break the log format.
+ *
+ * @param string $value The value
+ *
+ * @return string       The quoted field
+ */
+function emphyreErrorCsvField($value)
+{
+    return '"'.str_replace('"', '""', preg_replace('/[\r\n]+/', ' ', (string)$value)).'"';
+}//end emphyreErrorCsvField()
+
+
+/**
+ * Custom Error Handler, installed by errorlog.php when the app sets $errorlogging.
+ *
+ * Globals the app sets (all optional):
+ *  - $sitebasedir          base directory: logs go to $sitebasedir/logs/*.csv, and file names are
+ *                          shown relative to it (no logging to files when unset)
+ *  - $errorlogging         >= 2: show the full error to the visitor on fatal errors (also with
+ *                          $debug and a logged-in user, as before)
+ *  - $output_errors_to_irc true: forward errors to the bot cluster (needs CommClient)
+ *  - $debug                echo each error line
+ *  - $user                 current user object (its getId() is logged)
+ *
+ * @param int    $errno    the php error number
+ * @param string $errmsg   the php error message
+ * @param string $filename the filename of the error
+ * @param int    $linenum  the line number of the error
+ * @param array  $vars     the error context (PHP < 8 only; unused)
+ *
+ * @return bool            false for @-suppressed errors (PHP carries on), true otherwise
+ */
+function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars = null)
+{
+    global $sitebasedir, $errorlogging, $output_errors_to_irc, $debug, $user;
+
+    if (!(error_reporting() & $errno)) {
+        // disabled with the @ operator, or not reported at this level
+        return false;
+    }
+
+    $time   = gmdate("M d Y H:i:s");
+    $userid = (is_object($user) && method_exists($user, 'getId') ? (int)$user->getId() : 0);
+    $ip     = (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'cli');
+    $self   = (isset($_SERVER['PHP_SELF']) ? $_SERVER['PHP_SELF'] : '');
+    $base   = ($sitebasedir ? rtrim($sitebasedir, '/').'/' : null);
+
     static $errortype = [
-                         1    => "Error",
-                         2    => "Warning",
-                         4    => "Parsing Error",
-                         8    => "Notice",
-                         16   => "Core Error",
-                         32   => "Core Warning",
-                         64   => "Compile Error",
-                         128  => "Compile Warning",
-                         256  => "User Error",
-                         512  => "User Warning",
-                         1024 => "User Notice",
-                         2048 => "PHP Strict",
+                         E_ERROR             => "Error",
+                         E_WARNING           => "Warning",
+                         E_PARSE             => "Parsing Error",
+                         E_NOTICE            => "Notice",
+                         E_CORE_ERROR        => "Core Error",
+                         E_CORE_WARNING      => "Core Warning",
+                         E_COMPILE_ERROR     => "Compile Error",
+                         E_COMPILE_WARNING   => "Compile Warning",
+                         E_USER_ERROR        => "User Error",
+                         E_USER_WARNING      => "User Warning",
+                         E_USER_NOTICE       => "User Notice",
+                         E_STRICT            => "PHP Strict",
+                         E_RECOVERABLE_ERROR => "Recoverable Error",
+                         E_DEPRECATED        => "Deprecated",
+                         E_USER_DEPRECATED   => "User Deprecated",
                         ];
-    $errlevel         = $errortype[$errno];
+    $errlevel = (isset($errortype[$errno]) ? $errortype[$errno] : "Error $errno");
 
-    // Write error to log file (CSV format)
-    if ($errno <= 128) {
-        $file = "$sitebasedir/logs/errors.csv";
-    } elseif ($errno == 256) {
-        $file = "$sitebasedir/logs/usererrors.csv";
-    } else {
-        $file = "$sitebasedir/logs/userwarnings.csv";
-    }
-
-    $user = (isset($userid) ? $userid : 0);
-    $ip   = $_SERVER['REMOTE_ADDR'];
-
-    if (strpos($filename, $sitebasedir) === 0) {
-        $filename = substr($filename, strlen($sitebasedir));
+    if ($base && strpos($filename, $base) === 0) {
+        $filename = substr($filename, strlen($base));
     }
 
     $errmsg = preg_replace("/^(.*)\[<(.*)>\](.*)$/", "\\1\\3", $errmsg);
 
     $backoutput = "";
-
-    if (function_exists('debug_backtrace')) {
-        $backtrace = debug_backtrace();
-        // ignore $backtrace[0] as that is this function, the errorlogger
-        // only show 4 levels deep
-        for ($i = 1; $i < 5 && $i < count($backtrace); $i++) {
-            $errfile = (isset($backtrace[$i]['file']) ? $backtrace[$i]['file'] : '');
-
-            if (strpos($errfile, $sitebasedir) === 0) {
-                $errfile = substr($errfile, strlen($sitebasedir));
-            }
-
-            $line     = (isset($backtrace[$i]['line']) ? $backtrace[$i]['line'] : '');
-            $function = (isset($backtrace[$i]['function']) ? $backtrace[$i]['function'] : '');
-            $args     = (isset($backtrace[$i]['args']) ? count($backtrace[$i]['args']) : '');
-
-            $backoutput .= "$errfile:$line:$function($args)";
-
-            // show if there are more levels that were cut off
-            if (($i + 1) < count($backtrace)) {
-                $backoutput .= "<-";
-            }
+    $backtrace  = debug_backtrace();
+    // ignore $backtrace[0] as that is this function, the errorlogger; only show 4 levels deep
+    for ($i = 1; $i < 5 && $i < count($backtrace); $i++) {
+        $errfile = (isset($backtrace[$i]['file']) ? $backtrace[$i]['file'] : '');
+        if ($base && strpos($errfile, $base) === 0) {
+            $errfile = substr($errfile, strlen($base));
         }
-    }//end if
 
-    $str  = "\"$time\",";
-    $str .= "\"$_SERVER[PHP_SELF]\",";
-    $str .= "\"$user\",";
-    $str .= "\"$ip\",";
-    $str .= "\"$filename: $linenum\",";
-    $str .= "\"($errlevel)\",";
-    $str .= "\"$errmsg\",";
-    $str .= "\"$backoutput\"\r\n";
+        $line     = (isset($backtrace[$i]['line']) ? $backtrace[$i]['line'] : '');
+        $function = (isset($backtrace[$i]['function']) ? $backtrace[$i]['function'] : '');
+        $args     = (isset($backtrace[$i]['args']) ? count($backtrace[$i]['args']) : '');
 
-    if (isset($debug) && $debug) {
-        echo $str;
+        $backoutput .= "$errfile:$line:$function($args)";
+
+        // show if there are more levels that were cut off
+        if (($i + 1) < count($backtrace)) {
+            $backoutput .= "<-";
+        }
     }
 
-    $errfile = fopen($file, "a");
-    fputs($errfile, $str);
-    fclose($errfile);
+    $fields = [$time, $self, $userid, $ip, "$filename: $linenum", "($errlevel)", $errmsg, $backoutput];
+    $str    = implode(',', array_map('emphyreErrorCsvField', $fields))."\r\n";
 
-    if ($output_errors_to_irc) {
+    if ($debug) {
+        echo htmlspecialchars($str);
+    }
+
+    if ($base) {
+        if (in_array($errno, [E_USER_ERROR], true)) {
+            $file = $base.'logs/usererrors.csv';
+        } elseif (in_array($errno, [E_ERROR, E_WARNING, E_PARSE, E_NOTICE, E_CORE_ERROR, E_CORE_WARNING, E_COMPILE_ERROR, E_COMPILE_WARNING], true)) {
+            $file = $base.'logs/errors.csv';
+        } else {
+            $file = $base.'logs/userwarnings.csv';
+        }
+
+        @file_put_contents($file, $str, FILE_APPEND | LOCK_EX);
+    }
+
+    if ($output_errors_to_irc && class_exists('CommClient')) {
         // THIS PART IS ONLY FOR IF YOU HAVE THE BOT CLUSTER WORKING, TO SEND ERRORS TO IRC!
         if (strncmp($errmsg, '{NODETAIL_IRC}', 14) == 0) {
-            $str2 = str_replace('{NODETAIL_IRC}', null, $errmsg);
+            $str2 = substr($errmsg, 14);
         } else {
-            $str2 = "($errlevel) $errmsg,$filename:$linenum,$_SERVER[PHP_SELF],$user,$ip\r\n";
+            $str2 = "($errlevel) $errmsg,$filename:$linenum,$self,$userid,$ip";
         }
 
         $comm = new CommClient();
-        $comm->send('forward', ['type' => 'website_error', 'data' => $str2]);
+        $comm->send('forward', ['type' => 'website_error', 'data' => emphyreErrorRelayText($str2)."\r\n"]);
     }
 
     // Terminate script if fatal error
-    if ($errno != 2 && $errno != 8 && $errno != 512 && $errno != 1024 && $errno != 2048) {
-        if ($errorlogging >= 2 || $user && $debug) {
-            die("A fatal error has occured. Script execution has been aborted:<br/>\n$str");
-        } else {
-            die("A fatal error has occured. Script execution has been aborted<br/>");
+    $nonfatal = [E_WARNING, E_NOTICE, E_USER_WARNING, E_USER_NOTICE, E_STRICT, E_DEPRECATED, E_USER_DEPRECATED];
+    if (!in_array($errno, $nonfatal, true)) {
+        if ($errorlogging >= 2 || ($userid && $debug)) {
+            die("A fatal error has occured. Script execution has been aborted:<br/>\n".htmlspecialchars($str));
         }
+
+        die("A fatal error has occured. Script execution has been aborted<br/>");
     }
+
+    return true;
 }//end userErrorHandler()
