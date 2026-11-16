@@ -359,16 +359,19 @@ class Cors
      */
     private static function send($path, $method, $preflight)
     {
-        if (self::$sent !== null && !$preflight) {   // decided once per request (Router::route() can recurse)
+        if (self::$sent !== null && !$preflight) {   // already sent for this request (idempotent)
             return self::$sent;
         }
 
-        if ($path === null) {   // same source as Router::route()
+        if ($path === null) {   // same source as Router::route(); an empty value counts as missing
             $uri  = getenv('REQUEST_URI');
-            $path = explode('?', (string)($uri !== false ? $uri : (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '')), 2)[0];
+            if ($uri === false || $uri === '') {
+                $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+            }
+            $path = explode('?', (string)$uri, 2)[0];
         }
         if (!self::enabled() || !self::inScope($path)) {   // out-of-scope paths get no CORS at all
-            return $preflight ? false : (self::$sent = false);
+            return false;
         }
 
         // the method: as routed for real requests, as requested for a preflight. A method that isn't
@@ -385,11 +388,11 @@ class Cors
 
         $file = $line = '?';
         $alreadySent = self::$headersSentCheck === null ? headers_sent($file, $line) : (bool)call_user_func(self::$headersSentCheck);
-        if ($alreadySent) {   // output before routing on an in-scope path
-            if (isset($_SERVER['HTTP_ORIGIN'])) {   // only cross-origin browser calls can be affected: say so (once)
+        if ($alreadySent) {
+            if ($allowed !== null) {   // CORS headers were due for an allowed origin: that's a real failure
                 trigger_error('Cors: headers already sent (output started at ' . basename((string)$file) . ":$line); CORS headers not sent", E_USER_WARNING);
             }
-            return self::$sent = false;
+            return self::$sent = false;   // once per request
         }
 
         foreach (self::build($allowed, $preflight) as $i => $headerLine) {

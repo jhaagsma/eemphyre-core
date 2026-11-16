@@ -32,6 +32,8 @@ namespace EmPHyre;
 class Router
 {
     public $paths;
+    /** @var bool CORS handled for this request (see route()); not part of the cached router state */
+    private $corsDecided = false;
     public $optimize = 0;
     //inherit everything other than the function
     // 0 => dir (string)
@@ -678,11 +680,16 @@ class Router
         // CORS (Routing/Cors.class.php): for the path being routed, only on the paths and methods the app
         // listed with Cors::allow(). Preflights end here (empty 204 unless approved); other responses get
         // their headers before routing, so 404s and auth errors on API paths carry them too.
-        $corsPath = Cors::routedPath($routeUrl);
-        if ($type == 'OPTIONS' && Cors::enabled() && Cors::inScope($corsPath)) {   // else: as before (no CORS)
-            Cors::preflight($corsPath);
+        // Decided once per request: route() recurses for path extensions (built from user input), and the
+        // recursion must not change the decision.
+        if (!$this->corsDecided) {
+            $this->corsDecided = true;
+            $corsPath = Cors::routedPath($routeUrl);
+            if ($type == 'OPTIONS') {
+                Cors::preflight($corsPath);   // always ends the request (as before): empty 204 unless approved
+            }
+            Cors::headers($corsPath, $type);   // $type: the method it is routed as (unknown ones route as GET)
         }
-        Cors::headers($corsPath, $type);   // $type: the method it is routed as (unknown ones route as GET)
 
         if (!isset($this->paths)) {
             trigger_error($type . ': ' . getenv('SERVER_NAME') . ' ' . $uri);

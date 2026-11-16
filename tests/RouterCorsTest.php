@@ -73,8 +73,26 @@ final class RouterCorsTest extends TestCase
 
     public function testFirstDecisionPerRequestWins()
     {
-        $this->route('GET', '/account');
-        $this->assertFalse(\EmPHyre\Cors::headers('/rest'), 'a later call in the same request (e.g. a recursion) keeps the first decision');
-        $this->assertSame([], $this->sent, 'nothing sent');
+        putenv('REQUEST_URI=/account');
+        putenv('REQUEST_METHOD=GET');
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $router = new Router();
+        $router->get('/rest', 'x.php', 'rest_get');
+        $router->get('/account', 'x.php', 'account');
+        $router->route();         // out of scope: no CORS
+        $router->route('/rest');  // like the internal recursion with a user-chosen extension
+        $this->assertSame([], $this->sent, 'the first decision in the request stands');
+    }
+
+    public function testCorsBeforeRoutingDoesNotLockTheRequest()
+    {
+        putenv('REQUEST_URI=/index.php');
+        $this->assertFalse(\EmPHyre\Cors::headers(), 'an early no-argument call: out of scope');
+        putenv('REQUEST_METHOD=GET');
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $router = new Router();
+        $router->get('/rest', 'x.php', 'rest_get');
+        $router->route('/rest');
+        $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, $this->sent, 'routing /rest still gets CORS');
     }
 }

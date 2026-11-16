@@ -369,7 +369,7 @@ final class CorsTest extends TestCase
         $this->assertContains(['Access-Control-Allow-Methods: GET, POST', true], $this->sent, 'approval sent');
     }
 
-    public function testInScopeWarnsOnceEvenForADisallowedMethod()
+    public function testNoWarningWhenNoCorsHeadersWereDue()
     {
         Cors::allow([self::APP], self::PATHS, true);
         Cors::setEmitterForTests(function ($line, $replace) {
@@ -385,8 +385,7 @@ final class CorsTest extends TestCase
             return true;
         });
         Cors::headers('/rest');
-        Cors::headers('/rest');
         restore_error_handler();
-        $this->assertSame(1, $warnings, 'output before routing on an in-scope path is reported, once per request');
+        $this->assertSame(0, $warnings, 'a disallowed method would only have got Vary: nothing failed that matters');
     }
 }
