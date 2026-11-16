@@ -32,7 +32,7 @@
 global $errorlogging;
 
 if ($errorlogging) {
-    include_once '/core/ErrorHander.function.php';
+    include_once __DIR__.'/ErrorHandler.function.php';   // was a misspelled absolute path (#7)
 
     set_error_handler("userErrorHandler");
 }
