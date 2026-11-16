@@ -1,0 +1,17 @@
+{
+    "name": "jhaagsma/eemphyre-core",
+    "description": "EmPHyre: the small PHP framework under Earth Empires",
+    "license": "MIT",
+    "require": {
+        "php": ">=7.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.5 || ^9.6"
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "config": {
+        "platform-check": false
+    }
+}

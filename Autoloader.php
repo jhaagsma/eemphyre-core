@@ -53,7 +53,7 @@ class Autoloader
      */
     public static function register()
     {
-        spl_autoload_register('self::loadClass');
+        spl_autoload_register([__CLASS__, 'loadClass']);   // 'self::…' callables are deprecated in PHP 8.2
         self::addNamespace('EmPHyre', EMPHYRE_DIR, false, '.class.php');
         self::addNamespace('EmPHyre', EMPHYRE_DIR.'/Routing', false, '.class.php');
         self::addNamespace('EmPHyre', EMPHYRE_DIR.'/Cache', false, '.class.php');

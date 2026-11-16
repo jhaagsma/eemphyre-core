@@ -1,0 +1,111 @@
+<?php
+use EmPHyre\Cors;
+use EmPHyre\Router;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * Router::route() and Cors together: the path and method the Router routes are the ones CORS uses.
+ */
+final class RouterCorsTest extends TestCase
+{
+    private const APP = 'https://alphaui.earthempires.com';
+
+    /** @var array[] */
+    private $sent = [];
+
+    protected function setUp(): void
+    {
+        Cors::allow([self::APP], ['/rest'], true);
+        $this->sent = [];
+        Cors::setEmitterForTests(function ($line, $replace) {
+            $this->sent[] = $line;
+        }, function () {
+            return false;
+        });
+        $_SERVER['HTTP_ORIGIN'] = self::APP;
+    }
+
+    protected function tearDown(): void
+    {
+        Cors::allow([]);
+        Cors::setEmitterForTests(null);
+        unset($_SERVER['HTTP_ORIGIN'], $_SERVER['REQUEST_METHOD']);
+        putenv('REQUEST_URI');
+        putenv('REQUEST_METHOD');
+    }
+
+    private function route($method, $uri)
+    {
+        putenv("REQUEST_METHOD=$method");
+        putenv("REQUEST_URI=$uri");
+        $_SERVER['REQUEST_METHOD'] = $method;
+        $router = new Router();
+        $router->get('/rest', 'x.php', 'rest_get');
+        $router->get('/account', 'x.php', 'account');
+        return $router->route();
+    }
+
+    public function testQueryOnTheRestEndpointKeepsCors()
+    {
+        $route = $this->route('GET', '/rest?api_function=x');
+        $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, $this->sent, 'GET /rest?query is in scope');
+        $this->assertSame('rest_get', $route->function, 'and routes to the /rest handler');
+    }
+
+    public function testOutOfScopePageGetsNothing()
+    {
+        $route = $this->route('GET', '/account?next=/rest');
+        $this->assertSame([], $this->sent, 'no CORS headers for /account, whatever the query says');
+        $this->assertSame('account', $route->function, 'routes to /account');
+    }
+
+    public function testExplicitUrlArgument()
+    {
+        putenv('REQUEST_URI=/account');   // the request URI says /account ...
+        putenv('REQUEST_METHOD=GET');
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $router = new Router();
+        $router->get('/rest', 'x.php', 'rest_get');
+        $route = $router->route('/rest');   // ... but the app routes /rest explicitly
+        $this->assertSame('rest_get', $route->function, 'routes the explicit URL');
+        $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, $this->sent, 'and CORS follows the routed URL');
+    }
+
+    public function testSecondRouteInARequestFollowsTheAnsweringRoute()
+    {
+        putenv('REQUEST_METHOD=GET');
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $router = new Router();
+        $router->get('/rest', 'x.php', 'rest_get');
+        $router->get('/account', 'x.php', 'account');
+        $router->route('/account');
+        $this->assertSame([], $this->sent, 'first call: out of scope');
+        $router->route('/rest');
+        $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, $this->sent, 'the route that answers decides');
+    }
+
+    public function testCorsBeforeRoutingDoesNotLockTheRequest()
+    {
+        putenv('REQUEST_URI=/index.php');
+        $this->assertFalse(\EmPHyre\Cors::headers(), 'an early no-argument call: out of scope');
+        putenv('REQUEST_METHOD=GET');
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $router = new Router();
+        $router->get('/rest', 'x.php', 'rest_get');
+        $router->route('/rest');
+        $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, $this->sent, 'routing /rest still gets CORS');
+    }
+
+    public function testNestedRoutingDoesNotDecideCors()
+    {
+        putenv('REQUEST_METHOD=GET');
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $router = new Router();
+        $router->get('/rest', 'x.php', 'rest_get');
+        $nested = new \ReflectionMethod(Router::class, 'routeUrl');   // what the path-extension recursion calls
+        $nested->setAccessible(true);
+        $route = $nested->invoke($router, '/rest', true);
+        $this->assertSame('rest_get', $route->function, 'still routes');
+        $this->assertSame([], $this->sent, 'but CORS is left to the outer call');
+    }
+}

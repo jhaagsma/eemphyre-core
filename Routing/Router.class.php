@@ -670,28 +670,45 @@ class Router
      */
     public function route($url = null)
     {
+        return $this->routeUrl($url, false);
+    }//end route()
+
+
+    /**
+     * route(), with a flag for the internal path-extension recursion (which must not redo CORS or the
+     * OPTIONS exit: the outer call already did). Private so callers can't skip either.
+     *
+     * @param string|null $url
+     * @param bool        $nested
+     *
+     * @return object
+     */
+    private function routeUrl($url, $nested)
+    {
         $type = $this->getType();
-        $uri  = getenv('REQUEST_URI');
-        if ($type == 'OPTIONS') {
-            $url_parts = parse_url($_SERVER['HTTP_REFERER']);
-            $origin = $url_parts['scheme'].'://'.$url_parts['host'];
-            if ($url_parts['port']) {
-                $origin = $origin.':'.$url_parts['port'];
+        $uri  = (string)getenv('REQUEST_URI');
+        // The URL path being routed, worked out once: CORS and routing must agree on it.
+        $routeUrl = $url ? $url : explode('?', $uri, 2)[0];
+
+        // CORS (Routing/Cors.class.php), on the outermost call only (the path-extension recursion builds its
+        // URL from user input and must not change the decision): for the path being routed, only on the
+        // paths and methods the app listed with Cors::allow(). Every OPTIONS request ends here, as before
+        // (an empty 204 unless approved); other responses get their headers before routing, so 404s and
+        // auth errors on API paths carry them too.
+        if (!$nested) {
+            $corsPath = Cors::routedPath($routeUrl);
+            if ($type == 'OPTIONS') {
+                Cors::preflight($corsPath);
             }
-            
-            header("Access-Control-Allow-Origin: ".$origin);
-            header("Access-Control-Allow-Credentials: true");
-            header("Access-Control-Allow-Headers: Content-Type");
-            exit;
+            Cors::headers($corsPath, $type);   // $type: the method it is routed as (unknown ones route as GET)
         }
 
         if (!isset($this->paths)) {
             trigger_error($type . ': ' . getenv('SERVER_NAME') . ' ' . $uri);
         }
 
-        $url = ($url ? [$url] : explode('?', $uri, 2));
-
-        $path = new Path($url = rtrim($url[0], '/'));
+        $url  = rtrim($routeUrl, '/');
+        $path = new Path($url);
         $s    = explode('/', ltrim($path->url, '/'));
 
         $node = $this->urlRoute($s, $this->paths[$type], $path);
@@ -718,10 +735,10 @@ class Router
         if ($extension) {
             unset($node->path_extension);
             unset($node->extractable_json);
-            return $this->route($url . '/' . $extension);
+            return $this->routeUrl($url . '/' . $extension, true);   // nested: CORS was decided by the outer call
         }
 
         $path->skin = $node->skin;
         return new Route($node->file, $node->function, $data, $path, $node->auth);
-    }//end route()
+    }//end routeUrl()
 }//end class
