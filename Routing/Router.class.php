@@ -720,7 +720,10 @@ class Router
 
         //basically this lets people set everything up as a single json variable,
         //like api_payload, and we extract it as though it were in the POST or GET
-        $extension = $node->extractable_json ? $this->extractJson($node) : null;
+        // Only on the outermost call: the nested route inherits extractable_json, and extracting again would
+        // put an api_function from inside the payload back and extend the path a second time (a 404). So a
+        // path extends once: a nested route's own pathExtension()/extractableJson() keys are not applied.
+        $extension = (!$nested && $node->extractable_json) ? $this->extractJson($node) : null;
 
         if (is_array($node->inputs)) {
             $source = $this->getData();
