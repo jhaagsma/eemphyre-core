@@ -100,19 +100,60 @@ class Cors
 
 
     /**
-     * The request's Origin if it is on the allowlist, otherwise null.
+     * The given (or current request's) Origin if it is on the allowlist, otherwise null.
+     *
+     * @param string|null $origin Origin to check; null = the request's Origin header
      *
      * @return string|null
      */
-    public static function origin()
+    public static function origin($origin = null)
     {
-        $origin = isset($_SERVER['HTTP_ORIGIN']) ? strtolower(rtrim($_SERVER['HTTP_ORIGIN'], '/')) : '';
+        if ($origin === null) {
+            $origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
+        }
+
+        $origin = strtolower(rtrim((string)$origin, '/'));
         if ($origin === '' || !in_array($origin, self::$origins, true)) {
             return null;
         }
 
         return $origin;
     }//end origin()
+
+
+    /**
+     * The CORS headers to send for a request. Pure: sends nothing (tests use this).
+     *
+     * @param string|null $origin    The request's Origin header ('' or null = none)
+     * @param bool        $preflight true for an OPTIONS preflight
+     *
+     * @return string[] header lines
+     */
+    public static function headerLines($origin, $preflight = false)
+    {
+        if (!self::enabled()) {
+            return [];
+        }
+
+        $lines   = ['Vary: Origin'];
+        $allowed = self::origin((string)$origin);
+        if ($allowed === null) {
+            return $lines;
+        }
+
+        $lines[] = 'Access-Control-Allow-Origin: ' . $allowed;
+        if (self::$credentials) {
+            $lines[] = 'Access-Control-Allow-Credentials: true';
+        }
+
+        if ($preflight) {
+            $lines[] = 'Access-Control-Allow-Methods: ' . implode(', ', self::$methods);
+            $lines[] = 'Access-Control-Allow-Headers: ' . implode(', ', self::$headers);
+            $lines[] = 'Access-Control-Max-Age: ' . self::$max_age;
+        }
+
+        return $lines;
+    }//end headerLines()
 
 
     /**
@@ -123,22 +164,7 @@ class Cors
      */
     public static function headers()
     {
-        if (!self::enabled() || headers_sent()) {
-            return false;
-        }
-
-        header('Vary: Origin', false);
-        $origin = self::origin();
-        if ($origin === null) {
-            return false;
-        }
-
-        header('Access-Control-Allow-Origin: ' . $origin);
-        if (self::$credentials) {
-            header('Access-Control-Allow-Credentials: true');
-        }
-
-        return true;
+        return self::send(false);
     }//end headers()
 
 
@@ -150,13 +176,31 @@ class Cors
      */
     public static function preflight()
     {
-        if (self::headers()) {
-            header('Access-Control-Allow-Methods: ' . implode(', ', self::$methods));
-            header('Access-Control-Allow-Headers: ' . implode(', ', self::$headers));
-            header('Access-Control-Max-Age: ' . self::$max_age);
-        }
-
+        self::send(true);
         http_response_code(204);
         exit;
     }//end preflight()
+
+
+    /**
+     * Emit headerLines() for the current request.
+     *
+     * @param bool $preflight true for an OPTIONS preflight
+     *
+     * @return bool true if the request's origin was allowed
+     */
+    private static function send($preflight)
+    {
+        if (headers_sent()) {
+            return false;
+        }
+
+        $allowed = false;
+        foreach (self::headerLines(isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '', $preflight) as $line) {
+            header($line, strpos($line, 'Vary:') !== 0);  // don't replace other Vary headers
+            $allowed = $allowed || strpos($line, 'Access-Control-Allow-Origin:') === 0;
+        }
+
+        return $allowed;
+    }//end send()
 }//end class
