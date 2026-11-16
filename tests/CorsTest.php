@@ -26,7 +26,8 @@ final class CorsTest extends TestCase
     protected function tearDown(): void
     {
         Cors::setEmitterForTests(null);
-        unset($_SERVER['HTTP_ORIGIN'], $_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']);
+        unset($_SERVER['HTTP_ORIGIN'], $_SERVER['REQUEST_METHOD'], $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']);
+        putenv('REQUEST_URI');
     }
 
     public function testOffByDefault()
@@ -354,7 +355,6 @@ final class CorsTest extends TestCase
         $_SERVER['HTTP_ORIGIN'] = self::APP;
         putenv('REQUEST_URI=/rest/x?y=1');   // read like Router::route() reads it
         $this->assertTrue(Cors::headers(), 'no-argument form uses REQUEST_URI and REQUEST_METHOD');
-        putenv('REQUEST_URI');
     }
 
     public function testPreflightChecksTheRequestedMethod()

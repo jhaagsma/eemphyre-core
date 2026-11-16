@@ -95,4 +95,17 @@ final class RouterCorsTest extends TestCase
         $router->route('/rest');
         $this->assertContains('Access-Control-Allow-Origin: ' . self::APP, $this->sent, 'routing /rest still gets CORS');
     }
+
+    public function testNestedRoutingDoesNotDecideCors()
+    {
+        putenv('REQUEST_METHOD=GET');
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $router = new Router();
+        $router->get('/rest', 'x.php', 'rest_get');
+        $nested = new \ReflectionMethod(Router::class, 'routeUrl');   // what the path-extension recursion calls
+        $nested->setAccessible(true);
+        $route = $nested->invoke($router, '/rest', true);
+        $this->assertSame('rest_get', $route->function, 'still routes');
+        $this->assertSame([], $this->sent, 'but CORS is left to the outer call');
+    }
 }
